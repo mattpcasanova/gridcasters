@@ -70,8 +70,12 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    console.log('Form submitted, starting validation...');
     
     if (!validateForm()) {
+      console.log('Validation failed');
       return;
     }
 
@@ -79,21 +83,41 @@ export default function SignUp() {
     setErrors({})
 
     try {
-      await signUp(supabase, formData)
+      console.log('Starting sign up process...');
+      const result = await signUp(supabase, {
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        username: formData.username.toLowerCase().trim()
+      });
+      
+      console.log('Sign up successful:', result);
+      
       toast.success('Account created successfully!', {
         description: 'Please check your email to verify your account.'
       })
       router.push('/auth/verify-email')
     } catch (err) {
       console.error('Sign up error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up'
       
+      let errorMessage = 'An error occurred during sign up';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        errorMessage = String(err.message);
+      }
+      
+      // Handle specific error cases
       if (errorMessage.toLowerCase().includes('email')) {
         setErrors({ email: errorMessage })
       } else if (errorMessage.toLowerCase().includes('password')) {
         setErrors({ password: errorMessage })
       } else if (errorMessage.toLowerCase().includes('username')) {
         setErrors({ username: errorMessage })
+      } else if (errorMessage.toLowerCase().includes('duplicate')) {
+        setErrors({ username: 'This username is already taken' })
+      } else if (errorMessage.toLowerCase().includes('already registered')) {
+        setErrors({ email: 'This email is already registered' })
       } else {
         setErrors({ general: errorMessage })
       }
@@ -123,7 +147,7 @@ export default function SignUp() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {errors.general && (
           <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
             <p className="text-sm text-red-700 dark:text-red-400">{errors.general}</p>
