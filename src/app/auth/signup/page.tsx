@@ -72,16 +72,12 @@ export default function SignUp() {
     e.preventDefault()
     e.stopPropagation()
     
-    console.log('Form submitted, starting validation...');
-    
     if (!validateForm()) {
-      console.log('Validation failed');
       return;
     }
 
     // Prevent multiple submissions
     if (isLoading) {
-      console.log('Already processing, ignoring submission');
       return;
     }
 
@@ -89,14 +85,11 @@ export default function SignUp() {
     setErrors({})
 
     try {
-      console.log('Starting sign up process...');
       const result = await signUp(supabase, {
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
         username: formData.username.toLowerCase().trim()
       });
-      
-      console.log('Sign up successful:', result);
       
       toast.success('Account created successfully!', {
         description: 'Please check your email to verify your account.'

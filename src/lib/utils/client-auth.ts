@@ -60,19 +60,18 @@ export async function signUp(
   supabase: SupabaseClient<Database>,
   { email, password, username }: SignUpData
 ) {
-  console.log('Client auth: Starting sign up process...', { email, username });
+  console.log('Starting sign up for:', email);
 
   try {
     await waitForRateLimit();
     
-    console.log('Client auth: Creating auth user...');
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (authError) {
-      console.error('Client auth: Sign up auth error:', authError);
+      console.error('Auth user creation failed:', authError.message);
       
       // Handle specific rate limiting error
       if (authError.message?.includes('you can only request this after')) {
@@ -83,16 +82,13 @@ export async function signUp(
     }
 
     if (!authData.user) {
-      console.error('Client auth: User was not created');
       throw new Error('User was not created');
     }
 
-    console.log('Client auth: Auth user created successfully:', { userId: authData.user.id });
+    console.log('Auth user created, creating profile...');
     
     // Wait a moment for the session to be established
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log('Client auth: Creating profile...');
     
     // Create profile directly with client
     const { error: profileError, data: profileData } = await supabase
@@ -107,7 +103,7 @@ export async function signUp(
       .select();
 
     if (profileError) {
-      console.error('Client auth: Profile creation error:', profileError);
+      console.error('Profile creation failed:', profileError.message);
       
       // Handle specific profile errors
       if (profileError.code === '23505') { // Unique constraint violation
@@ -117,11 +113,10 @@ export async function signUp(
       throw profileError;
     }
 
-    console.log('Client auth: Profile created successfully:', profileData);
-    console.log('Client auth: Sign up successful, profile created');
+    console.log('Sign up successful');
     return authData;
   } catch (err) {
-    console.error('Client auth: Unexpected error during sign up:', err);
+    console.error('Sign up failed:', err);
     throw err;
   }
 }
