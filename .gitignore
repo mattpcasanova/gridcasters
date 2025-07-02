@@ -46,3 +46,6 @@ next-env.d.ts
 .env.development.local
 .env.test.local
 .env.production.local
+
+# v0 code reference
+v0 code/
