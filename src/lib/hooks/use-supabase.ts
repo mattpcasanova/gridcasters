@@ -1,3 +1,5 @@
+'use client'
+
 import { createBrowserClient } from '@supabase/ssr'
 import { useEffect, useState } from 'react'
 import { Database } from '../supabase/types'
