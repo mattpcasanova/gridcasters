@@ -1,0 +1,453 @@
+# RankBet - Cursor Project Rules
+
+## Project Overview
+RankBet is a fantasy football ranking platform where users create player rankings, track accuracy over time, and compete socially. Built with Next.js 14, Supabase, and Tailwind CSS. Users can follow friends, create groups, and aggregate rankings from multiple sources.
+
+**Primary Slogan**: "Rank Smart. Bet Better."
+**Secondary Slogans**: 
+- "Your Rankings, Your Record" (accuracy features)
+- "Outrank the Competition" (social features)
+
+## Tech Stack & Architecture
+
+### Core Framework
+- **Next.js 14** with App Router (`app/` directory structure)
+- **TypeScript** (strict mode, no implicit any)
+- **Tailwind CSS** with custom design system
+- **Supabase** for database, auth, real-time, and storage
+- **Vercel** for deployment
+
+### Key Libraries
+- **@supabase/auth-helpers-nextjs** for authentication
+- **@tanstack/react-query** for server state management
+- **@headlessui/react** or **@radix-ui/react** for complex components
+- **lucide-react** for icons
+- **sonner** for toast notifications
+- **framer-motion** for animations (when needed)
+
+## File Structure
+```
+app/
+├── (auth)/
+│   ├── signin/
+│   └── signup/
+├── dashboard/
+├── leaderboard/
+├── rankings/
+│   └── [id]/
+├── profile/
+│   └── [userId]/
+├── find-friends/
+├── find-groups/
+├── settings/
+└── api/
+    ├── rankings/
+    ├── users/
+    └── groups/
+
+components/
+├── ui/              # Base components (Button, Input, etc.)
+├── layout/          # Header, Footer, Navigation
+├── ranking/         # Ranking-specific components
+├── social/          # User/group components
+├── charts/          # Analytics visualizations
+└── forms/           # Form components
+
+lib/
+├── supabase/        # Client, types, helpers
+├── utils/           # Utility functions
+├── hooks/           # Custom React hooks
+├── constants/       # App constants
+└── types/           # Global TypeScript types
+```
+
+## Database Schema (Supabase)
+
+### Core Tables
+```sql
+-- Users (extends auth.users)
+profiles (
+  id uuid references auth.users primary key,
+  username text unique not null,
+  display_name text,
+  bio text,
+  avatar_url text,
+  is_private boolean default false,
+  is_verified boolean default false,
+  created_at timestamp default now()
+);
+
+-- Rankings
+rankings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id),
+  title text not null,
+  position text not null, -- 'QB','RB','WR','TE','OVR','FLX'
+  type text not null, -- 'weekly', 'preseason'
+  week integer, -- null for preseason
+  season integer not null,
+  accuracy_score decimal(5,2), -- only shown after prediction period
+  is_active boolean default true,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- Player Rankings (junction table)
+player_rankings (
+  id uuid primary key default gen_random_uuid(),
+  ranking_id uuid references rankings(id) on delete cascade,
+  player_id text not null, -- external player ID
+  player_name text not null,
+  team text not null,
+  position text not null,
+  rank_position integer not null,
+  is_starred boolean default false, -- "My Guys"
+  created_at timestamp default now()
+);
+
+-- Social Features
+follows (
+  id uuid primary key default gen_random_uuid(),
+  follower_id uuid references profiles(id),
+  following_id uuid references profiles(id),
+  created_at timestamp default now(),
+  unique(follower_id, following_id)
+);
+
+groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  avatar_url text,
+  is_private boolean default false,
+  host_id uuid references profiles(id) not null,
+  created_at timestamp default now()
+);
+
+group_members (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid references groups(id) on delete cascade,
+  user_id uuid references profiles(id),
+  status text default 'pending', -- 'pending', 'approved', 'rejected'
+  joined_at timestamp,
+  created_at timestamp default now(),
+  unique(group_id, user_id)
+);
+```
+
+## Fantasy Football Specific Rules
+
+### Position Categories
+```typescript
+type Position = 'QB' | 'RB' | 'WR' | 'TE' | 'OVR' | 'FLX';
+
+// Position colors for "My Guys"
+const POSITION_COLORS = {
+  QB: 'text-red-600 bg-red-50',
+  RB: 'text-green-600 bg-green-50', 
+  WR: 'text-blue-600 bg-blue-50',
+  TE: 'text-yellow-600 bg-yellow-50',
+  OVR: 'text-purple-600 bg-purple-50',
+  FLX: 'text-indigo-600 bg-indigo-50'
+} as const;
+```
+
+### Ranking Logic
+- **Active Rankings**: Current week + preseason only
+- **Historical Rankings**: Viewable but locked from editing
+- **Reference Points**: Copy from any past week or friend's ranking
+- **Accuracy Scoring**: Only show after prediction period ends
+- **Preseason Exception**: Show cumulative score, recalculate after each week
+
+### "My Guys" System
+- **Star players** with position-based color coding
+- **Filter by position** using circular dropdown button
+- **Persist across ranking updates**
+
+## UI/UX Design System
+
+### Brand Elements
+```typescript
+// Logo should always be clickable
+// Signed out: navigate to home
+// Signed in: navigate to dashboard
+
+// Navigation active states use gradient
+const BRAND_GRADIENT = 'bg-gradient-to-r from-blue-600 to-green-500';
+```
+
+### Color Palette
+```css
+:root {
+  --primary-blue: #2567E8;
+  --secondary-green: #10b981;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --muted: #6b7280;
+  
+  /* Gradient combinations */
+  --brand-gradient: linear-gradient(135deg, #2567E8 0%, #10b981 100%);
+}
+```
+
+### Circular Progress Indicators
+```typescript
+// For accuracy scores - white center, gradient border
+interface CircularProgress {
+  percentage: number; // 0-100
+  size?: 'sm' | 'md' | 'lg';
+  showText?: boolean;
+}
+
+// Implementation: gradient fill to percentage, gray remainder
+// Colors: blue to green gradient like brand
+```
+
+### Typography Hierarchy
+- **Page Titles**: text-3xl font-bold
+- **Section Headers**: text-xl font-semibold  
+- **Body Text**: text-base
+- **Captions**: text-sm text-muted-foreground
+- **Labels**: text-xs font-medium
+
+## Component Patterns
+
+### Navigation Header
+```typescript
+// Universal header with logo, main nav, page-specific actions, profile
+interface HeaderProps {
+  currentPage: 'dashboard' | 'leaderboard' | 'rankings' | 'profile';
+  pageActions?: React.ReactNode; // page-specific buttons
+}
+
+// Active page gets gradient button treatment
+// Logo navigation: home (signed out) vs dashboard (signed in)
+```
+
+### User Profile Components
+```typescript
+// Two distinct profile views
+interface ProfileViewProps {
+  userId: string;
+  isOwnProfile: boolean; // affects what's shown/editable
+}
+
+// Privacy levels affect visibility
+interface ProfileData {
+  public: {
+    username: string;
+    displayName: string;
+    avatar: string;
+    bio: string;
+    joinDate: string;
+    followers: number;
+    rankings: RankingPreview[];
+  };
+  private: {
+    // Same as public - rankings still visible on private profiles
+  };
+}
+```
+
+### Ranking Components
+```typescript
+// Dual input methods: drag-and-drop + direct number input
+interface RankingEditorProps {
+  players: Player[];
+  onReorder: (newOrder: Player[]) => void;
+  onStarPlayer: (playerId: string) => void;
+  showMyGuys?: boolean;
+  positionFilter?: Position;
+}
+
+// Reference point selection
+interface ReferencePointSelector {
+  userRankings: Ranking[]; // user's own rankings
+  searchableRankings: Ranking[]; // friends/aggregates
+}
+```
+
+### Social Components
+```typescript
+// Follow button with clear state indication
+interface FollowButtonProps {
+  userId: string;
+  isFollowing: boolean;
+  onToggle: () => void;
+}
+
+// Group management with host permissions
+interface GroupManagerProps {
+  group: Group;
+  isHost: boolean;
+  pendingRequests?: GroupRequest[]; // only for hosts
+}
+```
+
+## Data Fetching Patterns
+
+### Server Components (Default)
+```typescript
+// Use for initial page loads
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+
+export default async function LeaderboardPage() {
+  const supabase = createServerComponentClient({ cookies });
+  const { data } = await supabase
+    .from('rankings')
+    .select('*, profiles(username, avatar_url)')
+    .order('accuracy_score', { ascending: false });
+    
+  return ;
+}
+```
+
+### Client Components
+```typescript
+'use client';
+import { useSupabase } from '@/lib/hooks/use-supabase';
+import { useQuery } from '@tanstack/react-query';
+
+export function DynamicRankings() {
+  const supabase = useSupabase();
+  const { data, isLoading } = useQuery({
+    queryKey: ['rankings', 'active'],
+    queryFn: () => supabase
+      .from('rankings')
+      .select('*')
+      .eq('is_active', true)
+  });
+  
+  return ;
+}
+```
+
+### Real-time Subscriptions
+```typescript
+// For live leaderboard updates
+useEffect(() => {
+  const channel = supabase
+    .channel('rankings-changes')
+    .on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'rankings' },
+      (payload) => {
+        // Update local state
+        queryClient.invalidateQueries(['leaderboard']);
+      }
+    )
+    .subscribe();
+    
+  return () => supabase.removeChannel(channel);
+}, []);
+```
+
+## Authentication & Security
+
+### Row Level Security Policies
+```sql
+-- Users can only edit their own rankings
+CREATE POLICY "Users can manage own rankings" ON rankings
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Public profiles are viewable, private profiles restricted
+CREATE POLICY "Profile visibility" ON profiles
+  FOR SELECT USING (
+    NOT is_private OR 
+    auth.uid() = id OR
+    EXISTS (SELECT 1 FROM follows WHERE following_id = id AND follower_id = auth.uid())
+  );
+
+-- Group members can view group rankings
+CREATE POLICY "Group member access" ON rankings
+  FOR SELECT USING (
+    user_id = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM group_members gm 
+      JOIN rankings r ON r.user_id = gm.user_id 
+      WHERE gm.group_id IN (
+        SELECT group_id FROM group_members WHERE user_id = auth.uid() AND status = 'approved'
+      )
+    )
+  );
+```
+
+### Protected Routes
+```typescript
+// Middleware for auth protection
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+
+export async function middleware(req: NextRequest) {
+  const supabase = createMiddlewareClient({ req, res });
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  const protectedPaths = ['/dashboard', '/rankings', '/profile'];
+  const isProtected = protectedPaths.some(path => req.nextUrl.pathname.startsWith(path));
+  
+  if (isProtected && !session) {
+    return NextResponse.redirect(new URL('/signin', req.url));
+  }
+}
+```
+
+## Performance & Best Practices
+
+### Optimization Rules
+- **Images**: Use Next.js Image component with proper sizing
+- **Loading States**: Implement Suspense boundaries and skeleton loaders
+- **Caching**: Cache expensive ranking calculations
+- **Pagination**: Implement for large player lists and leaderboards
+- **Debouncing**: For search functionality and real-time updates
+
+### Error Handling
+```typescript
+// Consistent error handling with toast notifications
+import { toast } from 'sonner';
+
+async function handleRankingUpdate(data: RankingData) {
+  try {
+    await updateRanking(data);
+    toast.success('Ranking updated successfully');
+  } catch (error) {
+    toast.error('Failed to update ranking');
+    console.error('Ranking update error:', error);
+  }
+}
+
+// Global error boundary for unhandled errors
+export function GlobalErrorBoundary({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary
+      fallback={(error) => (
+        <div className="error-boundary">
+          <h2>Something went wrong</h2>
+          <pre>{error.message}</pre>
+        </div>
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}
+```
+
+## Key Features Implementation
+
+### Leaderboard Context Switching
+- **Global**: All users, show user's position ±2
+- **Friends**: Following list with rankings
+- **Groups**: Group-specific leaderboards
+- **Search**: Find specific users in rankings
+
+### Accuracy Score Display Rules
+- **Hide during prediction period** - Only show after week/season ends
+- **Preseason exception** - Show cumulative, recalculate weekly
+- **Use circular progress indicators** - Gradient fill with percentage
+
+### Group Management
+- **Host controls**: Name, avatar, privacy, member approval
+- **Member requests**: Pending approval system for private groups
+- **Group discovery**: Public groups searchable, private by invitation
+
+Remember: This is a fantasy sports platform focused on prediction accuracy and social competition. Every feature should feel polished and professional, matching industry leaders like Sleeper and ESPN Fantasy while providing unique value through accuracy tracking and social ranking comparison. 
