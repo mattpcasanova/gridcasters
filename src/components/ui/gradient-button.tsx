@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 interface GradientButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "md" | "lg"
-  icon?: LucideIcon
+  icon?: LucideIcon | React.ReactNode
   children: React.ReactNode
 }
 
@@ -32,7 +32,13 @@ export function GradientButton({
       )}
       {...props}
     >
-      {Icon && <Icon className="w-4 h-4 mr-2" />}
+      {Icon && (
+        typeof Icon === "function" ? (
+          <Icon className="w-4 h-4 mr-2" />
+        ) : (
+          <span className="mr-2">{Icon}</span>
+        )
+      )}
       {children}
     </button>
   )

@@ -45,7 +45,7 @@ export default function Dashboard() {
   const rightButtons = (
     <>
       <Link href="/rankings">
-        <GradientButton size="sm" icon={<Plus className="w-4 h-4" />}>
+        <GradientButton size="sm" icon={Plus}>
           New Ranking
         </GradientButton>
       </Link>
@@ -106,7 +106,6 @@ export default function Dashboard() {
             title="Week 8 Rankings"
             value="6"
             icon={Target}
-            trend={{ value: "Active this week", direction: "neutral", icon: Minus }}
             subtitle="Accuracy pending"
           />
 
