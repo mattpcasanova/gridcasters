@@ -1,6 +1,12 @@
+import { Metadata } from 'next';
 import Link from 'next/link'
 import Image from 'next/image'
 import { requireUnauth } from '@/lib/utils/server-auth'
+
+export const metadata: Metadata = {
+  title: 'Authentication - RankBet',
+  description: 'Sign in or create an account to start ranking players and competing with others.',
+};
 
 export default async function AuthLayout({
   children,
@@ -12,7 +18,7 @@ export default async function AuthLayout({
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Features */}
-      <div className="flex-1 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden flex items-center justify-center p-8">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden items-center justify-center p-8">
         {/* Grid Background */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.1)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
@@ -41,18 +47,18 @@ export default async function AuthLayout({
           {/* Feature Highlights */}
           <div className="space-y-8">
             <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold mb-2">Track Your Accuracy</h3>
-              <p className="text-blue-100">Advanced analytics to measure your fantasy football prediction skills</p>
+              <h3 className="text-xl font-bold mb-2">Start Ranking Today</h3>
+              <p className="text-blue-100">Create your first fantasy football rankings and see how you stack up</p>
             </div>
 
             <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold mb-2">Compete Globally</h3>
-              <p className="text-blue-100">Rise through the ranks on our global leaderboards</p>
+              <h3 className="text-xl font-bold mb-2">Join the Community</h3>
+              <p className="text-blue-100">Connect with thousands of fantasy football enthusiasts</p>
             </div>
 
             <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold mb-2">Connect with Experts</h3>
-              <p className="text-blue-100">Follow verified analysts and learn from the best</p>
+              <h3 className="text-xl font-bold mb-2">Prove Your Skills</h3>
+              <p className="text-blue-100">Climb the leaderboards and become a verified expert</p>
             </div>
           </div>
         </div>

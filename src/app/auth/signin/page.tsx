@@ -48,11 +48,8 @@ export default function SignIn() {
     }
   }
 
-  // Log initial render and params
-  console.log('SignIn page rendered, redirect param:', searchParams.get('redirect'))
-
   return (
-    <>
+    <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Sign in</h1>
@@ -65,7 +62,7 @@ export default function SignIn() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="rounded-md bg-red-50 p-4">
             <p className="text-sm text-red-700">{error}</p>
@@ -85,7 +82,7 @@ export default function SignIn() {
             className="mt-1"
             placeholder="Enter your email"
             value={formData.email}
-            onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
           />
         </div>
 
@@ -103,7 +100,7 @@ export default function SignIn() {
               className="pr-10"
               placeholder="Enter your password"
               value={formData.password}
-              onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
             />
             <button
               type="button"
@@ -141,7 +138,7 @@ export default function SignIn() {
       </form>
 
       {/* Footer Links */}
-      <div className="mt-6 text-center text-xs text-slate-500 space-x-4">
+      <div className="text-center text-xs text-slate-500 space-x-4">
         <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300">
           Privacy & Terms
         </Link>
@@ -150,6 +147,6 @@ export default function SignIn() {
           Support
         </Link>
       </div>
-    </>
+    </div>
   )
 } 

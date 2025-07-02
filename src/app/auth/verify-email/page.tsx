@@ -6,13 +6,13 @@ import { Mail } from "lucide-react"
 
 export default function VerifyEmail() {
   return (
-    <div className="max-w-md mx-auto text-center space-y-8 p-8">
+    <div className="space-y-8 text-center">
       <div className="rounded-full bg-blue-100 dark:bg-blue-900 w-16 h-16 mx-auto flex items-center justify-center">
         <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
           Check your email
         </h1>
         <p className="mt-2 text-slate-600 dark:text-slate-400">
