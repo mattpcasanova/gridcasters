@@ -2,21 +2,12 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Loading } from '@/components/ui/loading';
 
-function FeatureHighlights() {
-  // Use state to handle client-side rendering
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
+// Dynamically import components with SSR disabled to prevent hydration issues
+const FeatureHighlights = dynamic(() => Promise.resolve(function FeatureHighlightsComponent() {
   return (
     <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-blue-600 via-blue-800 to-slate-900 p-8">
       {/* Grid Background */}
@@ -73,9 +64,12 @@ function FeatureHighlights() {
       </div>
     </div>
   );
-}
+}), { 
+  ssr: false,
+  loading: () => <div className="hidden lg:block flex-1 bg-gradient-to-br from-blue-600 via-blue-800 to-slate-900" />
+});
 
-function Logo() {
+const MobileLogo = dynamic(() => Promise.resolve(function MobileLogoComponent() {
   return (
     <div className="lg:hidden text-center mb-8">
       <Link href="/" className="inline-block">
@@ -90,26 +84,22 @@ function Logo() {
       </Link>
     </div>
   );
-}
+}), { 
+  ssr: false,
+  loading: () => <div className="lg:hidden h-24 mb-8" />
+});
 
 export function AuthLayoutClient({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Use state to handle client-side rendering
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div className="flex min-h-screen">
-      {mounted && <FeatureHighlights />}
+      <FeatureHighlights />
       <div className="flex-1 bg-white dark:bg-slate-900 flex items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-md">
-          {mounted && <Logo />}
+          <MobileLogo />
           <Suspense fallback={<Loading className="w-full h-32" />}>
             {children}
           </Suspense>

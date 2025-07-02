@@ -2,7 +2,6 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '../supabase/types';
-import { createProfile } from '../actions/auth';
 
 export type SignInData = {
   email: string;
@@ -62,18 +61,30 @@ export async function signUp(
     }
 
     console.log('Client auth: Auth user created successfully:', { userId: authData.user.id });
+    
+    // Wait a moment for the session to be established
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     console.log('Client auth: Creating profile...');
+    
+    // Create profile directly with client
+    const { error: profileError, data: profileData } = await supabase
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        username,
+        display_name: username,
+        is_private: false,
+        is_verified: false,
+      })
+      .select();
 
-    try {
-      const profile = await createProfile(authData.user.id, username);
-      console.log('Client auth: Profile created successfully:', profile);
-    } catch (profileError) {
+    if (profileError) {
       console.error('Client auth: Profile creation error:', profileError);
-      // We can't delete the auth user from the client side, but the profile creation
-      // will be retried on next sign in if it failed
       throw profileError;
     }
 
+    console.log('Client auth: Profile created successfully:', profileData);
     console.log('Client auth: Sign up successful, profile created');
     return authData;
   } catch (err) {

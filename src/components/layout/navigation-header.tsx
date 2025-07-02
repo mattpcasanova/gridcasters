@@ -2,9 +2,9 @@
 
 import type React from "react"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { BarChart3, Trophy, Users, User, Menu } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -15,22 +15,15 @@ interface NavigationHeaderProps {
   isSignedIn?: boolean
 }
 
-function MobileMenu({ isOpen, onOpenChange, children }: { isOpen: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) {
-  return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
-          <Menu className="w-5 h-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-64">
-        <div className="flex flex-col space-y-4 mt-8">
-          {children}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
+// Dynamically import the mobile menu with SSR disabled
+const MobileMenu = dynamic(() => import("./mobile-menu"), { 
+  ssr: false,
+  loading: () => (
+    <Button variant="ghost" size="sm" className="md:hidden" disabled>
+      <Menu className="w-5 h-5" />
+    </Button>
+  )
+});
 
 function NavLinks({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname()
@@ -93,9 +86,11 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
           {rightButtons}
           {isSignedIn && (
             <>
-              <MobileMenu isOpen={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <NavLinks mobile onNavigate={() => setMobileMenuOpen(false)} />
-              </MobileMenu>
+              <MobileMenu 
+                isOpen={mobileMenuOpen} 
+                onOpenChange={setMobileMenuOpen}
+                onNavigate={() => setMobileMenuOpen(false)}
+              />
 
               <Link href="/profile">
                 <Avatar className="cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
