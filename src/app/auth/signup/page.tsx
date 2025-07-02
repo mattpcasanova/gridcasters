@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -8,8 +9,8 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { Eye, EyeOff, UserPlus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/hooks/use-supabase"
+import { signUp } from "@/lib/utils/client-auth"
 
 export default function SignUp() {
   const router = useRouter()
@@ -18,53 +19,53 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!agreeToTerms) {
-      setError("Please agree to the terms and conditions")
-      return
-    }
-
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const confirmPassword = formData.get("confirmPassword") as string
-    const firstName = formData.get("firstName") as string
-    const lastName = formData.get("lastName") as string
-    const username = formData.get("username") as string
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
+    setError(null)
+    setIsLoading(true)
 
     try {
-      setIsLoading(true)
-      setError("")
+      // Validate passwords match
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error('Passwords do not match')
+      }
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            username,
-          },
-        },
+      // Validate password strength
+      if (formData.password.length < 8) {
+        throw new Error('Password must be at least 8 characters long')
+      }
+
+      console.log('Starting sign up process...')
+      await signUp(supabase, {
+        email: formData.email,
+        password: formData.password,
+        username: formData.username,
       })
 
-      if (signUpError) throw signUpError
-
-      router.push("/auth/verify-email")
+      console.log('Sign up successful, redirecting...')
+      router.push('/auth/verify-email')
     } catch (err) {
-      console.error("Sign up error:", err)
-      setError(err instanceof Error ? err.message : "An error occurred during sign up")
+      console.error('Sign up error:', err)
+      setError(err instanceof Error ? err.message : 'An error occurred during sign up')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   return (
@@ -128,14 +129,15 @@ export default function SignUp() {
             </p>
           </div>
 
-          {/* Form */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-200 p-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+          {/* Error Display */}
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
 
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="firstName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -149,6 +151,8 @@ export default function SignUp() {
                   required
                   className="mt-1"
                   placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
                 />
               </div>
               <div>
@@ -163,6 +167,8 @@ export default function SignUp() {
                   required
                   className="mt-1"
                   placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -179,6 +185,8 @@ export default function SignUp() {
                 required
                 className="mt-1"
                 placeholder="johndoe"
+                value={formData.username}
+                onChange={handleInputChange}
               />
             </div>
 
@@ -194,6 +202,8 @@ export default function SignUp() {
                 required
                 className="mt-1"
                 placeholder="john@example.com"
+                value={formData.email}
+                onChange={handleInputChange}
               />
             </div>
 
@@ -210,6 +220,8 @@ export default function SignUp() {
                   required
                   className="pr-10"
                   placeholder="Create a strong password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                 />
                 <button
                   type="button"
@@ -238,6 +250,8 @@ export default function SignUp() {
                   required
                   className="pr-10"
                   placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
                 />
                 <button
                   type="button"
@@ -258,11 +272,9 @@ export default function SignUp() {
                 id="agree-terms"
                 checked={agreeToTerms}
                 onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
+                className="mt-1"
               />
-              <Label
-                htmlFor="agree-terms"
-                className="text-sm text-slate-600 dark:text-slate-400"
-              >
+              <Label htmlFor="agree-terms" className="text-sm text-slate-700 dark:text-slate-300 leading-5">
                 I agree to the{" "}
                 <Link href="/terms" className="text-blue-600 hover:text-blue-500">
                   Terms of Service
@@ -274,20 +286,26 @@ export default function SignUp() {
               </Label>
             </div>
 
-            <GradientButton
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
+            <GradientButton 
+              type="submit" 
+              className="w-full" 
+              icon={UserPlus} 
+              disabled={!agreeToTerms || isLoading}
             >
-              {isLoading ? (
-                "Creating Account..."
-              ) : (
-                <>
-                  Create Account <UserPlus className="ml-2 h-5 w-5" />
-                </>
-              )}
+              {isLoading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
             </GradientButton>
           </form>
+
+          {/* Footer Links */}
+          <div className="text-center text-xs text-slate-500 space-x-4">
+            <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300">
+              Privacy & Terms
+            </Link>
+            <span>•</span>
+            <Link href="/support" className="hover:text-slate-700 dark:hover:text-slate-300">
+              Support
+            </Link>
+          </div>
         </div>
       </div>
     </div>
