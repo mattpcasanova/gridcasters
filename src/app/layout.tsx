@@ -2,8 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { createServerClient } from '@supabase/ssr'
-import { cookies, headers } from 'next/headers'
-import { NavigationHeader } from "@/components/layout/navigation-header"
+import { cookies } from 'next/headers'
+import { RootLayoutClient } from "@/components/layout/root-layout-client"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
 import "./globals.css"
@@ -21,8 +21,6 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const cookieStore = cookies()
-  const headersList = headers()
-  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || '/'
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,8 +33,8 @@ export default async function RootLayout({
       },
     }
   )
+  
   const { data: { session } } = await supabase.auth.getSession()
-  const isSignedIn = !!session
 
   return (
     <html lang="en" className="h-full">
@@ -47,16 +45,9 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {!isSignedIn || pathname.startsWith('/auth') ? (
-            children
-          ) : (
-            <>
-              <NavigationHeader isSignedIn={isSignedIn} />
-              <main className="min-h-[calc(100vh-4rem)]">
-                {children}
-              </main>
-            </>
-          )}
+          <RootLayoutClient initialSession={session}>
+            {children}
+          </RootLayoutClient>
           <Toaster 
             position="top-right"
             toastOptions={{
