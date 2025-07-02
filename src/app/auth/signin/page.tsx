@@ -32,7 +32,7 @@ export default function SignIn() {
           {/* Logo */}
           <div className="mb-12">
             <Image
-              src="/logo.svg"
+              src="/images/rankbet-logo.png"
               alt="RankBet"
               width={120}
               height={120}
@@ -124,7 +124,7 @@ export default function SignIn() {
                 <Checkbox
                   id="remember-me"
                   checked={rememberMe}
-                  onCheckedChange={(checked: boolean) => setRememberMe(checked)}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                 />
                 <Label htmlFor="remember-me" className="text-sm text-slate-700 dark:text-slate-300">
                   Remember me
