@@ -4,6 +4,12 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowRight, BarChart3, Trophy, Users, Target, TrendingUp, Star } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function LandingPage() {
   return (
@@ -69,15 +75,23 @@ export default function LandingPage() {
                 Start Ranking <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Link href="/demo">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-500 text-lg px-8 bg-transparent shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Watch Demo
-              </Button>
-            </Link>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-500 text-lg px-8 bg-transparent shadow-lg hover:shadow-xl transition-all duration-300"
+                    disabled
+                  >
+                    Watch Demo
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Coming Soon!</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </section>
