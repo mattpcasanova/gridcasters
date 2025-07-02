@@ -101,9 +101,9 @@ export function SignInForm() {
         <Button
           type="submit"
           className="w-full"
-          isLoading={isLoading}
+          disabled={isLoading}
         >
-          Sign in
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
     </div>
