@@ -1,39 +1,39 @@
 "use client"
 
 import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface GradientButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon?: LucideIcon | React.ReactNode
+  size?: "sm" | "md" | "lg"
+  icon?: LucideIcon
   children: React.ReactNode
-  size?: "default" | "sm" | "lg" | "icon"
 }
 
 export function GradientButton({
-  className,
-  children,
+  size = "md",
   icon: Icon,
-  size = "default",
+  children,
+  className,
   ...props
 }: GradientButtonProps) {
+  const sizeClasses = {
+    sm: "px-3 py-1.5 text-sm",
+    md: "px-4 py-2",
+    lg: "px-6 py-3 text-lg",
+  }
+
   return (
-    <Button
+    <button
       className={cn(
-        "relative overflow-hidden transition-all duration-300",
-        "bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-500 hover:to-green-400",
-        "text-white shadow-lg hover:shadow-xl",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center font-medium text-white rounded-lg transition-transform active:scale-95 disabled:opacity-50 disabled:pointer-events-none bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600",
+        sizeClasses[size],
         className
       )}
-      size={size}
       {...props}
     >
-      <span className="relative flex items-center justify-center gap-2">
-        {Icon && (typeof Icon === "function" ? <Icon className="w-4 h-4" /> : Icon)}
-        {children}
-      </span>
-    </Button>
+      {Icon && <Icon className="w-4 h-4 mr-2" />}
+      {children}
+    </button>
   )
 } 

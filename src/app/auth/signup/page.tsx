@@ -8,11 +8,64 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { Eye, EyeOff, UserPlus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { useSupabase } from "@/lib/hooks/use-supabase"
 
 export default function SignUp() {
+  const router = useRouter()
+  const supabase = useSupabase()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!agreeToTerms) {
+      setError("Please agree to the terms and conditions")
+      return
+    }
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    const confirmPassword = formData.get("confirmPassword") as string
+    const firstName = formData.get("firstName") as string
+    const lastName = formData.get("lastName") as string
+    const username = formData.get("username") as string
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      setError("")
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            username,
+          },
+        },
+      })
+
+      if (signUpError) throw signUpError
+
+      router.push("/auth/verify-email")
+    } catch (err) {
+      console.error("Sign up error:", err)
+      setError(err instanceof Error ? err.message : "An error occurred during sign up")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -33,7 +86,7 @@ export default function SignUp() {
           {/* Logo */}
           <div className="mb-12">
             <Image
-              src="/images/rankbet-logo.png"
+              src="/logo.svg"
               alt="RankBet"
               width={120}
               height={120}
@@ -69,14 +122,20 @@ export default function SignUp() {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create Account</h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
               Already have an account?{" "}
-              <Link href="/signin" className="text-blue-600 hover:text-blue-500 font-medium">
+              <Link href="/auth/signin" className="text-blue-600 hover:text-blue-500 font-medium">
                 Sign in here
               </Link>
             </p>
           </div>
 
           {/* Form */}
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/50 text-red-600 dark:text-red-200 p-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="firstName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -199,9 +258,11 @@ export default function SignUp() {
                 id="agree-terms"
                 checked={agreeToTerms}
                 onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
-                className="mt-1"
               />
-              <Label htmlFor="agree-terms" className="text-sm text-slate-700 dark:text-slate-300 leading-5">
+              <Label
+                htmlFor="agree-terms"
+                className="text-sm text-slate-600 dark:text-slate-400"
+              >
                 I agree to the{" "}
                 <Link href="/terms" className="text-blue-600 hover:text-blue-500">
                   Terms of Service
@@ -213,21 +274,20 @@ export default function SignUp() {
               </Label>
             </div>
 
-            <GradientButton type="submit" className="w-full" icon={UserPlus} disabled={!agreeToTerms}>
-              CREATE ACCOUNT
+            <GradientButton
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                "Creating Account..."
+              ) : (
+                <>
+                  Create Account <UserPlus className="ml-2 h-5 w-5" />
+                </>
+              )}
             </GradientButton>
           </form>
-
-          {/* Footer Links */}
-          <div className="text-center text-xs text-slate-500 space-x-4">
-            <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-slate-300">
-              Privacy & Terms
-            </Link>
-            <span>•</span>
-            <Link href="/support" className="hover:text-slate-700 dark:hover:text-slate-300">
-              Support
-            </Link>
-          </div>
         </div>
       </div>
     </div>

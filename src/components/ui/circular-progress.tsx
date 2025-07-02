@@ -4,53 +4,60 @@ import * as React from "react"
 
 interface CircularProgressProps {
   value: number
-  size?: number
-  strokeWidth?: number
-  showText?: boolean
+  size?: "sm" | "md" | "lg"
 }
 
-export function CircularProgress({
-  value,
-  size = 40,
-  strokeWidth = 4,
-  showText = false,
-}: CircularProgressProps) {
-  const radius = (size - strokeWidth) / 2
-  const circumference = radius * 2 * Math.PI
-  const offset = circumference - (value / 100) * circumference
+export function CircularProgress({ value, size = "md" }: CircularProgressProps) {
+  const radius = size === "sm" ? 16 : size === "md" ? 24 : 32
+  const strokeWidth = size === "sm" ? 3 : size === "md" ? 4 : 5
+  const circumference = 2 * Math.PI * radius
+  const progress = ((100 - value) / 100) * circumference
 
   return (
-    <div className="relative inline-flex" style={{ width: size, height: size }}>
-      {/* Background circle */}
-      <svg className="w-full h-full rotate-[-90deg]">
+    <div className="relative inline-flex">
+      <svg
+        className="transform -rotate-90"
+        width={radius * 2 + strokeWidth * 2}
+        height={radius * 2 + strokeWidth * 2}
+      >
+        {/* Background circle */}
         <circle
           className="text-slate-200 dark:text-slate-700"
           strokeWidth={strokeWidth}
           stroke="currentColor"
-          fill="transparent"
+          fill="none"
           r={radius}
-          cx={size / 2}
-          cy={size / 2}
+          cx={radius + strokeWidth}
+          cy={radius + strokeWidth}
         />
         {/* Progress circle */}
         <circle
-          className="text-blue-500 dark:text-blue-400"
+          className="text-primary"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          strokeDashoffset={progress}
           strokeLinecap="round"
-          stroke="currentColor"
-          fill="transparent"
+          stroke="url(#gradient)"
+          fill="none"
           r={radius}
-          cx={size / 2}
-          cy={size / 2}
+          cx={radius + strokeWidth}
+          cy={radius + strokeWidth}
         />
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--primary-blue)" />
+            <stop offset="100%" stopColor="var(--secondary-green)" />
+          </linearGradient>
+        </defs>
       </svg>
-      {showText && (
-        <div className="absolute inset-0 flex items-center justify-center text-sm font-medium">
-          {Math.round(value)}%
-        </div>
-      )}
+      <span
+        className={`absolute inset-0 flex items-center justify-center font-medium ${
+          size === "sm" ? "text-xs" : size === "md" ? "text-sm" : "text-base"
+        }`}
+      >
+        {Math.round(value)}%
+      </span>
     </div>
   )
 } 
