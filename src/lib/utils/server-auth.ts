@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Profile } from '@/types';
@@ -14,6 +14,12 @@ export async function getServerSupabase() {
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set(name, value, options);
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 });
         },
       },
     }
