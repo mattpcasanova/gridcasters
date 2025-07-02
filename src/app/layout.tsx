@@ -2,9 +2,10 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { NavigationHeader } from "@/components/layout/navigation-header"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -20,6 +21,9 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const cookieStore = cookies()
+  const headersList = headers()
+  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || '/'
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -43,7 +47,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {!isSignedIn || location.pathname.startsWith('/auth') ? (
+          {!isSignedIn || pathname.startsWith('/auth') ? (
             children
           ) : (
             <>
@@ -53,6 +57,16 @@ export default async function RootLayout({
               </main>
             </>
           )}
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: 'hsl(var(--background))',
+                color: 'hsl(var(--foreground))',
+                border: '1px solid hsl(var(--border))',
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>
