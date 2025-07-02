@@ -12,6 +12,23 @@ export type SignUpData = SignInData & {
   username: string;
 };
 
+// Track last request time to prevent rate limiting
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 3000; // 3 seconds between requests
+
+async function waitForRateLimit() {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    console.log(`Client auth: Waiting ${waitTime}ms to avoid rate limiting...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+  
+  lastRequestTime = Date.now();
+}
+
 export async function signIn(
   supabase: SupabaseClient<Database>,
   { email, password }: SignInData
@@ -19,6 +36,8 @@ export async function signIn(
   console.log('Client auth: Starting sign in process...');
 
   try {
+    await waitForRateLimit();
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -44,6 +63,8 @@ export async function signUp(
   console.log('Client auth: Starting sign up process...', { email, username });
 
   try {
+    await waitForRateLimit();
+    
     console.log('Client auth: Creating auth user...');
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -52,6 +73,12 @@ export async function signUp(
 
     if (authError) {
       console.error('Client auth: Sign up auth error:', authError);
+      
+      // Handle specific rate limiting error
+      if (authError.message?.includes('you can only request this after')) {
+        throw new Error('Please wait a moment before trying again. Sign up requests are rate limited for security.');
+      }
+      
       throw authError;
     }
 
@@ -81,6 +108,12 @@ export async function signUp(
 
     if (profileError) {
       console.error('Client auth: Profile creation error:', profileError);
+      
+      // Handle specific profile errors
+      if (profileError.code === '23505') { // Unique constraint violation
+        throw new Error('This username is already taken. Please choose a different one.');
+      }
+      
       throw profileError;
     }
 
@@ -116,6 +149,8 @@ export async function resetPassword(
   console.log('Client auth: Starting password reset process...');
 
   try {
+    await waitForRateLimit();
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
     });

@@ -79,6 +79,12 @@ export default function SignUp() {
       return;
     }
 
+    // Prevent multiple submissions
+    if (isLoading) {
+      console.log('Already processing, ignoring submission');
+      return;
+    }
+
     setIsLoading(true)
     setErrors({})
 
@@ -108,14 +114,19 @@ export default function SignUp() {
       }
       
       // Handle specific error cases
-      if (errorMessage.toLowerCase().includes('email')) {
+      if (errorMessage.toLowerCase().includes('rate limit') || errorMessage.includes('wait a moment')) {
+        setErrors({ general: errorMessage })
+        toast.error('Rate Limited', {
+          description: 'Please wait a moment before trying again'
+        })
+      } else if (errorMessage.toLowerCase().includes('email')) {
         setErrors({ email: errorMessage })
       } else if (errorMessage.toLowerCase().includes('password')) {
         setErrors({ password: errorMessage })
       } else if (errorMessage.toLowerCase().includes('username')) {
         setErrors({ username: errorMessage })
-      } else if (errorMessage.toLowerCase().includes('duplicate')) {
-        setErrors({ username: 'This username is already taken' })
+      } else if (errorMessage.toLowerCase().includes('duplicate') || errorMessage.includes('already taken')) {
+        setErrors({ username: errorMessage })
       } else if (errorMessage.toLowerCase().includes('already registered')) {
         setErrors({ email: 'This email is already registered' })
       } else {
