@@ -29,16 +29,27 @@ export default function SignIn() {
     setIsLoading(true)
     setError(null)
 
+    console.log('Starting sign in process...')
+
     try {
-      await signIn(supabase, formData)
+      console.log('Attempting to sign in with email:', formData.email)
+      const data = await signIn(supabase, formData)
+      console.log('Sign in successful:', data)
+
       const redirectTo = searchParams.get('redirect') || '/dashboard'
+      console.log('Redirecting to:', redirectTo)
+      
       router.push(redirectTo)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Sign in error:', err)
+      setError(err instanceof Error ? err.message : 'An error occurred during sign in')
     } finally {
       setIsLoading(false)
     }
   }
+
+  // Log initial render and params
+  console.log('SignIn page rendered, redirect param:', searchParams.get('redirect'))
 
   return (
     <>
