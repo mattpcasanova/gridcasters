@@ -77,7 +77,7 @@ export default function LandingPage() {
             </Link>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger>
                   <Button
                     size="lg"
                     variant="outline"
