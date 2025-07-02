@@ -1,8 +1,10 @@
+'use client';
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSupabase } from '@/lib/hooks/use-supabase'
-import { signUp } from '@/lib/utils/auth'
+import { signUp } from '@/lib/utils/client-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 

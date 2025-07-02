@@ -1,11 +1,14 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { requireGuest } from '@/lib/utils/server-auth'
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  await requireGuest();
+
   return (
     <div className="flex min-h-screen">
       {/* Left side - Auth form */}

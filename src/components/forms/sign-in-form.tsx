@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useSupabase } from '@/lib/hooks/use-supabase'
-import { signIn } from '@/lib/utils/auth'
+import { signIn } from '@/lib/utils/client-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 

@@ -1,12 +1,15 @@
 import React from 'react';
 import { Metadata } from 'next';
+import { requireAuth } from '@/lib/utils/server-auth';
 
 export const metadata: Metadata = {
   title: 'Dashboard - RankBet',
   description: 'Your RankBet dashboard',
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await requireAuth();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
