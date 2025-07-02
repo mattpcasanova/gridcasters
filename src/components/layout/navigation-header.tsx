@@ -77,7 +77,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
             <>
               {/* Mobile Menu */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
+                <SheetTrigger>
                   <Button variant="ghost" size="sm" className="md:hidden">
                     <Menu className="w-5 h-5" />
                   </Button>

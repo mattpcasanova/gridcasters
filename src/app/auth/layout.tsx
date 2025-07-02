@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link'
 import Image from 'next/image'
-import { requireUnauth } from '@/lib/utils/server-auth'
 import { Suspense } from 'react';
 import { Loading } from '@/components/ui/loading';
 
@@ -10,13 +9,11 @@ export const metadata: Metadata = {
   description: 'Sign in or create an account to start ranking players and competing with others.',
 };
 
-export default async function AuthLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  await requireUnauth();
-
   return (
     <div className="flex min-h-screen">
       {/* Left Side - Feature Highlights */}
