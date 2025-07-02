@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useSupabase } from '@/lib/hooks/use-supabase'
+import { signIn } from '@/lib/utils/client-auth'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -10,8 +13,33 @@ import Link from "next/link"
 import Image from "next/image"
 
 export default function SignIn() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = useSupabase()
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  })
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      await signIn(supabase, formData)
+      const redirectTo = searchParams.get('redirect') || '/dashboard'
+      router.push(redirectTo)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -32,7 +60,7 @@ export default function SignIn() {
           {/* Logo */}
           <div className="mb-12">
             <Image
-              src="/images/rankbet-logo.png"
+              src="/logo.svg"
               alt="RankBet"
               width={120}
               height={120}
@@ -68,17 +96,23 @@ export default function SignIn() {
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Sign in</h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-blue-600 hover:text-blue-500 font-medium">
+              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-500 font-medium">
                 Create one here
               </Link>
             </p>
           </div>
 
           {/* Form */}
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Email or Username
+                Email
               </Label>
               <Input
                 id="email"
@@ -87,7 +121,9 @@ export default function SignIn() {
                 autoComplete="email"
                 required
                 className="mt-1"
-                placeholder="Enter your email or username"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
               />
             </div>
 
@@ -104,6 +140,8 @@ export default function SignIn() {
                   required
                   className="pr-10"
                   placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                 />
                 <button
                   type="button"
@@ -130,13 +168,13 @@ export default function SignIn() {
                   Remember me
                 </Label>
               </div>
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500">
+              <Link href="/auth/reset-password" className="text-sm text-blue-600 hover:text-blue-500">
                 Forgot password?
               </Link>
             </div>
 
-            <GradientButton type="submit" className="w-full" icon={LogIn}>
-              CONTINUE
+            <GradientButton type="submit" className="w-full" icon={LogIn} disabled={isLoading}>
+              {isLoading ? "SIGNING IN..." : "CONTINUE"}
             </GradientButton>
           </form>
 
