@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { AuthLayoutClient } from '@/components/layout/auth-layout-client';
 
 export const metadata: Metadata = {
@@ -11,5 +12,12 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <AuthLayoutClient>{children}</AuthLayoutClient>;
+  // Force dynamic rendering to avoid hydration issues
+  headers();
+  
+  return (
+    <AuthLayoutClient>
+      {children}
+    </AuthLayoutClient>
+  );
 } 

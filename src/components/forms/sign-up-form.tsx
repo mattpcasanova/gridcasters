@@ -7,6 +7,7 @@ import { useSupabase } from '@/lib/hooks/use-supabase'
 import { signUp } from '@/lib/utils/client-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
 
 export function SignUpForm() {
   const router = useRouter()
@@ -25,10 +26,42 @@ export function SignUpForm() {
     setError(null)
 
     try {
+      // First check if the user already exists
+      const { data: existingUsers } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', formData.username)
+        .limit(1)
+
+      if (existingUsers && existingUsers.length > 0) {
+        setError('This username is already taken. Please choose another.')
+        setIsLoading(false)
+        return
+      }
+
+      // Proceed with sign up
       await signUp(supabase, formData)
+      toast.success('Account created successfully! Please check your email to verify your account.')
       router.push('/auth/verify-email')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      console.error('Sign up error:', err)
+      if (err instanceof Error) {
+        // Handle specific error cases
+        if (err.message.includes('duplicate key') || err.message.includes('already registered')) {
+          setError('This email is already registered. Please sign in instead.')
+        } else if (err.message.includes('invalid email')) {
+          setError('Please enter a valid email address.')
+        } else if (err.message.includes('weak password')) {
+          setError('Password is too weak. Please use at least 8 characters with letters and numbers.')
+        } else if (err.message.includes('row-level security')) {
+          setError('There was an error creating your profile. Please try again.')
+        } else {
+          setError(err.message)
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
+      toast.error('Failed to create account')
     } finally {
       setIsLoading(false)
     }
@@ -38,7 +71,7 @@ export function SignUpForm() {
     <div className="w-full max-w-md space-y-8">
       <div className="text-center">
         <h2 className="text-3xl font-bold">Create your account</h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
           <Link
             href="/auth/signin"
@@ -51,8 +84,8 @@ export function SignUpForm() {
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
           </div>
         )}
 
@@ -69,8 +102,9 @@ export function SignUpForm() {
               title="Username must be between 3 and 20 characters and can only contain letters, numbers, and underscores"
               value={formData.username}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, username: e.target.value }))
+                setFormData((prev) => ({ ...prev, username: e.target.value.toLowerCase() }))
               }
+              disabled={isLoading}
             />
           </div>
 
@@ -84,8 +118,9 @@ export function SignUpForm() {
               placeholder="Email address"
               value={formData.email}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
+                setFormData((prev) => ({ ...prev, email: e.target.value.toLowerCase() }))
               }
+              disabled={isLoading}
             />
           </div>
 
@@ -103,11 +138,12 @@ export function SignUpForm() {
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, password: e.target.value }))
               }
+              disabled={isLoading}
             />
           </div>
         </div>
 
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           By signing up, you agree to our{' '}
           <Link
             href="/terms"
@@ -128,6 +164,7 @@ export function SignUpForm() {
           type="submit"
           className="w-full"
           isLoading={isLoading}
+          disabled={isLoading}
         >
           Sign up
         </Button>
