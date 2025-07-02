@@ -8,12 +8,6 @@ import { GradientButton } from "@/components/ui/gradient-button"
 import { Eye, EyeOff, LogIn } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Sign In - RankBet',
-  description: 'Sign in to your RankBet account',
-};
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false)
