@@ -25,17 +25,72 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
           sleeperAPI.getProjections(currentWeek).catch(() => ({})) // Fallback to empty object if projections fail
         ]);
 
-        setCurrentWeek(nflState.week || 8);
+        const actualWeek = nflState.week || 8;
+        setCurrentWeek(actualWeek);
 
-        // Transform data for our UI
-        const transformedPlayers = transformSleeperData(
-          allPlayers,
-          projections,
-          starredPlayers,
-          positionFilter
-        );
+        // Check if user has a saved ranking for this position/week/season
+        try {
+          const savedRankingResponse = await fetch(`/api/rankings?position=${positionFilter}&week=${actualWeek}&season=${new Date().getFullYear()}`);
+          
+          if (savedRankingResponse.ok) {
+            const { rankings } = await savedRankingResponse.json();
+            
+            if (rankings && rankings.length > 0) {
+              // User has a saved ranking - use it
+              const savedRanking = rankings[0];
+              const savedPlayers = savedRanking.player_rankings.map((pr: any) => ({
+                id: pr.player_id,
+                name: pr.player_name,
+                team: pr.team,
+                position: pr.position,
+                projectedPoints: projections[pr.player_id]?.pts_ppr || 0,
+                avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
+                teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
+                isStarred: pr.is_starred,
+                rank: pr.rank_position,
+                injuryStatus: allPlayers[pr.player_id]?.injury_status,
+                age: allPlayers[pr.player_id]?.age,
+                college: allPlayers[pr.player_id]?.college,
+                yearsExp: allPlayers[pr.player_id]?.years_exp
+              })).sort((a: any, b: any) => a.rank - b.rank);
+              
+              setPlayers(savedPlayers);
+              
+              // Update starred players set
+              const starredIds = savedPlayers.filter((p: any) => p.isStarred).map((p: any) => p.id);
+              setStarredPlayers(new Set(starredIds));
+            } else {
+              // No saved ranking - use default Sleeper data
+              const transformedPlayers = transformSleeperData(
+                allPlayers,
+                projections,
+                starredPlayers,
+                positionFilter
+              );
+              setPlayers(transformedPlayers);
+            }
+          } else {
+            // API error or no saved ranking - use default Sleeper data
+            const transformedPlayers = transformSleeperData(
+              allPlayers,
+              projections,
+              starredPlayers,
+              positionFilter
+            );
+            setPlayers(transformedPlayers);
+          }
+        } catch (fetchError) {
+          // Error fetching saved rankings (e.g., not authenticated) - use default Sleeper data
+          console.log('Could not fetch saved rankings, using default data:', fetchError);
+          const transformedPlayers = transformSleeperData(
+            allPlayers,
+            projections,
+            starredPlayers,
+            positionFilter
+          );
+          setPlayers(transformedPlayers);
+        }
 
-        setPlayers(transformedPlayers);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -125,6 +180,9 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
         return { success: false, action: 'error', error: data.error || 'Failed to save rankings' };
       }
 
+      // After successful save, the current state is now the "saved" state
+      // No need to refetch since the user's current order is already what they want
+      
       return { success: true, action: data.action };
     } catch (error) {
       console.error('Error saving rankings:', error);
