@@ -37,25 +37,37 @@ import { useSleeperRankings } from "@/lib/hooks/use-sleeper-rankings"
 import { PlayerRankingCard } from "@/components/ranking/player-ranking-card"
 import { PlayerModal } from "@/components/ranking/player-modal"
 import { RankingPlayer } from "@/lib/types"
+import { getAvailableWeeks, getCurrentSeasonInfo, getDefaultWeek } from "@/lib/utils/season"
 
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
+  const [selectedWeek, setSelectedWeek] = useState<number | 'preseason' | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [myGuysFilter, setMyGuysFilter] = useState("All")
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   
+  // Initialize selected week on mount
+  useEffect(() => {
+    if (selectedWeek === null) {
+      const seasonInfo = getCurrentSeasonInfo();
+      const defaultWeek = getDefaultWeek();
+      setSelectedWeek(seasonInfo.isPreSeason ? 'preseason' : defaultWeek);
+    }
+  }, [selectedWeek]);
+
   const { 
     players, 
     loading, 
     error, 
-    currentWeek, 
+    currentWeek,
+    rankingType,
     toggleStar, 
     reorderPlayers,
     updatePlayerRank,
     starredPlayers,
     saveRankings 
-  } = useSleeperRankings(selectedPosition)
+  } = useSleeperRankings(selectedPosition, selectedWeek || undefined)
 
   const { setRightButtons } = useHeaderButtons()
 
@@ -155,8 +167,15 @@ export default function Rankings() {
     <div className="container mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Week {currentWeek} Rankings</h1>
-        <p className="text-gray-600">Drag and drop players to create your custom rankings</p>
+        <h1 className="text-3xl font-bold mb-2">
+          {rankingType === 'preseason' ? 'Pre-Season Rankings' : `Week ${selectedWeek} Rankings`}
+        </h1>
+        <p className="text-gray-600">
+          {rankingType === 'preseason' 
+            ? 'Create your season-long player rankings' 
+            : 'Drag and drop players to create your custom rankings'
+          }
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -218,14 +237,42 @@ export default function Rankings() {
           {/* Week Selection */}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <h3 className="font-semibold mb-3">Week Selection</h3>
-            <Select value={`Week ${currentWeek}`} onValueChange={() => {}}>
+            <Select 
+              value={selectedWeek?.toString() || 'preseason'} 
+              onValueChange={(value) => {
+                if (value === 'preseason') {
+                  setSelectedWeek('preseason');
+                } else {
+                  setSelectedWeek(parseInt(value));
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[...Array(18)].map((_, i) => (
-                  <SelectItem key={i + 1} value={`Week ${i + 1}`}>
-                    Week {i + 1}
+                {getAvailableWeeks().map((week) => (
+                  <SelectItem 
+                    key={week.value} 
+                    value={week.value}
+                    className={`
+                      ${week.isCurrent ? 'bg-blue-50 text-blue-700 font-semibold' : ''}
+                      ${week.isFuture ? 'text-gray-500' : ''}
+                    `}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>{week.label}</span>
+                      {week.isCurrent && (
+                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-2">
+                          Current
+                        </span>
+                      )}
+                      {week.isFuture && (
+                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full ml-2">
+                          Future
+                        </span>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -320,13 +367,15 @@ export default function Rankings() {
             </div>
             <div className="space-y-4">
               <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-semibold">Week {currentWeek} {selectedPosition} Rankings</p>
+                <p className="font-semibold">
+                  {rankingType === 'preseason' ? 'Pre-Season' : `Week ${selectedWeek}`} {selectedPosition} Rankings
+                </p>
                 <p className="text-sm text-gray-600">by @username</p>
               </div>
               <div className="flex items-center space-x-2 p-2 bg-gray-100 rounded">
                 <input
                   type="text"
-                  value={`https://gridcasters.com/rankings/week${currentWeek}-${selectedPosition.toLowerCase()}`}
+                  value={`https://gridcasters.com/rankings/${rankingType === 'preseason' ? 'preseason' : `week${selectedWeek}`}-${selectedPosition.toLowerCase()}`}
                   readOnly
                   className="flex-1 bg-transparent text-sm"
                 />
@@ -334,7 +383,7 @@ export default function Rankings() {
                   size="sm"
                   onClick={() =>
                     navigator.clipboard.writeText(
-                      `https://gridcasters.com/rankings/week${currentWeek}-${selectedPosition.toLowerCase()}`
+                      `https://gridcasters.com/rankings/${rankingType === 'preseason' ? 'preseason' : `week${selectedWeek}`}-${selectedPosition.toLowerCase()}`
                     )
                   }
                 >

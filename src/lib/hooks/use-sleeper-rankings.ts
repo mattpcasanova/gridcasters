@@ -3,34 +3,131 @@ import { useState, useEffect } from 'react';
 import { SleeperAPI } from '@/lib/sleeper-api';
 import { transformSleeperData } from '@/lib/sleeper-utils';
 import { RankingPlayer } from '@/lib/types';
+import { getCurrentSeasonInfo, getDefaultRankingType, getDefaultWeek } from '@/lib/utils/season';
 
-export function useSleeperRankings(positionFilter: string = 'OVR') {
+export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?: number | 'preseason') {
   const [players, setPlayers] = useState<RankingPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [starredPlayers, setStarredPlayers] = useState<Set<string>>(new Set());
-  const [currentWeek, setCurrentWeek] = useState(8);
+  const [currentWeek, setCurrentWeek] = useState<number | null>(null);
+  const [rankingType, setRankingType] = useState<'preseason' | 'weekly'>('weekly');
 
   const sleeperAPI = new SleeperAPI();
+
+  // Helper function to load default or previous ranking
+  const loadDefaultOrPreviousRanking = async (
+    allPlayers: any, 
+    projections: any, 
+    seasonInfo: any, 
+    weekToLoad: number | null, 
+    typeToLoad: 'preseason' | 'weekly'
+  ) => {
+    // For future weeks, try to find the most recent saved ranking to use as default
+    if (typeToLoad === 'weekly' && weekToLoad && seasonInfo.isRegularSeason && weekToLoad > (seasonInfo.currentWeek || 0)) {
+      try {
+        // Look for the most recent saved ranking for this position
+        const queryParams = new URLSearchParams({
+          position: positionFilter,
+          season: seasonInfo.season.toString(),
+          type: 'weekly'
+        });
+        
+        const recentRankingResponse = await fetch(`/api/rankings?${queryParams.toString()}`);
+        
+        if (recentRankingResponse.ok) {
+          const { rankings } = await recentRankingResponse.json();
+          
+          if (rankings && rankings.length > 0) {
+            // Use the most recent ranking as base, but update projected points for the new week
+            const recentRanking = rankings[0];
+            const baseOrder = recentRanking.player_rankings
+              .sort((a: any, b: any) => a.rank_position - b.rank_position)
+              .map((pr: any, index: number) => ({
+                id: pr.player_id,
+                name: pr.player_name,
+                team: pr.team,
+                position: pr.position,
+                projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
+                avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
+                teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
+                isStarred: pr.is_starred,
+                rank: index + 1, // Maintain the previous ranking order
+                injuryStatus: allPlayers[pr.player_id]?.injury_status,
+                age: allPlayers[pr.player_id]?.age,
+                college: allPlayers[pr.player_id]?.college,
+                yearsExp: allPlayers[pr.player_id]?.years_exp
+              }));
+            
+            setPlayers(baseOrder);
+            
+            // Update starred players set
+            const starredIds = baseOrder.filter((p: any) => p.isStarred).map((p: any) => p.id);
+            setStarredPlayers(new Set(starredIds));
+            return;
+          }
+        }
+      } catch (err) {
+        console.log('Could not fetch previous ranking, falling back to default data');
+      }
+    }
+    
+    // Fall back to default Sleeper data
+    const transformedPlayers = transformSleeperData(
+      allPlayers,
+      projections,
+      starredPlayers,
+      positionFilter
+    );
+    setPlayers(transformedPlayers);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
+        // Determine season info and week to load
+        const seasonInfo = getCurrentSeasonInfo();
+        const defaultType = getDefaultRankingType();
+        const defaultWeek = getDefaultWeek();
+        
+        // Use selected week/type or defaults
+        const weekToLoad = selectedWeek === 'preseason' ? null : (selectedWeek || defaultWeek);
+        const typeToLoad = selectedWeek === 'preseason' ? 'preseason' : 'weekly';
+        
+        setCurrentWeek(weekToLoad);
+        setRankingType(typeToLoad);
+        
         // Fetch all required data
-        const [allPlayers, nflState, projections] = await Promise.all([
+        const [allPlayers, nflState] = await Promise.all([
           sleeperAPI.getAllPlayers(),
-          sleeperAPI.getNFLState(),
-          sleeperAPI.getProjections(currentWeek).catch(() => ({})) // Fallback to empty object if projections fail
+          sleeperAPI.getNFLState()
         ]);
 
-        const actualWeek = nflState.week || 8;
-        setCurrentWeek(actualWeek);
+        // Get projections only for weekly rankings
+        let projections = {};
+        if (typeToLoad === 'weekly' && weekToLoad) {
+          try {
+            projections = await sleeperAPI.getProjections(weekToLoad);
+          } catch (err) {
+            console.log('Failed to fetch projections, using empty object');
+          }
+        }
 
         // Check if user has a saved ranking for this position/week/season
         try {
-          const savedRankingResponse = await fetch(`/api/rankings?position=${positionFilter}&week=${actualWeek}&season=${new Date().getFullYear()}`);
+          const queryParams = new URLSearchParams({
+            position: positionFilter,
+            season: seasonInfo.season.toString(),
+            type: typeToLoad
+          });
+          
+          if (weekToLoad) {
+            queryParams.append('week', weekToLoad.toString());
+          }
+          
+          const savedRankingResponse = await fetch(`/api/rankings?${queryParams.toString()}`);
           
           if (savedRankingResponse.ok) {
             const { rankings } = await savedRankingResponse.json();
@@ -43,7 +140,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
                 name: pr.player_name,
                 team: pr.team,
                 position: pr.position,
-                projectedPoints: projections[pr.player_id]?.pts_ppr || 0,
+                projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
                 avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
                 teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
                 isStarred: pr.is_starred,
@@ -60,35 +157,17 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
               const starredIds = savedPlayers.filter((p: any) => p.isStarred).map((p: any) => p.id);
               setStarredPlayers(new Set(starredIds));
             } else {
-              // No saved ranking - use default Sleeper data
-              const transformedPlayers = transformSleeperData(
-                allPlayers,
-                projections,
-                starredPlayers,
-                positionFilter
-              );
-              setPlayers(transformedPlayers);
+              // No saved ranking - try to load previous ranking as default for future weeks
+              await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
             }
           } else {
-            // API error or no saved ranking - use default Sleeper data
-            const transformedPlayers = transformSleeperData(
-              allPlayers,
-              projections,
-              starredPlayers,
-              positionFilter
-            );
-            setPlayers(transformedPlayers);
+            // API error or no saved ranking - try to load previous ranking as default
+            await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
           }
         } catch (fetchError) {
           // Error fetching saved rankings (e.g., not authenticated) - use default Sleeper data
           console.log('Could not fetch saved rankings, using default data:', fetchError);
-          const transformedPlayers = transformSleeperData(
-            allPlayers,
-            projections,
-            starredPlayers,
-            positionFilter
-          );
-          setPlayers(transformedPlayers);
+          await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
         }
 
         setError(null);
@@ -101,7 +180,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
     };
 
     fetchData();
-  }, [positionFilter, currentWeek]);
+  }, [positionFilter, selectedWeek]);
 
   const toggleStar = (playerId: string) => {
     setStarredPlayers(prev => {
@@ -160,6 +239,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
 
   const saveRankings = async (position: string): Promise<{ success: boolean; action: string; error?: string; positionRankingsUpdated?: boolean }> => {
     try {
+      const seasonInfo = getCurrentSeasonInfo();
+      
       const response = await fetch('/api/rankings', {
         method: 'POST',
         headers: {
@@ -168,9 +249,9 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
         body: JSON.stringify({
           players: players,
           position: position,
-          week: currentWeek,
-          season: new Date().getFullYear(),
-          type: 'weekly'
+          week: rankingType === 'preseason' ? null : currentWeek,
+          season: seasonInfo.season,
+          type: rankingType
         }),
       });
 
@@ -199,6 +280,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
     loading,
     error,
     currentWeek,
+    rankingType,
     toggleStar,
     reorderPlayers,
     updatePlayerRank,
