@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSupabase } from '@/lib/hooks/use-supabase'
 import { signIn } from '@/lib/utils/client-auth'
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { Eye, EyeOff, LogIn } from "lucide-react"
+import { Eye, EyeOff, LogIn, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -21,22 +21,53 @@ export default function SignIn() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    email: '',
+    emailOrUsername: '',
     password: '',
   })
   const [errors, setErrors] = useState<{
-    email?: string;
+    emailOrUsername?: string;
     password?: string;
     general?: string;
   }>({})
 
+  // Handle auth callback errors
+  useEffect(() => {
+    const error = searchParams.get('error')
+    const details = searchParams.get('details')
+    
+    if (error) {
+      let errorMessage = 'An error occurred during authentication'
+      
+      switch (error) {
+        case 'verification_failed':
+          if (details) {
+            errorMessage = `Email verification failed: ${decodeURIComponent(details)}`
+          } else {
+            errorMessage = 'Email verification failed. Please try signing up again or contact support.'
+          }
+          break
+        case 'callback_error':
+          errorMessage = 'There was an error processing your email verification. Please try again.'
+          break
+        case 'no_code':
+          errorMessage = 'Invalid verification link. Please check your email or request a new verification email.'
+          break
+        default:
+          errorMessage = 'An authentication error occurred. Please try again.'
+      }
+      
+      setErrors({ general: errorMessage })
+      toast.error('Authentication Error', {
+        description: errorMessage
+      })
+    }
+  }, [searchParams])
+
   const validateForm = () => {
     const newErrors: typeof errors = {};
     
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    if (!formData.emailOrUsername) {
+      newErrors.emailOrUsername = 'Email or username is required';
     }
     
     if (!formData.password) {
@@ -71,6 +102,8 @@ export default function SignIn() {
       
       if (errorMessage.toLowerCase().includes('invalid credentials')) {
         setErrors({ general: 'Invalid email or password' })
+      } else if (errorMessage.toLowerCase().includes('email not confirmed')) {
+        setErrors({ general: 'Please check your email and click the verification link to activate your account.' })
       } else if (errorMessage.toLowerCase().includes('email')) {
         setErrors({ email: errorMessage })
       } else if (errorMessage.toLowerCase().includes('password')) {
@@ -106,38 +139,39 @@ export default function SignIn() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {errors.general && (
-          <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+          <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 flex items-start space-x-3">
+            <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-red-700 dark:text-red-400">{errors.general}</p>
           </div>
         )}
 
         <div className="space-y-2">
           <Label 
-            htmlFor="email" 
+            htmlFor="emailOrUsername" 
             className="block text-sm font-medium text-slate-700 dark:text-slate-300"
           >
-            Email
+            Email or Username
           </Label>
           <Input
-            id="email"
-            name="email"
-            type="email"
+            id="emailOrUsername"
+            name="emailOrUsername"
+            type="text"
             autoComplete="email"
             required
             className={cn(
               "mt-1",
-              errors.email && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
+              errors.emailOrUsername && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
             )}
-            placeholder="Enter your email"
-            value={formData.email}
+            placeholder="Enter your email or username"
+            value={formData.emailOrUsername}
             onChange={(e) => {
-              setFormData(prev => ({ ...prev, email: e.target.value }))
-              if (errors.email) setErrors(prev => ({ ...prev, email: undefined }))
+              setFormData(prev => ({ ...prev, emailOrUsername: e.target.value }))
+              if (errors.emailOrUsername || errors.general) setErrors(prev => ({ ...prev, emailOrUsername: undefined, general: undefined }))
             }}
             disabled={isLoading}
           />
-          {errors.email && (
-            <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.email}</p>
+          {errors.emailOrUsername && (
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.emailOrUsername}</p>
           )}
         </div>
 

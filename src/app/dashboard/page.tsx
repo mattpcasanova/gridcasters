@@ -1,15 +1,19 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { NavigationHeader } from "@/components/layout/navigation-header"
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { BarChart3, TrendingUp, Trophy, Users, Target, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
+import { useSupabase } from "@/lib/hooks/use-supabase"
+import { useRouter } from "next/navigation"
 
 const getPositionColor = (position: string) => {
   switch (position) {
@@ -41,7 +45,76 @@ const getPositionIconColor = (position: string) => {
   }
 }
 
+type UserProfile = {
+  username: string
+  display_name: string | null
+  first_name: string | null
+  last_name: string | null
+}
+
 export default function Dashboard() {
+  const searchParams = useSearchParams()
+  const supabase = useSupabase()
+  const router = useRouter()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/auth/signin')
+          return
+        }
+
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('username, display_name, first_name, last_name')
+          .eq('id', user.id)
+          .single()
+
+        if (error) {
+          console.error('Error fetching profile for dashboard:', error)
+          toast.error('Failed to load profile. You may need to sign out and back in.')
+          return
+        }
+
+        setProfile(profileData)
+      } catch (error) {
+        console.error('Error fetching profile for dashboard:', error)
+        toast.error('Failed to load profile. You may need to sign out and back in.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [supabase, router])
+  
+  useEffect(() => {
+    // Show success message if user was redirected after email verification
+    if (searchParams.get('verified') === 'true') {
+      toast.success('Email verified successfully! Welcome to RankBet!')
+    }
+  }, [searchParams])
+
+  const getDisplayName = (profile: UserProfile) => {
+    if (profile.first_name && profile.last_name) return `${profile.first_name} ${profile.last_name}`
+    if (profile.display_name) return profile.display_name
+    return profile.username
+  }
+
+  const getFirstName = (profile: UserProfile) => {
+    if (profile.first_name) return profile.first_name
+    if (profile.display_name) {
+      const names = profile.display_name.split(' ')
+      return names[0]
+    }
+    return profile.username
+  }
+
   const rightButtons = (
     <>
       <Link href="/rankings">
@@ -52,14 +125,58 @@ export default function Dashboard() {
     </>
   )
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome back, John!</h1>
-          <p className="text-slate-600 dark:text-slate-400">Here's how your rankings are performing this week.</p>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading dashboard...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Unable to load your profile</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+            This might be because your email hasn't been confirmed yet or there was an issue creating your profile.
+          </p>
+          <div className="space-y-2">
+            <Button 
+              onClick={async () => {
+                try {
+                  await supabase.auth.signOut()
+                  router.push('/')
+                } catch (error) {
+                  console.error('Sign out error:', error)
+                  localStorage.clear()
+                  sessionStorage.clear()
+                  window.location.href = '/'
+                }
+              }}
+              className="w-full"
+            >
+              Sign Out & Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+      return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, {profile ? getFirstName(profile) : "User"}!
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400">Here's how your rankings are performing this week.</p>
+          </div>
 
         {/* Leaderboard Selection */}
         <div className="mb-6">
@@ -240,17 +357,22 @@ export default function Dashboard() {
                   {[
                     { name: "Sarah K.", accuracy: 94, rank: 1 },
                     { name: "Mike R.", accuracy: 91, rank: 2 },
-                    { name: "John D.", accuracy: 87, rank: 3 },
+                    { name: profile ? getFirstName(profile) : "You", accuracy: 87, rank: 3, isCurrentUser: true },
                     { name: "Alex M.", accuracy: 85, rank: 4 },
                   ].map((user, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                        user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
                         <div>
-                          <div className="font-medium">{user.name}</div>
+                          <div className={`font-medium ${user.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}>
+                            {user.name}
+                            {user.isCurrentUser && " (You)"}
+                          </div>
                           <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global</div>
                         </div>
                       </div>

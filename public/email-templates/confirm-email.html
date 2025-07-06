@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your RankBet Account</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8fafc;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2567E8 0%, #10b981 100%);
+            padding: 48px 40px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+        }
+        
+        .logo {
+            background-color: white;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 800;
+            color: #2567E8;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .brand-text {
+            color: white;
+            font-size: 36px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .rank {
+            color: #ffffff;
+        }
+        
+        .bet {
+            color: #10b981;
+        }
+        
+        .tagline {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 18px;
+            margin: 12px 0 0 0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .content {
+            padding: 48px 40px;
+            text-align: center;
+        }
+        
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0 0 20px 0;
+            line-height: 1.2;
+        }
+        
+        .welcome-text {
+            font-size: 18px;
+            color: #64748b;
+            margin: 0 0 36px 0;
+            line-height: 1.6;
+        }
+        
+        .confirm-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2567E8 0%, #10b981 100%);
+            color: white;
+            text-decoration: none;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 0 0 40px 0;
+            box-shadow: 0 8px 24px rgba(37, 103, 232, 0.3);
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .confirm-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(37, 103, 232, 0.4);
+        }
+        
+        .features {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 40px;
+            margin: 0 -40px;
+            border-radius: 16px;
+        }
+        
+        .features-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 32px 0;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            color: #475569;
+            font-weight: 500;
+        }
+        
+        .feature-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2567E8 0%, #10b981 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 14px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(37, 103, 232, 0.25);
+        }
+        
+        .fallback-section {
+            background-color: #f1f5f9;
+            padding: 24px;
+            border-radius: 12px;
+            margin: 32px 0;
+        }
+        
+        .fallback-text {
+            font-size: 16px;
+            color: #64748b;
+            margin: 0 0 16px 0;
+        }
+        
+        .fallback-link {
+            background-color: #ffffff;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #64748b;
+            word-break: break-all;
+            border: 1px solid #e2e8f0;
+            font-family: monospace;
+        }
+        
+        .footer {
+            padding: 32px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+        }
+        
+        .footer-text {
+            font-size: 14px;
+            color: #94a3b8;
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+        
+        .social-links {
+            margin: 20px 0 0 0;
+        }
+        
+        .social-link {
+            display: inline-block;
+            margin: 0 12px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        
+        .social-link:hover {
+            color: #2567E8;
+        }
+        
+        @media (max-width: 640px) {
+            .email-container {
+                margin: 20px;
+                border-radius: 12px;
+            }
+            
+            .header {
+                padding: 36px 24px;
+            }
+            
+            .content {
+                padding: 36px 24px;
+            }
+            
+            .features {
+                padding: 32px 24px;
+                margin: 0 -24px;
+            }
+            
+            .footer {
+                padding: 24px;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .brand-text {
+                font-size: 32px;
+            }
+            
+            .welcome-title {
+                font-size: 28px;
+            }
+            
+            .confirm-button {
+                padding: 18px 32px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header with Brand -->
+        <div class="header">
+            <div class="logo">R</div>
+            <h1 class="brand-text">
+                <span class="rank">Rank</span><span class="bet">Bet</span>
+            </h1>
+            <p class="tagline">Rank Smart. Bet Better.</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <h2 class="welcome-title">Welcome to RankBet!</h2>
+            <p class="welcome-text">
+                You're one step away from joining the premier fantasy football ranking platform. 
+                Confirm your email to start creating rankings, tracking your accuracy, and competing with friends.
+            </p>
+            
+            <a href="{{ .ConfirmationURL }}" class="confirm-button">
+                Confirm Your Account
+            </a>
+            
+            <!-- Features Section -->
+            <div class="features">
+                <h3 class="features-title">What you can do with RankBet:</h3>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        Create player rankings
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🎯</div>
+                        Track accuracy over time
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">👥</div>
+                        Compete with friends
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📈</div>
+                        Improve your skills
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🏆</div>
+                        Join leaderboards
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">⭐</div>
+                        Follow experts
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fallback-section">
+                <p class="fallback-text">
+                    If the button above doesn't work, copy and paste this link into your browser:
+                </p>
+                <div class="fallback-link">
+                    {{ .ConfirmationURL }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-text">
+                This email was sent to {{ .Email }}. If you didn't create a RankBet account, you can safely ignore this email.
+            </p>
+            <div class="social-links">
+                <a href="{{ .SiteURL }}/privacy" class="social-link">Privacy Policy</a>
+                <a href="{{ .SiteURL }}/terms" class="social-link">Terms of Service</a>
+                <a href="{{ .SiteURL }}/support" class="social-link">Support</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

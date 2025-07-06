@@ -1,135 +1,362 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { NavigationHeader } from "@/components/layout/navigation-header"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchInput } from "@/components/ui/search-input"
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck } from "lucide-react"
+import { CircularProgress } from "@/components/ui/circular-progress"
+import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown } from "lucide-react"
 import Link from "next/link"
+import { useHeaderButtons } from "@/components/layout/root-layout-client"
 
-// Mock data - replace with real data from Supabase
 interface LeaderboardUser {
-  id: number
-  name: string
-  username: string
-  accuracy: number
-  weeklyChange: number
-  totalRankings: number
-  followers: number
-  avatar: string
-  isFollowing: boolean
-  isCurrentUser?: boolean
+  id: number;
+  rank: number;
+  user: {
+    name: string;
+    username: string;
+    avatar: string;
+    verified: boolean;
+  };
+  accuracy: number;
+  rankings: number;
+  followers: number;
+  isFollowing: boolean;
+  isCurrentUser?: boolean;
+  weeklyAccuracy?: number;
+  weeklyRank?: number;
+  change?: number;
 }
 
-const leaderboardData: LeaderboardUser[] = [
+interface GroupData {
+  id: number;
+  name: string;
+  members: number;
+  avgAccuracy: number;
+  avatar: string;
+  userRank?: number;
+  isJoined?: boolean;
+}
+
+const mockLeaderboardData: LeaderboardUser[] = [
   {
     id: 1,
-    name: "Mike Chen",
-    username: "@mikechen",
+    rank: 1,
+    user: {
+      name: "Mike Chen",
+      username: "@mikechen",
+      avatar: "/placeholder-user.jpg",
+      verified: true,
+    },
     accuracy: 94.2,
-    weeklyChange: 2.1,
-    totalRankings: 156,
+    rankings: 156,
     followers: 1247,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=mike",
     isFollowing: false,
+    weeklyAccuracy: 96.1,
+    weeklyRank: 1,
+    change: 0,
   },
   {
     id: 2,
-    name: "Sarah Johnson",
-    username: "@sarahj",
+    rank: 2,
+    user: {
+      name: "Sarah Johnson", 
+      username: "@sarahj",
+      avatar: "/placeholder-user.jpg",
+      verified: false,
+    },
     accuracy: 91.8,
-    weeklyChange: -0.5,
-    totalRankings: 142,
+    rankings: 142,
     followers: 892,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
     isFollowing: true,
+    weeklyAccuracy: 93.4,
+    weeklyRank: 2,
+    change: 1,
   },
   {
     id: 3,
-    name: "John Doe",
-    username: "@johndoe",
+    rank: 3,
+    user: {
+      name: "Matt Casanova",
+      username: "@mattcasanova",
+      avatar: "/placeholder-user.jpg",
+      verified: false,
+    },
     accuracy: 87.3,
-    weeklyChange: 3.2,
-    totalRankings: 98,
-    followers: 247,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-    isCurrentUser: true,
+    rankings: 98,
+    followers: 234,
     isFollowing: false,
+    isCurrentUser: true,
+    weeklyAccuracy: 89.7,
+    weeklyRank: 5,
+    change: -2,
   },
   {
     id: 4,
-    name: "Alex Rodriguez",
-    username: "@alexr",
+    rank: 4,
+    user: {
+      name: "Alex Rodriguez",
+      username: "@alexr",
+      avatar: "/placeholder-user.jpg",
+      verified: false,
+    },
     accuracy: 85.1,
-    weeklyChange: -1.2,
-    totalRankings: 134,
+    rankings: 78,
     followers: 567,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=alex",
     isFollowing: false,
+    weeklyAccuracy: 91.2,
+    weeklyRank: 3,
+    change: 1,
   },
   {
     id: 5,
-    name: "Emma Wilson",
-    username: "@emmaw",
+    rank: 5,
+    user: {
+      name: "Emma Wilson",
+      username: "@emmaw",
+      avatar: "/placeholder-user.jpg",
+      verified: true,
+    },
     accuracy: 83.7,
-    weeklyChange: 1.8,
-    totalRankings: 89,
+    rankings: 134,
     followers: 423,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=emma",
     isFollowing: true,
-  }
+    weeklyAccuracy: 90.8,
+    weeklyRank: 4,
+    change: 1,
+  },
+  {
+    id: 6,
+    rank: 8,
+    user: {
+      name: "David Kim",
+      username: "@davidk",
+      avatar: "/placeholder-user.jpg",
+      verified: false,
+    },
+    accuracy: 82.1,
+    rankings: 89,
+    followers: 156,
+    isFollowing: true,
+    weeklyAccuracy: 87.3,
+    weeklyRank: 6,
+    change: 2,
+  },
+  {
+    id: 7,
+    rank: 12,
+    user: {
+      name: "Lisa Park",
+      username: "@lisap",
+      avatar: "/placeholder-user.jpg",
+      verified: false,
+    },
+    accuracy: 79.8,
+    rankings: 67,
+    followers: 298,
+    isFollowing: true,
+    weeklyAccuracy: 85.1,
+    weeklyRank: 7,
+    change: 5,
+  },
 ]
 
-const groupData = [
+const groupData: GroupData[] = [
   {
     id: 1,
     name: "Fantasy Experts",
     members: 247,
     avgAccuracy: 89.4,
     avatar: "/placeholder-group.jpg",
+    userRank: 15,
+    isJoined: true,
   },
-  // ... more mock data
+  {
+    id: 2,
+    name: "College Friends",
+    members: 12,
+    avgAccuracy: 82.1,
+    avatar: "/placeholder-group.jpg",
+    userRank: 3,
+    isJoined: true,
+  },
+  {
+    id: 3,
+    name: "NFL Analysts",
+    members: 156,
+    avgAccuracy: 91.2,
+    avatar: "/placeholder-group.jpg",
+    userRank: 42,
+    isJoined: true,
+  },
+  {
+    id: 4,
+    name: "Monday Night Football",
+    members: 89,
+    avgAccuracy: 86.7,
+    avatar: "/placeholder-group.jpg",
+    isJoined: false,
+  },
+  {
+    id: 5,
+    name: "Dynasty League Pros",
+    members: 324,
+    avgAccuracy: 88.9,
+    avatar: "/placeholder-group.jpg",
+    isJoined: false,
+  },
 ]
 
 export default function Leaderboard() {
-  const [followingUsers, setFollowingUsers] = useState<number[]>(
-    leaderboardData.filter((user) => user.isFollowing).map((user) => user.id)
-  )
+  const [activeTab, setActiveTab] = useState("overall")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedWeek, setSelectedWeek] = useState("Week 8")
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
+  const [groups, setGroups] = useState<GroupData[]>(groupData)
+  const { setRightButtons } = useHeaderButtons()
+
+  const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
+  const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
+
+  // Set header buttons when component mounts
+  useEffect(() => {
+    setRightButtons(
+      <Link href="/rankings">
+        <GradientButton size="sm" icon={Plus}>
+          New Ranking
+        </GradientButton>
+      </Link>
+    )
+  }, [setRightButtons])
 
   const toggleFollow = (userId: number) => {
-    setFollowingUsers((prev) => 
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    setLeaderboardData((data: LeaderboardUser[]) => 
+      data.map((user: LeaderboardUser) => 
+        user.id === userId 
+          ? { ...user, isFollowing: !user.isFollowing }
+          : user
+      )
     )
   }
 
-  // Get current user's position and surrounding users
-  const currentUserIndex = leaderboardData.findIndex((user) => user.isCurrentUser)
-  const getGlobalLeaderboardView = () => {
-    const startIndex = Math.max(0, currentUserIndex - 2)
-    const endIndex = Math.min(leaderboardData.length, currentUserIndex + 3)
-    return leaderboardData.slice(startIndex, endIndex)
+  const toggleGroupJoin = (groupId: number) => {
+    setGroups((data: GroupData[]) => 
+      data.map((group: GroupData) => 
+        group.id === groupId 
+          ? { ...group, isJoined: !group.isJoined, userRank: group.isJoined ? undefined : Math.floor(Math.random() * group.members) + 1 }
+          : group
+      )
+    )
   }
 
-  // Get friends list (users being followed)
-  const friendsList = leaderboardData.filter((user) => followingUsers.includes(user.id))
+  const filteredData = leaderboardData.filter((user: LeaderboardUser) =>
+    user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const weeklyData = [...leaderboardData].sort((a, b) => (a.weeklyRank || 999) - (b.weeklyRank || 999))
+
+  const renderUserRow = (entry: LeaderboardUser, showWeeklyRank = false) => (
+    <div
+      key={entry.id}
+      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+        entry.isCurrentUser 
+          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" 
+          : "hover:bg-slate-50 dark:hover:bg-slate-800"
+      }`}
+    >
+      <div className="flex items-center space-x-4">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+          (showWeeklyRank ? (entry.weeklyRank || 999) : entry.rank) <= 3 
+            ? "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white" 
+            : "bg-slate-100 dark:bg-slate-700"
+        }`}>
+          {showWeeklyRank ? (entry.weeklyRank || 'N/A') : entry.rank}
+        </div>
+
+        <Link href={`/profile/${entry.id}`}>
+          <Avatar className="w-12 h-12 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+            <AvatarImage src={entry.user.avatar} />
+            <AvatarFallback>
+              {entry.user.name.split(' ').map((n: string) => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
+
+        <div>
+          <div className="flex items-center space-x-2">
+            <Link href={`/profile/${entry.id}`}>
+              <p className="font-semibold hover:text-blue-600 cursor-pointer">
+                {entry.user.name}
+              </p>
+            </Link>
+            {entry.user.verified && (
+              <Badge variant="secondary" className="text-xs">
+                <Star className="w-3 h-3 mr-1" />
+                Verified
+              </Badge>
+            )}
+            {entry.isCurrentUser && (
+              <Badge variant="outline" className="text-xs">
+                You
+              </Badge>
+            )}
+            {showWeeklyRank && entry.change !== undefined && (
+              <Badge variant={entry.change > 0 ? "default" : entry.change < 0 ? "destructive" : "secondary"} className="text-xs">
+                {entry.change > 0 ? `+${entry.change}` : entry.change === 0 ? "=" : entry.change}
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {entry.user.username}
+          </p>
+          <p className="text-xs text-slate-500">
+            {entry.rankings} rankings • {entry.followers} followers
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <div className="text-center">
+          <CircularProgress value={showWeeklyRank ? entry.weeklyAccuracy || 0 : entry.accuracy} size={60} showText />
+          <p className="text-xs text-slate-500 mt-1">accuracy</p>
+        </div>
+
+        {!entry.isCurrentUser && (
+          <Button
+            variant={entry.isFollowing ? "outline" : "default"}
+            size="sm"
+            onClick={() => toggleFollow(entry.id)}
+            className={entry.isFollowing 
+              ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+              : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+            }
+          >
+            {entry.isFollowing ? (
+              <>
+                <UserCheck className="w-4 h-4 mr-2" />
+                Following
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Follow
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <NavigationHeader
-        rightButtons={
-          <Link href="/rankings">
-            <GradientButton size="sm" icon={Plus}>
-              New Ranking
-            </GradientButton>
-          </Link>
-        }
-      />
-
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -137,31 +364,41 @@ export default function Leaderboard() {
           <p className="text-slate-600 dark:text-slate-400">Outrank the Competition</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard
             title="Your Rank"
-            value="#3"
+            value={`#${currentUser?.rank || 'N/A'}`}
+            subtitle="+2 positions this week"
             icon={Trophy}
-            trend={{ value: "+2 positions this week", direction: "up", icon: TrendingUp }}
+            trend={{
+              value: "+2 positions this week",
+              direction: "up",
+              icon: TrendingUp
+            }}
           />
-          <StatCard 
-            title="Total Players" 
-            value="2,847" 
-            icon={Users} 
-            subtitle="Active this week" 
+          <StatCard
+            title="Total Players"
+            value="2,847"
+            subtitle="Active this week"
+            icon={Users}
           />
           <StatCard
             title="Your Accuracy"
-            value="87.3%"
-            icon={Target}
-            trend={{ value: "+3.2% this week", direction: "up", icon: TrendingUp }}
-            progress={87.3}
+            value={`${currentUser?.accuracy || 0}%`}
+            subtitle="+3.2% this week"
+            icon={TrendingUp}
+            trend={{
+              value: "+3.2% this week",
+              direction: "up",
+              icon: TrendingUp
+            }}
+            progress={currentUser?.accuracy}
           />
         </div>
 
-        {/* Leaderboard Tabs */}
-        <Tabs defaultValue="overall" className="space-y-6">
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overall">Overall</TabsTrigger>
             <TabsTrigger value="weekly">Weekly</TabsTrigger>
@@ -174,101 +411,214 @@ export default function Leaderboard() {
               <CardHeader>
                 <CardTitle>Overall Leaderboard</CardTitle>
                 <CardDescription>Your position and nearby competitors</CardDescription>
-                <SearchInput placeholder="Search users..." className="max-w-md mt-4" />
               </CardHeader>
               <CardContent>
+                <div className="mb-6">
+                  <SearchInput
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+
                 <div className="space-y-4">
-                  {getGlobalLeaderboardView().map((user, index) => {
-                    const actualRank = leaderboardData.findIndex((u) => u.id === user.id) + 1
-                    return (
-                      <div
-                        key={user.id}
-                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                          user.isCurrentUser
-                            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                            : "hover:bg-slate-50 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-4">
-                          {/* Rank */}
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                              actualRank === 1
-                                ? "bg-yellow-500 text-white"
-                                : actualRank === 2
-                                ? "bg-gray-400 text-white"
-                                : actualRank === 3
-                                ? "bg-orange-500 text-white"
-                                : "bg-slate-200 dark:bg-slate-700"
-                            }`}
-                          >
-                            {actualRank <= 3 ? (
-                              actualRank === 1 ? (
-                                <Trophy className="w-4 h-4" />
-                              ) : actualRank === 2 ? (
-                                <Medal className="w-4 h-4" />
-                              ) : (
-                                <Award className="w-4 h-4" />
-                              )
-                            ) : (
-                              actualRank
-                            )}
-                          </div>
-
-                          {/* User Info */}
-                          <Link
-                            href={`/profile/${user.id}`}
-                            className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-                          >
-                            <Avatar className="w-12 h-12">
-                              <AvatarImage src={user.avatar} alt={user.name} />
-                              <AvatarFallback>
-                                {user.name.split(" ").map((n) => n[0]).join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-sm text-slate-500">{user.username}</div>
-                            </div>
-                          </Link>
-                        </div>
-
-                        {/* Stats & Actions */}
-                        <div className="flex items-center space-x-8">
-                          <div className="text-right">
-                            <div className="font-medium">{user.accuracy}%</div>
-                            <div className="text-sm text-slate-500">Accuracy</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium">{user.totalRankings}</div>
-                            <div className="text-sm text-slate-500">Rankings</div>
-                          </div>
-                          {!user.isCurrentUser && (
-                            <Button
-                              variant={followingUsers.includes(user.id) ? "secondary" : "default"}
-                              size="sm"
-                              onClick={() => toggleFollow(user.id)}
-                            >
-                              {followingUsers.includes(user.id) ? (
-                                <>
-                                  <UserCheck className="w-4 h-4 mr-1" />
-                                  Following
-                                </>
-                              ) : (
-                                "Follow"
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {filteredData.map((entry: LeaderboardUser) => renderUserRow(entry))}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Other tab contents would go here */}
+          <TabsContent value="weekly">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Weekly Leaderboard</CardTitle>
+                    <CardDescription>This week's top performers</CardDescription>
+                  </div>
+                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Week 8">Week 8</SelectItem>
+                      <SelectItem value="Week 7">Week 7</SelectItem>
+                      <SelectItem value="Week 6">Week 6</SelectItem>
+                      <SelectItem value="Week 5">Week 5</SelectItem>
+                      <SelectItem value="Week 4">Week 4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
+                  <SearchInput
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  {weeklyData
+                    .filter((user: LeaderboardUser) =>
+                      user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((entry: LeaderboardUser) => renderUserRow(entry, true))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="friends">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Friends Leaderboard</CardTitle>
+                    <CardDescription>See how you rank among your friends</CardDescription>
+                  </div>
+                  <Link href="/find-friends">
+                    <Button variant="outline" size="sm">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Find Friends
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {friendsData.length > 1 ? (
+                  <>
+                    <div className="mb-6">
+                      <SearchInput
+                        placeholder="Search friends..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-md"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      {friendsData
+                        .filter((user: LeaderboardUser) =>
+                          user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .sort((a, b) => a.rank - b.rank)
+                        .map((entry: LeaderboardUser, index: number) => (
+                          <div key={entry.id} className="relative">
+                            {renderUserRow({...entry, rank: index + 1})}
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Friends Yet</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      Follow other users to see how you rank among friends
+                    </p>
+                    <Link href="/find-friends">
+                      <Button>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Find Friends
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="groups">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Group Leaderboards</CardTitle>
+                    <CardDescription>Rankings within your groups</CardDescription>
+                  </div>
+                  <Link href="/find-groups">
+                    <Button variant="outline" size="sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      Find Groups
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {groups.map((group: GroupData) => (
+                    <div
+                      key={group.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={group.avatar} />
+                          <AvatarFallback>
+                            {group.name.split(' ').map((n: string) => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-semibold">{group.name}</h3>
+                            {group.isJoined && (
+                              <Badge variant="outline" className="text-xs">
+                                Member
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            {group.members} members • {group.avgAccuracy}% avg accuracy
+                          </p>
+                          {group.isJoined && group.userRank && (
+                            <p className="text-xs text-slate-500">
+                              Your rank: #{group.userRank}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <CircularProgress value={group.avgAccuracy} size={60} showText />
+                          <p className="text-xs text-slate-500 mt-1">group avg</p>
+                        </div>
+
+                        <Button
+                          variant={group.isJoined ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => toggleGroupJoin(group.id)}
+                          className={group.isJoined 
+                            ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                            : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+                          }
+                        >
+                          {group.isJoined ? (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Joined
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Join
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </div>

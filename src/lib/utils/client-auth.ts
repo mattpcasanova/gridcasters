@@ -1,6 +1,6 @@
 'use client';
 
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient, AuthResponse } from '@supabase/supabase-js';
 import { Database } from '../supabase/types';
 
 export type SignInData = {
@@ -10,6 +10,15 @@ export type SignInData = {
 
 export type SignUpData = SignInData & {
   username: string;
+  firstName: string;
+  lastName: string;
+};
+
+export type SignUpResult = {
+  user: any;
+  session: any;
+  needsEmailConfirmation?: boolean;
+  message?: string;
 };
 
 // Track last request time to prevent rate limiting
@@ -31,35 +40,66 @@ async function waitForRateLimit() {
 
 export async function signIn(
   supabase: SupabaseClient<Database>,
-  { email, password }: SignInData
+  { emailOrUsername, password }: { emailOrUsername: string; password: string }
 ) {
-  console.log('Client auth: Starting sign in process...');
+  console.log('Starting sign in for:', emailOrUsername);
 
   try {
     await waitForRateLimit();
     
-    const { data, error } = await supabase.auth.signInWithPassword({
+    let email = emailOrUsername;
+    
+    // If it's not an email (doesn't contain @), try to look up the email by username
+    if (!emailOrUsername.includes('@')) {
+      console.log('Looking up email for username:', emailOrUsername);
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', emailOrUsername)
+        .single();
+      
+      if (profileError || !profileData) {
+        throw new Error('Username not found');
+      }
+      
+      // Since we can't use admin functions from client, let's try a different approach
+      // We'll just show an error asking them to use email
+      throw new Error('Please use your email address to sign in');
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      console.error('Client auth: Sign in error:', error);
-      throw error;
+    if (authError) {
+      console.error('Sign in failed:', authError.message);
+      
+      // Handle specific rate limiting error
+      if (authError.message?.includes('you can only request this after')) {
+        throw new Error('Please wait a moment before trying again. Sign in requests are rate limited for security.');
+      }
+      
+      throw authError;
     }
 
-    console.log('Client auth: Sign in successful, session established');
-    return data;
+    if (!authData.user) {
+      throw new Error('Sign in failed - no user returned');
+    }
+
+    console.log('Sign in successful');
+    return authData;
   } catch (err) {
-    console.error('Client auth: Unexpected error during sign in:', err);
+    console.error('Sign in failed:', err);
     throw err;
   }
 }
 
 export async function signUp(
   supabase: SupabaseClient<Database>,
-  { email, password, username }: SignUpData
-) {
+  { email, password, username, firstName, lastName }: SignUpData
+): Promise<SignUpResult> {
   console.log('Starting sign up for:', email);
 
   try {
@@ -68,6 +108,15 @@ export async function signUp(
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        data: {
+          username: username,
+          display_name: `${firstName} ${lastName}`,
+          first_name: firstName,
+          last_name: lastName
+        }
+      }
     });
 
     if (authError) {
@@ -85,34 +134,29 @@ export async function signUp(
       throw new Error('User was not created');
     }
 
-    console.log('Auth user created, creating profile...');
+    console.log('Auth user created, checking session...');
+    console.log('Auth data:', {
+      userId: authData.user.id,
+      email: authData.user.email,
+      emailConfirmed: authData.user.email_confirmed_at,
+      sessionExists: !!authData.session
+    });
     
-    // Wait a moment for the session to be established
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Profile will be created automatically by database trigger
+    console.log('Profile will be created automatically by database trigger');
     
-    // Create profile directly with client
-    const { error: profileError, data: profileData } = await supabase
-      .from('profiles')
-      .insert({
-        id: authData.user.id,
-        username,
-        display_name: username,
-        is_private: false,
-        is_verified: false,
-      })
-      .select();
-
-    if (profileError) {
-      console.error('Profile creation failed:', profileError.message);
+    // If no session was created, email confirmation is required
+    if (!authData.session) {
+      console.log('No session created - email confirmation required');
       
-      // Handle specific profile errors
-      if (profileError.code === '23505') { // Unique constraint violation
-        throw new Error('This username is already taken. Please choose a different one.');
-      }
-      
-      throw profileError;
+      // Return success state indicating email confirmation needed
+      return {
+        ...authData,
+        needsEmailConfirmation: true,
+        message: 'Account created successfully! Please check your email to verify your account.'
+      };
     }
-
+    
     console.log('Sign up successful');
     return authData;
   } catch (err) {
@@ -120,6 +164,8 @@ export async function signUp(
     throw err;
   }
 }
+
+// This function is no longer needed since profiles are created automatically by database trigger
 
 export async function signOut(supabase: SupabaseClient<Database>) {
   console.log('Client auth: Starting sign out process...');

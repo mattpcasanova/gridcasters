@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -10,10 +10,19 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
 import { NoSSR } from "@/components/ui/no-ssr"
+import { useSupabase } from "@/lib/hooks/use-supabase"
 
 interface NavigationHeaderProps {
   rightButtons?: React.ReactNode
   isSignedIn?: boolean
+}
+
+type UserProfile = {
+  username: string
+  display_name: string | null
+  first_name: string | null
+  last_name: string | null
+  avatar_url: string | null
 }
 
 function NavLinks({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
@@ -52,7 +61,51 @@ function NavLinks({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate
 
 export function NavigationHeader({ rightButtons, isSignedIn = true }: NavigationHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const logoHref = isSignedIn ? "/dashboard" : "/"
+  const supabase = useSupabase()
+
+  // Fetch user profile data
+  useEffect(() => {
+    if (!isSignedIn) return
+
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('username, display_name, first_name, last_name, avatar_url')
+          .eq('id', user.id)
+          .single()
+
+        if (error) {
+          console.error('Error fetching profile for header:', error)
+          return
+        }
+
+        setProfile(profileData)
+      } catch (error) {
+        console.error('Error fetching profile for header:', error)
+      }
+    }
+
+    fetchProfile()
+  }, [supabase, isSignedIn])
+
+  const getInitials = (profile: UserProfile) => {
+    if (profile.first_name && profile.last_name) {
+      return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
+    }
+    if (profile.display_name) {
+      const names = profile.display_name.split(' ')
+      return names.length > 1 
+        ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase()
+    }
+    return profile.username[0].toUpperCase()
+  }
 
   return (
     <header className="border-b bg-white dark:bg-slate-800 dark:border-slate-700">
@@ -98,8 +151,8 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
 
               <Link href="/profile">
                 <Avatar className="cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
-                  <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={profile?.avatar_url || "/placeholder-user.jpg"} />
+                  <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
                 </Avatar>
               </Link>
             </>
