@@ -85,7 +85,13 @@ export default function Rankings() {
       
       if (result.success) {
         const actionText = result.action === 'created' ? 'created' : 'updated';
-        alert(`Rankings ${actionText} successfully!`);
+        let message = `Rankings ${actionText} successfully!`;
+        
+        if (selectedPosition === 'OVR' && result.positionRankingsUpdated) {
+          message += ' Individual position rankings have been updated to maintain consistency.';
+        }
+        
+        alert(message);
       } else {
         alert(`Failed to save rankings: ${result.error}`);
       }

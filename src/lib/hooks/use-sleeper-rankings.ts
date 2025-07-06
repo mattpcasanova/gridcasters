@@ -158,7 +158,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
     });
   };
 
-  const saveRankings = async (position: string): Promise<{ success: boolean; action: string; error?: string }> => {
+  const saveRankings = async (position: string): Promise<{ success: boolean; action: string; error?: string; positionRankingsUpdated?: boolean }> => {
     try {
       const response = await fetch('/api/rankings', {
         method: 'POST',
@@ -183,7 +183,11 @@ export function useSleeperRankings(positionFilter: string = 'OVR') {
       // After successful save, the current state is now the "saved" state
       // No need to refetch since the user's current order is already what they want
       
-      return { success: true, action: data.action };
+      return { 
+        success: true, 
+        action: data.action,
+        positionRankingsUpdated: data.positionRankingsUpdated
+      };
     } catch (error) {
       console.error('Error saving rankings:', error);
       return { success: false, action: 'error', error: 'Network error' };

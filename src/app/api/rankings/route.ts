@@ -1,6 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 
+// Helper function to update individual position rankings based on OVR ranking
+async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number, season: number, type: string) {
+  // Group players by position from the OVR ranking
+  const playersByPosition: Record<string, any[]> = {};
+  
+  ovrPlayers.forEach(player => {
+    if (!playersByPosition[player.position]) {
+      playersByPosition[player.position] = [];
+    }
+    playersByPosition[player.position].push(player);
+  });
+
+  // Update each position's ranking to match the OVR order
+  for (const [pos, positionPlayers] of Object.entries(playersByPosition)) {
+    // Sort players by their rank in the OVR ranking
+    const sortedPlayers = positionPlayers.sort((a, b) => a.rank - b.rank);
+    
+    // Check if a ranking already exists for this position
+    const { data: existingPositionRanking, error: fetchError } = await supabase
+      .from('rankings')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('position', pos)
+      .eq('week', week)
+      .eq('season', season)
+      .eq('type', type)
+      .single();
+
+    let positionRankingId: string;
+
+    if (existingPositionRanking) {
+      // Update existing position ranking
+      positionRankingId = existingPositionRanking.id;
+      
+      await supabase
+        .from('rankings')
+        .update({
+          title: `Week ${week} ${pos} Rankings`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', positionRankingId);
+
+      // Delete existing player rankings for this position
+      await supabase
+        .from('player_rankings')
+        .delete()
+        .eq('ranking_id', positionRankingId);
+    } else {
+      // Create new position ranking
+      const { data: newPositionRanking, error: createError } = await supabase
+        .from('rankings')
+        .insert({
+          user_id: userId,
+          title: `Week ${week} ${pos} Rankings`,
+          position: pos,
+          type,
+          week,
+          season,
+          is_active: true
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error(`Error creating ${pos} ranking:`, createError);
+        continue;
+      }
+
+      positionRankingId = newPositionRanking.id;
+    }
+
+    // Insert player rankings for this position with new ranks (1, 2, 3, etc.)
+    const positionPlayerRankings = sortedPlayers.map((player, index) => ({
+      ranking_id: positionRankingId,
+      player_id: player.id,
+      player_name: player.name,
+      team: player.team,
+      position: player.position,
+      rank_position: index + 1, // Re-rank starting from 1 for each position
+      is_starred: player.isStarred || false
+    }));
+
+    const { error: insertError } = await supabase
+      .from('player_rankings')
+      .insert(positionPlayerRankings);
+
+    if (insertError) {
+      console.error(`Error inserting ${pos} player rankings:`, insertError);
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerSupabase();
@@ -107,10 +199,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save player rankings' }, { status: 500 });
     }
 
+    // If this is an OVR ranking, update individual position rankings to maintain consistency
+    if (position === 'OVR') {
+      await updatePositionRankingsFromOVR(supabase, user.id, players, week, season, type);
+    }
+
     return NextResponse.json({ 
       success: true, 
       rankingId,
-      action: existingRanking ? 'updated' : 'created'
+      action: existingRanking ? 'updated' : 'created',
+      positionRankingsUpdated: position === 'OVR' // Let the UI know if position rankings were updated
     });
 
   } catch (error) {
