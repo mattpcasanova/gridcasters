@@ -18,10 +18,10 @@ export default function LandingPage() {
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Image src="/logo.svg" alt="RankBet Logo" width={40} height={40} className="w-10 h-10" />
+            <Image src="/logo.svg" alt="GridCasters Logo" width={40} height={40} className="w-10 h-10" />
             <span className="text-2xl font-bold">
-              <span className="text-blue-400">Rank</span>
-              <span className="text-green-400">Bet</span>
+              <span className="text-blue-400">Grid</span>
+              <span className="text-green-400">Casters</span>
             </span>
           </div>
           <nav className="hidden md:flex items-center space-x-6">
@@ -115,7 +115,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <div className="flex-1 bg-slate-700 rounded ml-4 px-3 py-1">
-                  <span className="text-slate-400 text-sm">rankbet.com/dashboard</span>
+                  <span className="text-slate-400 text-sm">gridcasters.com/dashboard</span>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ export default function LandingPage() {
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg"></div>
-                    <span className="text-xl font-bold text-slate-800">RankBet</span>
+                    <span className="text-xl font-bold text-slate-800">GridCasters</span>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-3 py-1 rounded text-sm font-medium">
@@ -327,11 +327,11 @@ export default function LandingPage() {
       <footer className="border-t border-slate-800 bg-slate-900/50 py-12 px-4">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <Image src="/logo.svg" alt="RankBet Logo" width={32} height={32} className="w-8 h-8" />
+            <div className="flex items-center space-x-3 mb-6">
+              <Image src="/logo.svg" alt="GridCasters Logo" width={32} height={32} className="w-8 h-8" />
               <span className="text-xl font-bold">
-                <span className="text-blue-400">Rank</span>
-                <span className="text-green-400">Bet</span>
+                <span className="text-blue-400">Grid</span>
+                <span className="text-green-400">Casters</span>
               </span>
             </div>
             <div className="flex space-x-6 text-slate-400">
@@ -347,7 +347,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-slate-800 text-center text-slate-400">
-            <p>&copy; {new Date().getFullYear()} RankBet. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} GridCasters. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -22,12 +22,12 @@ export default function Support() {
               <p className="text-slate-600 dark:text-slate-400 mb-4">
                 Get help via email within 24 hours
               </p>
-              <Link 
-                href="mailto:support@rankbet.com"
-                className="text-blue-600 hover:text-blue-500 transition-colors"
+              <a
+                href="mailto:support@gridcasters.com"
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                support@rankbet.com
-              </Link>
+                support@gridcasters.com
+              </a>
             </div>
 
             <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">

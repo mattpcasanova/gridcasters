@@ -22,12 +22,12 @@ export default function TermsOfService() {
             <h2>Contact Us</h2>
             <p>
               If you have any questions about our terms of service, please contact us at{" "}
-              <Link 
-                href="mailto:support@rankbet.com"
-                className="text-blue-600 hover:text-blue-500 transition-colors"
+              <a
+                href="mailto:support@gridcasters.com"
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                support@rankbet.com
-              </Link>
+                support@gridcasters.com
+              </a>
             </p>
           </div>
         </div>

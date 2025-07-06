@@ -168,13 +168,13 @@ export default function GroupPage({ params }: { params: { id: string } }) {
           <div className="flex items-center space-x-2 p-2 bg-slate-100 dark:bg-slate-700 rounded">
             <input
               type="text"
-              value={`https://rankbet.com/group/${groupData.id}`}
+              value={`https://gridcasters.com/group/${groupData.id}`}
               readOnly
               className="flex-1 bg-transparent text-sm"
             />
             <Button
               size="sm"
-              onClick={() => navigator.clipboard.writeText(`https://rankbet.com/group/${groupData.id}`)}
+              onClick={() => navigator.clipboard.writeText(`https://gridcasters.com/group/${groupData.id}`)}
             >
               Copy
             </Button>
@@ -329,8 +329,8 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                           {member.isHost && <Crown className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />}
                           {member.verified && (
                             <Image
-                              src="/images/rankbet-logo.png"
-                              alt="RankBet Verified"
+                              src="/logo.svg"
+                              alt="GridCasters Verified"
                               width={16}
                               height={16}
                               className="w-4 h-4"

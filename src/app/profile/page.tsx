@@ -289,13 +289,13 @@ export default function Profile() {
           <div className="flex items-center space-x-2 p-2 bg-slate-100 dark:bg-slate-700 rounded">
             <input
               type="text"
-              value={`https://rankbet.com/user/${profile?.username || "unknown"}`}
+              value={`https://gridcasters.com/user/${profile?.username || "unknown"}`}
               readOnly
               className="flex-1 bg-transparent text-sm"
             />
             <Button
               size="sm"
-              onClick={() => navigator.clipboard.writeText(`https://rankbet.com/user/${profile?.username || "unknown"}`)}
+              onClick={() => navigator.clipboard.writeText(`https://gridcasters.com/user/${profile?.username || "unknown"}`)}
             >
               Copy
             </Button>

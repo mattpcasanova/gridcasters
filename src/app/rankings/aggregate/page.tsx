@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { NavigationHeader } from "@/components/layout/navigation-header"
+
 import { SearchInput } from "@/components/ui/search-input"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { CircularProgress } from "@/components/ui/circular-progress"
@@ -403,8 +403,6 @@ export default function AggregateRankings() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <NavigationHeader />
-
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -511,7 +509,7 @@ export default function AggregateRankings() {
                           <div className="flex items-center space-x-2">
                             {ranking.verified && (
                               <Image
-                                src="/images/rankbet-logo.png"
+                                src="/logo.svg"
                                 alt="Verified"
                                 width={12}
                                 height={12}
@@ -588,7 +586,7 @@ export default function AggregateRankings() {
                                 <p className="font-medium">{ranking.user}</p>
                                 {ranking.verified && (
                                   <Image
-                                    src="/images/rankbet-logo.png"
+                                    src="/logo.svg"
                                     alt="Verified"
                                     width={16}
                                     height={16}

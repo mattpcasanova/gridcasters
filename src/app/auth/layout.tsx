@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
 export const metadata: Metadata = {
-  title: 'Authentication - RankBet',
+  title: 'Authentication - GridCasters',
   description: 'Sign in or create an account to start ranking players and competing with others.',
 };
 

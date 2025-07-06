@@ -177,13 +177,13 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
           <div className="flex items-center space-x-2 p-2 bg-slate-100 dark:bg-slate-700 rounded">
             <input
               type="text"
-              value={`https://rankbet.com/rankings/${ranking.id}`}
+              value={`https://gridcasters.com/rankings/${ranking.id}`}
               readOnly
               className="flex-1 bg-transparent text-sm"
             />
             <Button
               size="sm"
-              onClick={() => navigator.clipboard.writeText(`https://rankbet.com/rankings/${ranking.id}`)}
+              onClick={() => navigator.clipboard.writeText(`https://gridcasters.com/rankings/${ranking.id}`)}
             >
               Copy
             </Button>

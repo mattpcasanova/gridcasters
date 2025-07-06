@@ -362,7 +362,7 @@ export default function Rankings() {
           <div className="flex items-center space-x-2 p-2 bg-slate-100 dark:bg-slate-700 rounded">
             <input
               type="text"
-              value={`https://rankbet.com/rankings/${currentWeek.toLowerCase().replace(" ", "")}-${selectedPosition.toLowerCase()}`}
+              value={`https://gridcasters.com/rankings/${currentWeek.toLowerCase().replace(" ", "")}-${selectedPosition.toLowerCase()}`}
               readOnly
               className="flex-1 bg-transparent text-sm"
             />
@@ -370,7 +370,7 @@ export default function Rankings() {
               size="sm"
               onClick={() =>
                 navigator.clipboard.writeText(
-                  `https://rankbet.com/rankings/${currentWeek.toLowerCase().replace(" ", "")}-${selectedPosition.toLowerCase()}`,
+                  `https://gridcasters.com/rankings/${currentWeek.toLowerCase().replace(" ", "")}-${selectedPosition.toLowerCase()}`,
                 )
               }
             >

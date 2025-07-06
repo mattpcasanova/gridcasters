@@ -16,7 +16,7 @@ export default function VerifyEmail() {
           Check your email
         </h1>
         <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-          We've sent you a verification link to complete your RankBet account setup.
+          We've sent you a verification link to complete your GridCasters account setup.
         </p>
       </div>
 

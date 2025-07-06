@@ -20,12 +20,15 @@ const FeatureHighlights = dynamic(() => Promise.resolve(function FeatureHighligh
           <Link href="/" className="inline-block group transition-transform hover:scale-105">
             <Image
               src="/logo.svg"
-              alt="RankBet"
-              width={120}
-              height={120}
-              className="mx-auto drop-shadow-2xl transition-all duration-300 group-hover:drop-shadow-[0_0_2em_rgba(59,130,246,0.5)]"
-              priority
+              alt="GridCasters"
+              width={40}
+              height={40}
+              className="w-10 h-10"
             />
+            <span className="text-2xl font-bold">
+              <span className="text-blue-600 dark:text-blue-400">Grid</span>
+              <span className="text-green-600 dark:text-green-400">Casters</span>
+            </span>
           </Link>
         </div>
 
@@ -75,7 +78,7 @@ const MobileLogo = dynamic(() => Promise.resolve(function MobileLogoComponent() 
       <Link href="/" className="inline-block">
         <Image
           src="/logo.svg"
-          alt="RankBet"
+          alt="GridCasters"
           width={80}
           height={80}
           className="mx-auto"

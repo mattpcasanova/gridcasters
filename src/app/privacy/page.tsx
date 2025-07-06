@@ -22,12 +22,12 @@ export default function PrivacyPolicy() {
             <h2>Contact Us</h2>
             <p>
               If you have any questions about our privacy practices, please contact us at{" "}
-              <Link 
-                href="mailto:privacy@rankbet.com"
-                className="text-blue-600 hover:text-blue-500 transition-colors"
+              <a
+                href="mailto:privacy@gridcasters.com"
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                privacy@rankbet.com
-              </Link>
+                privacy@gridcasters.com
+              </a>
             </p>
           </div>
         </div>

@@ -11,7 +11,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "RankBet - Fantasy Football Ranking Platform",
+  title: "GridCasters - Fantasy Football Ranking Platform",
   description: "Create, track, and compare your fantasy football player rankings with statistical accuracy scoring.",
 }
 

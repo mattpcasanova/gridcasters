@@ -97,7 +97,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Show success message if user was redirected after email verification
     if (searchParams.get('verified') === 'true') {
-      toast.success('Email verified successfully! Welcome to RankBet!')
+      toast.success('Email verified successfully! Welcome to GridCasters!')
     }
   }, [searchParams])
 
