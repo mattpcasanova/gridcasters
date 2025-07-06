@@ -20,7 +20,8 @@ const HeaderContext = createContext<HeaderContextType | null>(null);
 export function useHeaderButtons() {
   const context = useContext(HeaderContext);
   if (!context) {
-    throw new Error('useHeaderButtons must be used within HeaderProvider');
+    // Return a no-op function when context is not available
+    return { setRightButtons: () => {} };
   }
   return context;
 }
