@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BarChart3, TrendingUp, Trophy, Users, Target, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -355,31 +356,70 @@ export default function Dashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { name: "Sarah K.", accuracy: 94, rank: 1 },
-                    { name: "Mike R.", accuracy: 91, rank: 2 },
-                    { name: profile ? getFirstName(profile) : "You", accuracy: 87, rank: 3, isCurrentUser: true },
-                    { name: "Alex M.", accuracy: 85, rank: 4 },
+                    { 
+                      id: "sarah-k", 
+                      name: "Sarah K.", 
+                      username: "sarahk", 
+                      accuracy: 94, 
+                      rank: 1, 
+                      avatar: "/placeholder-user.jpg",
+                      followers: 1247
+                    },
+                    { 
+                      id: "mike-r", 
+                      name: "Mike R.", 
+                      username: "miker", 
+                      accuracy: 91, 
+                      rank: 2, 
+                      avatar: "/placeholder-user.jpg",
+                      followers: 892
+                    },
+                    { 
+                      id: "current-user", 
+                      name: profile ? getFirstName(profile) : "You", 
+                      username: profile?.username || "you", 
+                      accuracy: 87, 
+                      rank: 3, 
+                      isCurrentUser: true,
+                      avatar: "/placeholder-user.jpg",
+                      followers: 247
+                    },
+                    { 
+                      id: "alex-m", 
+                      name: "Alex M.", 
+                      username: "alexm", 
+                      accuracy: 85, 
+                      rank: 4, 
+                      avatar: "/placeholder-user.jpg",
+                      followers: 567
+                    },
                   ].map((user, index) => (
-                    <div
+                    <Link
                       key={index}
+                      href={user.isCurrentUser ? "/profile" : `/profile/${user.username}`}
                       className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
                         user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={user.avatar} />
+                          <AvatarFallback>
+                            {user.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <div className={`font-medium ${user.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}>
                             {user.name}
                             {user.isCurrentUser && " (You)"}
                           </div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global</div>
+                          <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global • {user.followers} followers</div>
                         </div>
                       </div>
                       <div className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded text-xs font-medium">
                         {user.accuracy}%
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </CardContent>

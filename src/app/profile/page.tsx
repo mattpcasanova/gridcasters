@@ -576,16 +576,22 @@ export default function Profile() {
                 <CardContent>
                   <div className="space-y-4">
                     {mockRankings.slice(0, 3).map((ranking) => (
-                      <div key={ranking.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                        <div>
-                          <p className="font-medium">{ranking.title}</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">{ranking.date}</p>
+                      <Link
+                        key={ranking.id}
+                        href={`/rankings/${ranking.id}`}
+                        className="block"
+                      >
+                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                          <div>
+                            <p className="font-medium">{ranking.title}</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">{ranking.date}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold">{ranking.accuracy}%</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">#{ranking.rank}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold">{ranking.accuracy}%</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">#{ranking.rank}</p>
-                        </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </CardContent>
@@ -641,8 +647,12 @@ export default function Profile() {
                   </TableHeader>
                   <TableBody>
                     {mockRankings.map((ranking) => (
-                      <TableRow key={ranking.id}>
-                        <TableCell className="font-medium">{ranking.title}</TableCell>
+                      <TableRow key={ranking.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <TableCell className="font-medium">
+                          <Link href={`/rankings/${ranking.id}`} className="block">
+                            {ranking.title}
+                          </Link>
+                        </TableCell>
                         <TableCell>
                           <Badge className={getPositionColor(ranking.position)}>
                             {ranking.position}
