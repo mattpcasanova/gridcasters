@@ -6,7 +6,7 @@ import { RankingPlayer } from '@/lib/types';
 import { getCurrentSeasonInfo, getDefaultRankingType, getDefaultWeek } from '@/lib/utils/season';
 import { useFavorites } from '@/lib/hooks/use-favorites';
 
-export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?: number | 'preseason') {
+export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?: number | 'preseason', scoringFormat: string = 'half_ppr') {
   const [players, setPlayers] = useState<RankingPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,20 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 name: pr.player_name,
                 team: pr.team,
                 position: allPlayers[pr.player_id]?.position || pr.position, // Use actual player position
-                projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
+                projectedPoints: (() => {
+                  const projection = (projections as any)[pr.player_id];
+                  if (!projection) return 0;
+                  
+                  switch (scoringFormat) {
+                    case 'std':
+                      return projection.pts_std || 0;
+                    case 'ppr':
+                      return projection.pts_ppr || 0;
+                    case 'half_ppr':
+                    default:
+                      return projection.pts_half_ppr || (projection.pts_ppr ? projection.pts_ppr * 0.95 : 0);
+                  }
+                })(),
                 avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
                 teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
                 isStarred: isFavorite(pr.player_id),
@@ -77,7 +90,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
       projections,
       new Set(favorites.map(f => f.player_id)),
       positionFilter,
-      matchups
+      matchups,
+      scoringFormat
     );
     setPlayers(transformedPlayers);
   };
@@ -210,7 +224,20 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                   name: pr.player_name,
                   team: pr.team,
                   position: allPlayers[pr.player_id]?.position || pr.position, // Use actual player position from Sleeper data
-                  projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
+                  projectedPoints: (() => {
+                    const projection = (projections as any)[pr.player_id];
+                    if (!projection) return 0;
+                    
+                    switch (scoringFormat) {
+                      case 'std':
+                        return projection.pts_std || 0;
+                      case 'ppr':
+                        return projection.pts_ppr || 0;
+                      case 'half_ppr':
+                      default:
+                        return projection.pts_half_ppr || (projection.pts_ppr ? projection.pts_ppr * 0.95 : 0);
+                    }
+                  })(),
                   avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
                   teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
                   isStarred: isFavorite(pr.player_id),
@@ -219,7 +246,11 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                   age: allPlayers[pr.player_id]?.age,
                   college: allPlayers[pr.player_id]?.college,
                   yearsExp: allPlayers[pr.player_id]?.years_exp,
-                  matchup: undefined // Matchups not needed for saved rankings display
+                  matchup: matchups && (matchups as any)[pr.team] ? {
+                    opponent: (matchups as any)[pr.team].opponent,
+                    isHome: (matchups as any)[pr.team].isHome,
+                    week: (matchups as any)[pr.team].week
+                  } : undefined
                 })).sort((a: any, b: any) => a.rank - b.rank);
                 
                 setPlayers(savedPlayers);
@@ -251,7 +282,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     if (!favoritesLoading) {
       fetchData();
     }
-  }, [positionFilter, selectedWeek, favorites, favoritesLoading]);
+  }, [positionFilter, selectedWeek, scoringFormat, favorites, favoritesLoading]);
 
   const toggleStar = async (playerId: string) => {
     const player = players.find(p => p.id === playerId);

@@ -16,7 +16,8 @@ export const transformSleeperData = (
   projections: PlayerProjections,
   starredPlayers: Set<string>,
   positionFilter: string = 'OVR',
-  matchups?: Record<string, any>
+  matchups?: Record<string, any>,
+  scoringFormat: string = 'half_ppr'
 ): RankingPlayer[] => {
   const playerArray = Object.values(players);
   
@@ -59,7 +60,20 @@ export const transformSleeperData = (
         name: `${player.first_name} ${player.last_name}`,
         team: player.team,
         position: player.position, // Use position directly since we only allow QB, RB, WR, TE
-        projectedPoints: projections[player.player_id]?.pts_ppr || 0,
+        projectedPoints: (() => {
+          const projection = projections[player.player_id];
+          if (!projection) return 0;
+          
+          switch (scoringFormat) {
+            case 'std':
+              return projection.pts_std || 0;
+            case 'ppr':
+              return projection.pts_ppr || 0;
+            case 'half_ppr':
+            default:
+              return projection.pts_half_ppr || (projection.pts_ppr ? projection.pts_ppr * 0.95 : 0);
+          }
+        })(),
         avatarUrl: getPlayerAvatarURL(player.player_id),
         teamLogoUrl: getTeamLogoURL(player.team),
         isStarred: starredPlayers.has(player.player_id),

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchInput } from "@/components/ui/search-input"
 import { GradientButton } from "@/components/ui/gradient-button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import {
   Filter,
   GripVertical,
@@ -40,10 +41,17 @@ import { RankingCutoffSeparator } from "@/components/ranking/ranking-cutoff-sepa
 import { RankingPlayer } from "@/lib/types"
 import { getAvailableWeeks, getCurrentSeasonInfo, getDefaultWeek } from "@/lib/utils/season"
 import { getPositionLimits } from "@/lib/constants/position-limits"
+import { getPositionColor } from "@/lib/sleeper-utils"
 
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
   const [selectedWeek, setSelectedWeek] = useState<number | 'preseason' | null>(null)
+  const [scoringFormat, setScoringFormat] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('rankbet-scoring-format') || 'half_ppr';
+    }
+    return 'half_ppr';
+  })
   const [searchTerm, setSearchTerm] = useState("")
   const [myGuysFilter, setMyGuysFilter] = useState("All")
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
@@ -58,6 +66,13 @@ export default function Rankings() {
     }
   }, [selectedWeek]);
 
+  // Save scoring format to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('rankbet-scoring-format', scoringFormat);
+    }
+  }, [scoringFormat]);
+
   const { 
     players, 
     loading, 
@@ -69,7 +84,7 @@ export default function Rankings() {
     updatePlayerRank,
     starredPlayers,
     saveRankings 
-  } = useSleeperRankings(selectedPosition, selectedWeek || undefined)
+  } = useSleeperRankings(selectedPosition, selectedWeek || undefined, scoringFormat)
 
   const { setRightButtons } = useHeaderButtons()
 
@@ -202,6 +217,20 @@ export default function Rankings() {
               ))}
             </div>
             
+            {/* Scoring Format */}
+            <div className="border-t border-gray-200 pt-4 mb-4">
+              <h4 className="font-medium mb-2">Scoring Format</h4>
+              <SegmentedControl
+                value={scoringFormat}
+                onChange={setScoringFormat}
+                options={[
+                  { label: "Standard", value: "std" },
+                  { label: "Half PPR", value: "half_ppr" },
+                  { label: "Full PPR", value: "ppr" }
+                ]}
+              />
+            </div>
+            
             {/* Week Selection */}
             <div className="border-t border-gray-200 pt-4">
               <h4 className="font-medium mb-2">Week Selection</h4>
@@ -267,16 +296,30 @@ export default function Rankings() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {myGuys.slice(0, 5).map(player => (
-                <div key={player.id} className="flex items-center gap-2 text-sm">
-                  <span className="font-medium">#{player.rank}</span>
-                  <span className="truncate">{player.name}</span>
-                  <span className="text-gray-500">{player.position}</span>
+                <div key={player.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-gray-900">#{player.rank}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
+                      {player.position}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium text-sm text-gray-900">{player.name}</div>
+                    <div className="text-xs text-gray-500">{player.team}</div>
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium">
+                    {player.projectedPoints > 0 ? player.projectedPoints.toFixed(1) : '--'} pts
+                  </div>
                 </div>
               ))}
               {myGuys.length === 0 && (
-                <p className="text-sm text-gray-500">No starred players yet</p>
+                <div className="text-center py-4">
+                  <div className="text-gray-400 mb-2">⭐</div>
+                  <p className="text-sm text-gray-500">No starred players yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Star players to add them here</p>
+                </div>
               )}
             </div>
           </div>
@@ -296,10 +339,9 @@ export default function Rankings() {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleSaveRankings}>
-                <Save className="w-4 h-4 mr-2" />
+              <GradientButton onClick={handleSaveRankings} icon={Save}>
                 Save
-              </Button>
+              </GradientButton>
               <Button variant="outline" onClick={handleShareRankings}>
                 <Share className="w-4 h-4 mr-2" />
                 Share
