@@ -69,13 +69,18 @@ export function getAvailableWeeks(): Array<{ value: string; label: string; isCur
   weeks.push({
     value: 'preseason',
     label: 'Pre-Season',
-    isCurrent: seasonInfo.isPreSeason,
+    isCurrent: seasonInfo.isPreSeason, // Current during preseason
     isFuture: false
   });
   
   // Add weekly options
   for (let week = 1; week <= 18; week++) {
-    const isCurrent = seasonInfo.currentWeek === week;
+    // During preseason, both preseason and week 1 are "current"
+    // During regular season, only the actual current week is "current"
+    const isCurrent = seasonInfo.isPreSeason 
+      ? week === 1 // Week 1 is also current during preseason
+      : seasonInfo.currentWeek === week; // Normal current week logic during season
+      
     const isFuture = seasonInfo.isRegularSeason && week > (seasonInfo.currentWeek || 0);
     
     weeks.push({
