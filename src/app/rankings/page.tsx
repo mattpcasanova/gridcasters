@@ -46,7 +46,7 @@ import { getPositionColor } from "@/lib/sleeper-utils"
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
   const [selectedWeek, setSelectedWeek] = useState<number | 'preseason' | null>(null)
-  const [hasPreseasonRankings, setHasPreseasonRankings] = useState(false)
+  const [hasPreseasonRankings, setHasPreseasonRankings] = useState<boolean | null>(null) // null = loading
   const [scoringFormat, setScoringFormat] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('rankbet-scoring-format') || 'half_ppr';
@@ -58,9 +58,9 @@ export default function Rankings() {
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   
-  // Check if user has preseason rankings
+  // Check if user has preseason rankings and initialize week
   useEffect(() => {
-    const checkPreseasonRankings = async () => {
+    const initializeWeekSelection = async () => {
       try {
         const seasonInfo = getCurrentSeasonInfo();
         const queryParams = new URLSearchParams({
@@ -70,26 +70,45 @@ export default function Rankings() {
         });
         
         const response = await fetch(`/api/rankings?${queryParams.toString()}`);
+        let hasPreseasonData = false;
+        
         if (response.ok) {
           const { rankings } = await response.json();
-          setHasPreseasonRankings(rankings && rankings.length > 0);
+          hasPreseasonData = rankings && rankings.length > 0;
         }
+        
+        setHasPreseasonRankings(hasPreseasonData);
+        
+        // Set default week based on preseason rankings status
+        if (selectedWeek === null) {
+          const defaultWeek = getDefaultWeek(hasPreseasonData);
+          
+          // If it's preseason and user has saved preseason rankings, default to week 1
+          // Otherwise, if it's preseason and no saved rankings, default to preseason
+          if (seasonInfo.isPreSeason && hasPreseasonData) {
+            setSelectedWeek(1);
+          } else if (seasonInfo.isPreSeason && !hasPreseasonData) {
+            setSelectedWeek('preseason');
+          } else {
+            setSelectedWeek(defaultWeek);
+          }
+        }
+        
       } catch (error) {
         console.log('Could not check preseason rankings:', error);
+        setHasPreseasonRankings(false);
+        
+        // Fallback to default logic
+        if (selectedWeek === null) {
+          const seasonInfo = getCurrentSeasonInfo();
+          const defaultWeek = getDefaultWeek(false);
+          setSelectedWeek(seasonInfo.isPreSeason ? 'preseason' : defaultWeek);
+        }
       }
     };
     
-    checkPreseasonRankings();
-  }, []);
-
-  // Initialize selected week on mount
-  useEffect(() => {
-    if (selectedWeek === null) {
-      const seasonInfo = getCurrentSeasonInfo();
-      const defaultWeek = getDefaultWeek(hasPreseasonRankings);
-      setSelectedWeek(seasonInfo.isPreSeason && !hasPreseasonRankings ? 'preseason' : defaultWeek);
-    }
-  }, [selectedWeek, hasPreseasonRankings]);
+    initializeWeekSelection();
+  }, []); // Only run once on mount
 
   // Save scoring format to localStorage when it changes
   useEffect(() => {
@@ -148,6 +167,12 @@ export default function Rankings() {
         // If this was a preseason ranking save, update the state
         if (rankingType === 'preseason') {
           setHasPreseasonRankings(true);
+          
+          // After saving preseason rankings, switch to week 1 if we're still in preseason
+          const seasonInfo = getCurrentSeasonInfo();
+          if (seasonInfo.isPreSeason) {
+            setSelectedWeek(1);
+          }
         }
         
         alert(message);

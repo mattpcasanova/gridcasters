@@ -159,21 +159,21 @@ export class SleeperAPI {
         
         if (!response2024.ok) {
           // Return mock matchup data for testing
-          console.log('Using mock matchup data for testing');
+          console.log('🔶 Using mock matchup data (2025 season schedule not yet available)');
           return this.getMockMatchups();
         }
         
         const matchups = await response2024.json();
-        console.log('Successfully fetched 2024 matchups:', Object.keys(matchups).length);
+        console.log(`✅ Successfully fetched 2024 matchups as fallback:`, Object.keys(matchups).length, 'games');
         return this.transformMatchups(matchups, week);
       }
       
       const matchups = await response.json();
-      console.log('Successfully fetched matchups:', Object.keys(matchups).length);
+      console.log(`✅ Successfully fetched REAL ${season} matchups:`, Object.keys(matchups).length, 'games');
       return this.transformMatchups(matchups, week);
     } catch (error) {
       console.warn(`Failed to fetch matchups for week ${week}:`, error);
-      console.log('Returning mock matchup data as fallback');
+      console.log('🔶 Returning mock matchup data as fallback');
       return this.getMockMatchups();
     }
   }
