@@ -20,18 +20,20 @@ export function PlayerModal({ player, isOpen, onClose, onStar }: PlayerModalProp
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <img 
-                src={player.avatarUrl}
-                alt={player.name}
-                className="w-16 h-16 rounded-full bg-gray-200"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = player.teamLogoUrl;
-                  target.onerror = () => {
-                    target.src = '/placeholder-user.jpg';
-                  };
-                }}
-              />
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5">
+                <img 
+                  src={player.avatarUrl}
+                  alt={player.name}
+                  className="w-full h-full rounded-full bg-gray-200 object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = player.teamLogoUrl;
+                    target.onerror = () => {
+                      target.src = '/placeholder-user.jpg';
+                    };
+                  }}
+                />
+              </div>
               {player.injuryStatus && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
               )}
@@ -53,6 +55,11 @@ export function PlayerModal({ player, isOpen, onClose, onStar }: PlayerModalProp
                     }}
                   />
                   <span className="font-medium text-gray-700">{player.team}</span>
+                  {player.matchup && (
+                    <span className="text-blue-600 font-medium">
+                      {player.matchup.isHome ? 'vs' : '@'} {player.matchup.opponent}
+                    </span>
+                  )}
                 </div>
                 {player.injuryStatus && (
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${getInjuryStatusColor(player.injuryStatus)}`}>

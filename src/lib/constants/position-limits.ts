@@ -1,8 +1,8 @@
 // Position limits for rankings
 export const POSITION_LIMITS = {
   QB: { rankingLimit: 24, displayLimit: 30 },
-  RB: { rankingLimit: 48, displayLimit: 60 },
-  WR: { rankingLimit: 48, displayLimit: 60 },
+  RB: { rankingLimit: 36, displayLimit: 60 },
+  WR: { rankingLimit: 36, displayLimit: 60 },
   TE: { rankingLimit: 24, displayLimit: 30 },
   OVR: { rankingLimit: 120, displayLimit: 150 },
   FLX: { rankingLimit: 96, displayLimit: 120 }

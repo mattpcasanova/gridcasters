@@ -4,16 +4,17 @@ import { SleeperAPI } from '@/lib/sleeper-api';
 import { transformSleeperData } from '@/lib/sleeper-utils';
 import { RankingPlayer } from '@/lib/types';
 import { getCurrentSeasonInfo, getDefaultRankingType, getDefaultWeek } from '@/lib/utils/season';
+import { useFavorites } from '@/lib/hooks/use-favorites';
 
 export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?: number | 'preseason') {
   const [players, setPlayers] = useState<RankingPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [starredPlayers, setStarredPlayers] = useState<Set<string>>(new Set());
   const [currentWeek, setCurrentWeek] = useState<number | null>(null);
   const [rankingType, setRankingType] = useState<'preseason' | 'weekly'>('weekly');
 
   const sleeperAPI = new SleeperAPI();
+  const { favorites, isFavorite, toggleFavorite: toggleFavoriteDB, loading: favoritesLoading } = useFavorites();
 
   // Helper function to load default or previous ranking
   const loadDefaultOrPreviousRanking = async (
@@ -52,7 +53,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
                 avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
                 teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
-                isStarred: pr.is_starred,
+                isStarred: isFavorite(pr.player_id),
                 rank: index + 1, // Maintain the previous ranking order
                 injuryStatus: allPlayers[pr.player_id]?.injury_status,
                 age: allPlayers[pr.player_id]?.age,
@@ -62,10 +63,6 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
               }));
             
             setPlayers(baseOrder);
-            
-            // Update starred players set
-            const starredIds = baseOrder.filter((p: any) => p.isStarred).map((p: any) => p.id);
-            setStarredPlayers(new Set(starredIds));
             return;
           }
         }
@@ -78,7 +75,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     const transformedPlayers = transformSleeperData(
       allPlayers,
       projections,
-      starredPlayers,
+      new Set(favorites.map(f => f.player_id)),
       positionFilter,
       matchups
     );
@@ -216,7 +213,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                   projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
                   avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
                   teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
-                  isStarred: pr.is_starred,
+                  isStarred: isFavorite(pr.player_id),
                   rank: pr.rank_position,
                   injuryStatus: allPlayers[pr.player_id]?.injury_status,
                   age: allPlayers[pr.player_id]?.age,
@@ -226,10 +223,6 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 })).sort((a: any, b: any) => a.rank - b.rank);
                 
                 setPlayers(savedPlayers);
-                
-                // Update starred players set
-                const starredIds = savedPlayers.filter((p: any) => p.isStarred).map((p: any) => p.id);
-                setStarredPlayers(new Set(starredIds));
               } else {
                 // No saved ranking - try to load previous ranking as default for future weeks
                 await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
@@ -254,25 +247,29 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
       }
     };
 
-    fetchData();
-  }, [positionFilter, selectedWeek]);
+    // Only fetch data when favorites are loaded
+    if (!favoritesLoading) {
+      fetchData();
+    }
+  }, [positionFilter, selectedWeek, favorites, favoritesLoading]);
 
-  const toggleStar = (playerId: string) => {
-    setStarredPlayers(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(playerId)) {
-        newSet.delete(playerId);
-      } else {
-        newSet.add(playerId);
-      }
-      return newSet;
+  const toggleStar = async (playerId: string) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    // Update the database
+    await toggleFavoriteDB({
+      id: player.id,
+      name: player.name,
+      team: player.team,
+      position: player.position
     });
 
     // Update the players array
-    setPlayers(prev => prev.map(player => 
-      player.id === playerId 
-        ? { ...player, isStarred: !player.isStarred }
-        : player
+    setPlayers(prev => prev.map(p => 
+      p.id === playerId 
+        ? { ...p, isStarred: !p.isStarred }
+        : p
     ));
   };
 
@@ -352,14 +349,14 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
 
   return {
     players,
-    loading,
+    loading: loading || favoritesLoading,
     error,
     currentWeek,
     rankingType,
     toggleStar,
     reorderPlayers,
     updatePlayerRank,
-    starredPlayers: Array.from(starredPlayers),
+    starredPlayers: favorites.map(f => f.player_id),
     saveRankings
   };
 } 

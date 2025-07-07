@@ -186,7 +186,7 @@ export default function Rankings() {
           {/* Position Filter */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
             <h3 className="font-semibold mb-3">Position Filter</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-4">
               {["OVR", "FLX", "QB", "RB", "WR", "TE"].map((position) => (
                 <button
                   key={position}
@@ -200,6 +200,51 @@ export default function Rankings() {
                   {position}
                 </button>
               ))}
+            </div>
+            
+            {/* Week Selection */}
+            <div className="border-t border-gray-200 pt-4">
+              <h4 className="font-medium mb-2">Week Selection</h4>
+              <Select 
+                value={selectedWeek?.toString() || 'preseason'} 
+                onValueChange={(value) => {
+                  if (value === 'preseason') {
+                    setSelectedWeek('preseason');
+                  } else {
+                    setSelectedWeek(parseInt(value));
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableWeeks().map((week) => (
+                    <SelectItem 
+                      key={week.value} 
+                      value={week.value}
+                      className={`
+                        ${week.isCurrent ? 'bg-blue-50 text-blue-700 font-semibold' : ''}
+                        ${week.isFuture ? 'text-gray-500' : ''}
+                      `}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span>{week.label}</span>
+                        {week.isCurrent && (
+                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-2">
+                            Current
+                          </span>
+                        )}
+                        {week.isFuture && (
+                          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full ml-2">
+                            Future
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -236,50 +281,7 @@ export default function Rankings() {
             </div>
           </div>
 
-          {/* Week Selection */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="font-semibold mb-3">Week Selection</h3>
-            <Select 
-              value={selectedWeek?.toString() || 'preseason'} 
-              onValueChange={(value) => {
-                if (value === 'preseason') {
-                  setSelectedWeek('preseason');
-                } else {
-                  setSelectedWeek(parseInt(value));
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {getAvailableWeeks().map((week) => (
-                  <SelectItem 
-                    key={week.value} 
-                    value={week.value}
-                    className={`
-                      ${week.isCurrent ? 'bg-blue-50 text-blue-700 font-semibold' : ''}
-                      ${week.isFuture ? 'text-gray-500' : ''}
-                    `}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span>{week.label}</span>
-                      {week.isCurrent && (
-                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-2">
-                          Current
-                        </span>
-                      )}
-                      {week.isFuture && (
-                        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full ml-2">
-                          Future
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
         </div>
 
         {/* Main Content */}
