@@ -55,9 +55,9 @@ export function RootLayoutClient({ children, initialSession }: RootLayoutClientP
   // During hydration, always render the same structure
   if (!mounted) {
     return (
-      <>
+      <LeaderboardProvider>
         {children}
-      </>
+      </LeaderboardProvider>
     );
   }
 
@@ -67,7 +67,11 @@ export function RootLayoutClient({ children, initialSession }: RootLayoutClientP
 
   // Don't show navigation header for non-signed in users, auth pages, or homepage
   if (!isSignedIn || isAuthPage || isHomePage) {
-    return <>{children}</>;
+    return (
+      <LeaderboardProvider>
+        {children}
+      </LeaderboardProvider>
+    );
   }
 
   return (

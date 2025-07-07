@@ -44,17 +44,17 @@ export function useRecentActivity() {
       }
 
       const formattedRankings = rankings?.map((ranking: any) => {
-        const isCurrentWeek = ranking.week === 8; // This should be dynamic based on current week
+        const isCurrentWeek = ranking.type === 'weekly' && ranking.week === 8; // This should be dynamic based on current week
         const weekLabel = ranking.type === 'preseason' ? 'Pre-Season' : `Week ${ranking.week}`;
         
         return {
           id: ranking.id,
           name: `${weekLabel} ${ranking.position} Rankings`,
-          accuracy: isCurrentWeek ? null : Math.floor(Math.random() * 20) + 80, // Mock accuracy for completed weeks
+          accuracy: (isCurrentWeek || ranking.type === 'preseason') ? null : Math.floor(Math.random() * 20) + 80, // Mock accuracy for active weeks and preseason
           trend: Math.random() > 0.5 ? 'up' : 'down',
           date: formatRelativeTime(ranking.updated_at),
           position: ranking.position,
-          status: isCurrentWeek ? 'active' : 'completed',
+          status: (isCurrentWeek || ranking.type === 'preseason') ? 'active' : 'completed',
           week: ranking.type === 'preseason' ? 'preseason' : `week${ranking.week}`,
           type: ranking.type
         } as RecentRanking;

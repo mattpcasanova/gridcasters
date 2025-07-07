@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 
 // Helper function to update individual position rankings based on OVR ranking
-async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number, season: number, type: string) {
+async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string) {
   // Group players by position from the OVR ranking
   const playersByPosition: Record<string, any[]> = {};
   
@@ -19,15 +19,22 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
     const sortedPlayers = positionPlayers.sort((a, b) => a.rank - b.rank);
     
     // Check if a ranking already exists for this position
-    const { data: existingPositionRanking, error: fetchError } = await supabase
+    let positionQuery = supabase
       .from('rankings')
       .select('id')
       .eq('user_id', userId)
       .eq('position', pos)
-      .eq('week', week)
       .eq('season', season)
-      .eq('type', type)
-      .single();
+      .eq('type', type);
+
+    // Handle week parameter - use is() for null values, eq() for integers
+    if (week === null) {
+      positionQuery = positionQuery.is('week', null);
+    } else {
+      positionQuery = positionQuery.eq('week', week);
+    }
+
+    const { data: existingPositionRanking, error: fetchError } = await positionQuery.single();
 
     let positionRankingId: string;
 
@@ -38,7 +45,7 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
       await supabase
         .from('rankings')
         .update({
-          title: `Week ${week} ${pos} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${pos} Rankings` : `Week ${week} ${pos} Rankings`,
           updated_at: new Date().toISOString()
         })
         .eq('id', positionRankingId);
@@ -54,7 +61,7 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
         .from('rankings')
         .insert({
           user_id: userId,
-          title: `Week ${week} ${pos} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${pos} Rankings` : `Week ${week} ${pos} Rankings`,
           position: pos,
           type,
           week,
@@ -78,7 +85,7 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
       player_id: player.id,
       player_name: player.name,
       team: player.team,
-      position: player.position,
+      position: pos, // Use the ranking position (QB, RB, WR, TE) instead of individual player position
       rank_position: index + 1, // Re-rank starting from 1 for each position
       is_starred: player.isStarred || false
     }));
@@ -100,9 +107,14 @@ export async function POST(request: NextRequest) {
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
+    console.log('Auth check:', { user: user?.id, authError });
+    
     if (authError || !user) {
+      console.error('Authentication failed:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    console.log('Authenticated user ID:', user.id);
 
     const { players, position, week, season, type = 'weekly' } = await request.json();
 
@@ -110,16 +122,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Convert week to proper null value for preseason rankings
+    const weekValue = (type === 'preseason' || week === 'null' || week === null) ? null : parseInt(week);
+
     // Check if a ranking already exists for this user, position, week, and season
-    const { data: existingRanking, error: fetchError } = await supabase
+    let query = supabase
       .from('rankings')
       .select('id')
       .eq('user_id', user.id)
       .eq('position', position)
-      .eq('week', week)
       .eq('season', season)
-      .eq('type', type)
-      .single();
+      .eq('type', type);
+
+    // Handle week parameter - use is() for null values, eq() for integers
+    if (weekValue === null) {
+      query = query.is('week', null);
+    } else {
+      query = query.eq('week', weekValue);
+    }
+
+    const { data: existingRanking, error: fetchError } = await query.single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error checking existing ranking:', fetchError);
@@ -131,11 +153,12 @@ export async function POST(request: NextRequest) {
     if (existingRanking) {
       // Update existing ranking
       rankingId = existingRanking.id;
+      console.log('Found existing ranking with ID:', rankingId);
       
       const { error: updateError } = await supabase
         .from('rankings')
         .update({
-          title: `Week ${week} ${position} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${position} Rankings` : `Week ${weekValue} ${position} Rankings`,
           updated_at: new Date().toISOString()
         })
         .eq('id', rankingId);
@@ -161,10 +184,10 @@ export async function POST(request: NextRequest) {
         .from('rankings')
         .insert({
           user_id: user.id,
-          title: `Week ${week} ${position} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${position} Rankings` : `Week ${weekValue} ${position} Rankings`,
           position,
           type,
-          week,
+          week: weekValue,
           season,
           is_active: true
         })
@@ -177,18 +200,49 @@ export async function POST(request: NextRequest) {
       }
 
       rankingId = newRanking.id;
+      console.log('Successfully created ranking with ID:', rankingId);
     }
 
-    // Insert player rankings
-    const playerRankings = players.map((player: any) => ({
-      ranking_id: rankingId,
-      player_id: player.id,
-      player_name: player.name,
-      team: player.team,
-      position: player.position,
-      rank_position: player.rank,
-      is_starred: player.isStarred || false
-    }));
+    // Insert player rankings with validation
+    const playerRankings = players.map((player: any, index: number) => {
+      // Validate required fields
+      if (!player.id || !player.name || !player.team || !player.position || !player.rank) {
+        console.error(`Player at index ${index} missing required fields:`, player);
+        throw new Error(`Player at index ${index} missing required fields`);
+      }
+
+      // For player rankings, use the ranking position, not the individual player's NFL position
+      // This ensures consistency with our fantasy position constraints
+      const playerPosition = position; // Use the ranking position (QB, RB, WR, TE, OVR, FLX)
+      
+      console.log(`Player ${player.name}: NFL position="${player.position}", Using ranking position="${playerPosition}"`);
+
+      return {
+        ranking_id: rankingId,
+        player_id: String(player.id), // Ensure player_id is a string
+        player_name: player.name,
+        team: player.team,
+        position: playerPosition, // Use the ranking position instead of individual player position
+        rank_position: parseInt(player.rank), // Ensure rank_position is an integer
+        is_starred: Boolean(player.isStarred || false)
+      };
+    });
+
+    console.log('Attempting to insert player rankings:', JSON.stringify(playerRankings.slice(0, 2), null, 2)); // Log first 2 for debugging
+
+    // Verify ranking exists before inserting player rankings
+    const { data: rankingExists, error: verifyError } = await supabase
+      .from('rankings')
+      .select('id')
+      .eq('id', rankingId)
+      .single();
+
+    if (verifyError || !rankingExists) {
+      console.error('Ranking verification failed:', verifyError);
+      return NextResponse.json({ error: 'Ranking does not exist before inserting players' }, { status: 500 });
+    }
+
+    console.log('Ranking verified, proceeding with player rankings insertion');
 
     const { error: insertError } = await supabase
       .from('player_rankings')
@@ -196,12 +250,28 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error inserting player rankings:', insertError);
-      return NextResponse.json({ error: 'Failed to save player rankings' }, { status: 500 });
+      console.error('Sample player ranking data:', JSON.stringify(playerRankings[0], null, 2));
+      
+      // If it's a constraint violation, let's try to fix it by creating a new constraint
+      if (insertError.code === '23514') {
+        console.log('Constraint violation detected. The allowed positions might be different than expected.');
+        console.log('Expected positions: QB, RB, WR, TE, OVR, FLX');
+        console.log('Actual position in data:', playerRankings[0]?.position);
+        
+        // Try to provide more helpful error message
+        return NextResponse.json({ 
+          error: 'Database constraint violation: The position field has restrictions that do not match our expected values.',
+          details: `Position '${playerRankings[0]?.position}' is not allowed by database constraint. Expected: QB, RB, WR, TE, OVR, FLX`,
+          constraintCode: insertError.code
+        }, { status: 500 });
+      }
+      
+      return NextResponse.json({ error: 'Failed to save player rankings', details: insertError.message }, { status: 500 });
     }
 
     // If this is an OVR ranking, update individual position rankings to maintain consistency
     if (position === 'OVR') {
-      await updatePositionRankingsFromOVR(supabase, user.id, players, week, season, type);
+      await updatePositionRankingsFromOVR(supabase, user.id, players, weekValue, season, type);
     }
 
     return NextResponse.json({ 
