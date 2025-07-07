@@ -1,4 +1,5 @@
 import { SleeperPlayer, PlayerProjections, RankingPlayer } from '@/lib/types';
+import { getPositionLimits } from '@/lib/constants/position-limits';
 
 export const getPlayerAvatarURL = (playerId: string): string => {
   return `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`;
@@ -8,18 +9,34 @@ export const getTeamLogoURL = (teamAbbr: string): string => {
   return `https://sleepercdn.com/images/team_logos/nfl/${teamAbbr?.toLowerCase()}.png`;
 };
 
+// No longer need position mapping since we only use QB, RB, WR, TE
+
 export const transformSleeperData = (
   players: Record<string, SleeperPlayer>,
   projections: PlayerProjections,
   starredPlayers: Set<string>,
-  positionFilter: string = 'OVR'
+  positionFilter: string = 'OVR',
+  matchups?: Record<string, any>
 ): RankingPlayer[] => {
   const playerArray = Object.values(players);
   
-  // Filter by position
+  // Filter by position - only include relevant fantasy positions
   let filteredPlayers = playerArray.filter(player => {
-    if (positionFilter === 'OVR') return true;
-    if (positionFilter === 'FLX') return ['RB', 'WR', 'TE'].includes(player.position);
+    // Only include fantasy-relevant positions: QB, RB, WR, TE
+    const validPositions = ['QB', 'RB', 'WR', 'TE'];
+    if (!validPositions.includes(player.position)) {
+      return false;
+    }
+    
+    if (positionFilter === 'OVR') {
+      // OVR includes QB, RB, WR, TE
+      return ['QB', 'RB', 'WR', 'TE'].includes(player.position);
+    }
+    if (positionFilter === 'FLX') {
+      // FLX includes RB, WR, TE
+      return ['RB', 'WR', 'TE'].includes(player.position);
+    }
+    // For specific positions (QB, RB, WR, TE)
     return player.position === positionFilter;
   });
 
@@ -31,25 +48,40 @@ export const transformSleeperData = (
     player.team !== null
   );
 
-  // Transform and sort by projected points
+  // Get position limits
+  const limits = getPositionLimits(positionFilter);
+
+  // Transform players
   const transformedPlayers: RankingPlayer[] = filteredPlayers
-    .map(player => ({
-      id: player.player_id,
-      name: `${player.first_name} ${player.last_name}`,
-      team: player.team,
-      position: player.position,
-      projectedPoints: projections[player.player_id]?.pts_ppr || 0,
-      avatarUrl: getPlayerAvatarURL(player.player_id),
-      teamLogoUrl: getTeamLogoURL(player.team),
-      isStarred: starredPlayers.has(player.player_id),
-      rank: 0, // Will be set after sorting
-      injuryStatus: player.injury_status,
-      age: player.age,
-      college: player.college,
-      yearsExp: player.years_exp
-    }))
+    .map(player => {
+      return {
+        id: player.player_id,
+        name: `${player.first_name} ${player.last_name}`,
+        team: player.team,
+        position: player.position, // Use position directly since we only allow QB, RB, WR, TE
+        projectedPoints: projections[player.player_id]?.pts_ppr || 0,
+        avatarUrl: getPlayerAvatarURL(player.player_id),
+        teamLogoUrl: getTeamLogoURL(player.team),
+        isStarred: starredPlayers.has(player.player_id),
+        rank: 0, // Will be set after sorting
+        injuryStatus: player.injury_status,
+        age: player.age,
+        college: player.college,
+        yearsExp: player.years_exp,
+        matchup: matchups && matchups[player.team] ? {
+          opponent: matchups[player.team].opponent,
+          isHome: matchups[player.team].isHome,
+          week: matchups[player.team].week
+        } : undefined
+      };
+    })
+    // Filter out players with no projected points (0 points)
+    .filter(player => player.projectedPoints > 0)
+    // Sort by projected points (descending)
     .sort((a, b) => b.projectedPoints - a.projectedPoints)
-    .slice(0, 50) // Top 50 players for performance
+    // Apply position-specific display limit
+    .slice(0, limits.displayLimit)
+    // Set ranks after filtering and sorting
     .map((player, index) => ({
       ...player,
       rank: index + 1
@@ -79,9 +111,7 @@ export const getPositionColor = (position: string): string => {
     QB: 'bg-red-100 text-red-800',
     RB: 'bg-green-100 text-green-800',
     WR: 'bg-blue-100 text-blue-800',
-    TE: 'bg-yellow-100 text-yellow-800',
-    K: 'bg-purple-100 text-purple-800',
-    DEF: 'bg-gray-100 text-gray-800'
+    TE: 'bg-yellow-100 text-yellow-800'
   };
   return colors[position as keyof typeof colors] || 'bg-gray-100 text-gray-800';
 }; 

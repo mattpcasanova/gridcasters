@@ -74,20 +74,22 @@ export function PlayerRankingCard({
 
       {/* Player Avatar */}
       <div className="relative">
-        <img 
-          src={player.avatarUrl}
-          alt={player.name}
-          className="w-12 h-12 rounded-full bg-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={onPlayerClick}
-          onError={(e) => {
-            // Fallback to team logo or placeholder
-            const target = e.target as HTMLImageElement;
-            target.src = player.teamLogoUrl;
-            target.onerror = () => {
-              target.src = '/placeholder-user.jpg';
-            };
-          }}
-        />
+        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5">
+          <img 
+            src={player.avatarUrl}
+            alt={player.name}
+            className="w-full h-full rounded-full bg-gray-200 cursor-pointer hover:opacity-80 transition-opacity object-cover"
+            onClick={onPlayerClick}
+            onError={(e) => {
+              // Fallback to team logo or placeholder
+              const target = e.target as HTMLImageElement;
+              target.src = player.teamLogoUrl;
+              target.onerror = () => {
+                target.src = '/placeholder-user.jpg';
+              };
+            }}
+          />
+        </div>
         {player.injuryStatus && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
         )}
@@ -123,6 +125,11 @@ export function PlayerRankingCard({
             }}
           />
           <span className="font-medium">{player.team}</span>
+          {player.matchup && (
+            <span className="text-blue-600 font-medium">
+              {player.matchup.isHome ? 'vs' : '@'} {player.matchup.opponent}
+            </span>
+          )}
           {player.age && (
             <span className="text-gray-400">• {player.age}y</span>
           )}

@@ -36,8 +36,10 @@ import {
 import { useSleeperRankings } from "@/lib/hooks/use-sleeper-rankings"
 import { PlayerRankingCard } from "@/components/ranking/player-ranking-card"
 import { PlayerModal } from "@/components/ranking/player-modal"
+import { RankingCutoffSeparator } from "@/components/ranking/ranking-cutoff-separator"
 import { RankingPlayer } from "@/lib/types"
 import { getAvailableWeeks, getCurrentSeasonInfo, getDefaultWeek } from "@/lib/utils/season"
+import { getPositionLimits } from "@/lib/constants/position-limits"
 
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
@@ -312,25 +314,38 @@ export default function Rankings() {
                   ref={provided.innerRef}
                   className="space-y-3"
                 >
-                  {filteredPlayers.map((player, index) => (
-                    <Draggable key={player.id} draggableId={player.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <PlayerRankingCard
-                            player={player}
-                            onStar={() => toggleStar(player.id)}
-                            onRankChange={(newRank) => updatePlayerRank(player.id, newRank)}
-                            onPlayerClick={() => handlePlayerClick(player.id)}
-                            isDragging={snapshot.isDragging}
+                  {filteredPlayers.map((player, index) => {
+                    const limits = getPositionLimits(selectedPosition);
+                    const showCutoff = index === limits.rankingLimit - 1 && filteredPlayers.length > limits.rankingLimit;
+                    
+                    return (
+                      <div key={player.id}>
+                        <Draggable draggableId={player.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <PlayerRankingCard
+                                player={player}
+                                onStar={() => toggleStar(player.id)}
+                                onRankChange={(newRank) => updatePlayerRank(player.id, newRank)}
+                                onPlayerClick={() => handlePlayerClick(player.id)}
+                                isDragging={snapshot.isDragging}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                        {showCutoff && (
+                          <RankingCutoffSeparator 
+                            position={selectedPosition}
+                            rankingLimit={limits.rankingLimit}
                           />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                        )}
+                      </div>
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}

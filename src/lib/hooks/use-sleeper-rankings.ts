@@ -21,7 +21,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     projections: any, 
     seasonInfo: any, 
     weekToLoad: number | null, 
-    typeToLoad: 'preseason' | 'weekly'
+    typeToLoad: 'preseason' | 'weekly',
+    matchups: any = {}
   ) => {
     // For future weeks, try to find the most recent saved ranking to use as default
     if (typeToLoad === 'weekly' && weekToLoad && seasonInfo.isRegularSeason && weekToLoad > (seasonInfo.currentWeek || 0)) {
@@ -47,7 +48,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 id: pr.player_id,
                 name: pr.player_name,
                 team: pr.team,
-                position: pr.position,
+                position: allPlayers[pr.player_id]?.position || pr.position, // Use actual player position
                 projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
                 avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
                 teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
@@ -56,7 +57,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 injuryStatus: allPlayers[pr.player_id]?.injury_status,
                 age: allPlayers[pr.player_id]?.age,
                 college: allPlayers[pr.player_id]?.college,
-                yearsExp: allPlayers[pr.player_id]?.years_exp
+                yearsExp: allPlayers[pr.player_id]?.years_exp,
+                matchup: undefined // Not needed for fallback rankings
               }));
             
             setPlayers(baseOrder);
@@ -77,7 +79,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
       allPlayers,
       projections,
       starredPlayers,
-      positionFilter
+      positionFilter,
+      matchups
     );
     setPlayers(transformedPlayers);
   };
@@ -105,69 +108,141 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
           sleeperAPI.getNFLState()
         ]);
 
-        // Get projections only for weekly rankings
+        // Get projections based on ranking type
         let projections = {};
+        let matchups = {};
+        
         if (typeToLoad === 'weekly' && weekToLoad) {
           try {
             projections = await sleeperAPI.getProjections(weekToLoad);
+            // Get matchups for weekly rankings
+            matchups = await sleeperAPI.getMatchups(weekToLoad);
           } catch (err) {
-            console.log('Failed to fetch projections, using empty object');
+            console.log('Failed to fetch projections/matchups, using empty object');
+          }
+        } else if (typeToLoad === 'preseason') {
+          try {
+            // For preseason, sum up all weekly projections (weeks 1-18) for accurate season totals
+            const seasonProjections: Record<string, any> = {};
+            let successfulWeeks = 0;
+            
+            // Try current season first, then fall back to 2024
+            let season = 2025;
+            let hasValidData = false;
+            
+            // Test if we can get data from current season
+            try {
+              const testProjections = await sleeperAPI.getProjections(1, season);
+              const validProjections = Object.values(testProjections).filter((p: any) => p && p.pts_ppr && p.pts_ppr > 0);
+              if (validProjections.length > 100) {
+                hasValidData = true;
+              }
+            } catch {
+              // Current season failed
+            }
+            
+            if (!hasValidData) {
+              console.log('Current season projections insufficient, using 2024...');
+              season = 2024;
+            }
+            
+            // Fetch projections for all 18 weeks in parallel for speed
+            const weekPromises = [];
+            for (let week = 1; week <= 18; week++) {
+              weekPromises.push(
+                sleeperAPI.getProjections(week, season).catch((error) => {
+                  console.warn(`Failed to fetch projections for week ${week}:`, error);
+                  return null;
+                })
+              );
+            }
+            
+            const weeklyProjectionsArray = await Promise.all(weekPromises);
+            
+            // Sum up all the weekly projections
+            weeklyProjectionsArray.forEach((weeklyProjections, index) => {
+              if (weeklyProjections && Object.keys(weeklyProjections).length > 0) {
+                successfulWeeks++;
+                
+                Object.entries(weeklyProjections).forEach(([playerId, projection]: [string, any]) => {
+                  if (projection && projection.pts_ppr && projection.pts_ppr > 0) {
+                    if (!seasonProjections[playerId]) {
+                      seasonProjections[playerId] = { pts_ppr: 0, pts_half_ppr: 0, pts_std: 0 };
+                    }
+                    seasonProjections[playerId].pts_ppr += projection.pts_ppr || 0;
+                    seasonProjections[playerId].pts_half_ppr += projection.pts_half_ppr || projection.pts_ppr * 0.9 || 0;
+                    seasonProjections[playerId].pts_std += projection.pts_std || projection.pts_ppr * 0.8 || 0;
+                  }
+                });
+              }
+            });
+            
+            console.log(`Season projections created from ${successfulWeeks} weeks of data (${season} season)`);
+            projections = seasonProjections;
+          } catch (err) {
+            console.log('Failed to fetch season projections, using empty object');
           }
         }
 
-        // Check if user has a saved ranking for this position/week/season
-        try {
-          const queryParams = new URLSearchParams({
-            position: positionFilter,
-            season: seasonInfo.season.toString(),
-            type: typeToLoad
-          });
-          
-          if (weekToLoad) {
-            queryParams.append('week', weekToLoad.toString());
-          }
-          
-          const savedRankingResponse = await fetch(`/api/rankings?${queryParams.toString()}`);
-          
-          if (savedRankingResponse.ok) {
-            const { rankings } = await savedRankingResponse.json();
+        // For preseason rankings, always use fresh data to ensure we get the latest projections
+        if (typeToLoad === 'preseason') {
+          await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+        } else {
+          // Check if user has a saved ranking for this position/week/season  
+          try {
+            const queryParams = new URLSearchParams({
+              position: positionFilter,
+              season: seasonInfo.season.toString(),
+              type: typeToLoad
+            });
             
-            if (rankings && rankings.length > 0) {
-              // User has a saved ranking - use it
-              const savedRanking = rankings[0];
-              const savedPlayers = savedRanking.player_rankings.map((pr: any) => ({
-                id: pr.player_id,
-                name: pr.player_name,
-                team: pr.team,
-                position: pr.position,
-                projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
-                avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
-                teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
-                isStarred: pr.is_starred,
-                rank: pr.rank_position,
-                injuryStatus: allPlayers[pr.player_id]?.injury_status,
-                age: allPlayers[pr.player_id]?.age,
-                college: allPlayers[pr.player_id]?.college,
-                yearsExp: allPlayers[pr.player_id]?.years_exp
-              })).sort((a: any, b: any) => a.rank - b.rank);
-              
-              setPlayers(savedPlayers);
-              
-              // Update starred players set
-              const starredIds = savedPlayers.filter((p: any) => p.isStarred).map((p: any) => p.id);
-              setStarredPlayers(new Set(starredIds));
-            } else {
-              // No saved ranking - try to load previous ranking as default for future weeks
-              await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
+            if (weekToLoad) {
+              queryParams.append('week', weekToLoad.toString());
             }
-          } else {
-            // API error or no saved ranking - try to load previous ranking as default
-            await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
+            
+            const savedRankingResponse = await fetch(`/api/rankings?${queryParams.toString()}`);
+            
+            if (savedRankingResponse.ok) {
+              const { rankings } = await savedRankingResponse.json();
+              
+              if (rankings && rankings.length > 0) {
+                // User has a saved ranking - use it
+                const savedRanking = rankings[0];
+                const savedPlayers = savedRanking.player_rankings.map((pr: any) => ({
+                  id: pr.player_id,
+                  name: pr.player_name,
+                  team: pr.team,
+                  position: allPlayers[pr.player_id]?.position || pr.position, // Use actual player position from Sleeper data
+                  projectedPoints: (projections as any)[pr.player_id]?.pts_ppr || 0,
+                  avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
+                  teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
+                  isStarred: pr.is_starred,
+                  rank: pr.rank_position,
+                  injuryStatus: allPlayers[pr.player_id]?.injury_status,
+                  age: allPlayers[pr.player_id]?.age,
+                  college: allPlayers[pr.player_id]?.college,
+                  yearsExp: allPlayers[pr.player_id]?.years_exp,
+                  matchup: undefined // Matchups not needed for saved rankings display
+                })).sort((a: any, b: any) => a.rank - b.rank);
+                
+                setPlayers(savedPlayers);
+                
+                // Update starred players set
+                const starredIds = savedPlayers.filter((p: any) => p.isStarred).map((p: any) => p.id);
+                setStarredPlayers(new Set(starredIds));
+              } else {
+                // No saved ranking - try to load previous ranking as default for future weeks
+                await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+              }
+            } else {
+              // API error or no saved ranking - try to load previous ranking as default
+              await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+            }
+          } catch (fetchError) {
+            // Error fetching saved rankings (e.g., not authenticated) - use default Sleeper data
+            console.log('Could not fetch saved rankings, using default data:', fetchError);
+            await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
           }
-        } catch (fetchError) {
-          // Error fetching saved rankings (e.g., not authenticated) - use default Sleeper data
-          console.log('Could not fetch saved rankings, using default data:', fetchError);
-          await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
         }
 
         setError(null);
