@@ -15,6 +15,8 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { useRouter } from "next/navigation"
+import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
+import { useRecentActivity } from "@/lib/hooks/use-recent-activity"
 
 const getPositionColor = (position: string) => {
   switch (position) {
@@ -59,6 +61,16 @@ export default function Dashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  
+  const { 
+    selectedView, 
+    setSelectedView, 
+    getViewLabel, 
+    getLeaderboardData, 
+    getUserRank 
+  } = useLeaderboard()
+  
+  const { recentRankings, loading: activityLoading } = useRecentActivity()
   
   // Fetch user profile data
   useEffect(() => {
@@ -185,7 +197,7 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Leaderboard View</CardTitle>
-                <Select defaultValue="global">
+                <Select value={selectedView} onValueChange={setSelectedView}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select leaderboard" />
                   </SelectTrigger>
@@ -214,10 +226,10 @@ export default function Dashboard() {
 
           <StatCard
             title="League Rank"
-            value="#3"
+            value={`#${getUserRank(selectedView)}`}
             icon={Trophy}
             trend={{ value: "+2 positions", direction: "up", icon: ArrowUp }}
-            subtitle="in Global Rankings"
+            subtitle={`in ${getViewLabel(selectedView)}`}
           />
 
           <StatCard
@@ -245,62 +257,23 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    {
-                      name: "Week 8 QB Rankings",
-                      accuracy: null,
-                      trend: "up",
-                      date: "2 days ago",
-                      position: "QB",
-                      status: "active",
-                      week: "week8",
-                    },
-                    {
-                      name: "Week 8 RB Rankings",
-                      accuracy: null,
-                      trend: "up",
-                      date: "3 days ago",
-                      position: "RB",
-                      status: "active",
-                      week: "week8",
-                    },
-                    {
-                      name: "Week 8 WR Rankings",
-                      accuracy: null,
-                      trend: "up",
-                      date: "4 days ago",
-                      position: "WR",
-                      status: "active",
-                      week: "week8",
-                    },
-                    {
-                      name: "Week 7 QB Rankings",
-                      accuracy: 92,
-                      trend: "up",
-                      date: "1 week ago",
-                      position: "QB",
-                      status: "completed",
-                      week: "week7",
-                    },
-                    {
-                      name: "Week 7 RB Rankings",
-                      accuracy: 85,
-                      trend: "up",
-                      date: "1 week ago",
-                      position: "RB",
-                      status: "completed",
-                      week: "week7",
-                    },
-                    {
-                      name: "Week 7 WR Rankings",
-                      accuracy: 78,
-                      trend: "down",
-                      date: "1 week ago",
-                      position: "WR",
-                      status: "completed",
-                      week: "week7",
-                    },
-                  ].map((ranking, index) => (
+                  {activityLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                            <div className="w-16 h-6 bg-gray-200 rounded"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : recentRankings.length > 0 ? (
+                    recentRankings.map((ranking, index) => (
                     <Link
                       key={index}
                       href={`/rankings?week=${ranking.week}&position=${ranking.position}`}
@@ -340,7 +313,20 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </Link>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <BarChart3 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
+                      <p className="text-gray-600 mb-4">Create your first ranking to see activity here</p>
+                      <Link href="/rankings">
+                        <Button>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Ranking
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -350,50 +336,21 @@ export default function Dashboard() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Top Rankers</CardTitle>
-                <CardDescription>Global accuracy leaders this week</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Top Rankers</CardTitle>
+                    <CardDescription>{getViewLabel(selectedView)} leaders this week</CardDescription>
+                  </div>
+                  <Link href="/leaderboard">
+                    <Button variant="outline" size="sm">
+                      View All
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { 
-                      id: "sarah-k", 
-                      name: "Sarah K.", 
-                      username: "sarahk", 
-                      accuracy: 94, 
-                      rank: 1, 
-                      avatar: "/placeholder-user.jpg",
-                      followers: 1247
-                    },
-                    { 
-                      id: "mike-r", 
-                      name: "Mike R.", 
-                      username: "miker", 
-                      accuracy: 91, 
-                      rank: 2, 
-                      avatar: "/placeholder-user.jpg",
-                      followers: 892
-                    },
-                    { 
-                      id: "current-user", 
-                      name: profile ? getFirstName(profile) : "You", 
-                      username: profile?.username || "you", 
-                      accuracy: 87, 
-                      rank: 3, 
-                      isCurrentUser: true,
-                      avatar: "/placeholder-user.jpg",
-                      followers: 247
-                    },
-                    { 
-                      id: "alex-m", 
-                      name: "Alex M.", 
-                      username: "alexm", 
-                      accuracy: 85, 
-                      rank: 4, 
-                      avatar: "/placeholder-user.jpg",
-                      followers: 567
-                    },
-                  ].map((user, index) => (
+                <div className="space-y-3">
+                  {getLeaderboardData(selectedView).slice(0, 5).map((user, index) => (
                     <Link
                       key={index}
                       href={user.isCurrentUser ? "/profile" : `/profile/${user.username}`}
@@ -405,7 +362,7 @@ export default function Dashboard() {
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={user.avatar} />
                           <AvatarFallback>
-                            {user.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                            {user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>

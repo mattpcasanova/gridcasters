@@ -4,6 +4,7 @@ import { useEffect, useState, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSupabase } from '@/lib/hooks/use-supabase';
 import { NavigationHeader } from './navigation-header';
+import { LeaderboardProvider } from '@/lib/contexts/leaderboard-context';
 import type { Session } from '@supabase/supabase-js';
 
 interface RootLayoutClientProps {
@@ -70,11 +71,13 @@ export function RootLayoutClient({ children, initialSession }: RootLayoutClientP
   }
 
   return (
-    <HeaderContext.Provider value={{ setRightButtons }}>
-      <NavigationHeader isSignedIn={isSignedIn} rightButtons={rightButtons} />
-      <main className="min-h-[calc(100vh-4rem)]">
-        {children}
-      </main>
-    </HeaderContext.Provider>
+    <LeaderboardProvider>
+      <HeaderContext.Provider value={{ setRightButtons }}>
+        <NavigationHeader isSignedIn={isSignedIn} rightButtons={rightButtons} />
+        <main className="min-h-[calc(100vh-4rem)]">
+          {children}
+        </main>
+      </HeaderContext.Provider>
+    </LeaderboardProvider>
   );
 } 

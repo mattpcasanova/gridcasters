@@ -14,6 +14,7 @@ import { CircularProgress } from "@/components/ui/circular-progress"
 import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown } from "lucide-react"
 import Link from "next/link"
 import { useHeaderButtons } from "@/components/layout/root-layout-client"
+import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
 
 interface LeaderboardUser {
   id: number;
@@ -220,6 +221,7 @@ export default function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
   const [groups, setGroups] = useState<GroupData[]>(groupData)
   const { setRightButtons } = useHeaderButtons()
+  const { selectedView } = useLeaderboard()
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
   const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
@@ -234,6 +236,24 @@ export default function Leaderboard() {
       </Link>
     )
   }, [setRightButtons])
+
+  // Sync active tab with selected view from dashboard
+  useEffect(() => {
+    switch (selectedView) {
+      case 'global':
+        setActiveTab('overall');
+        break;
+      case 'friends':
+        setActiveTab('friends');
+        break;
+      case 'group1':
+      case 'group2':
+        setActiveTab('groups');
+        break;
+      default:
+        setActiveTab('overall');
+    }
+  }, [selectedView])
 
   const toggleFollow = (userId: number) => {
     setLeaderboardData((data: LeaderboardUser[]) => 

@@ -16,6 +16,8 @@ import { X, Plus, BarChart3, TrendingUp, Save, Share, ArrowLeft, Users, Trophy, 
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
+import { useSleeperRankings } from "@/lib/hooks/use-sleeper-rankings"
+import { getPositionColor } from "@/lib/sleeper-utils"
 
 const availableRankings = [
   {
@@ -204,20 +206,7 @@ const mockAggregatedPlayers = [
   },
 ]
 
-const getPositionColor = (position: string) => {
-  switch (position) {
-    case "QB":
-      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-    case "WR":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-    case "RB":
-      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-    case "TE":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-    default:
-      return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
-  }
-}
+
 
 const getLeagueTypeColor = (leagueType: string) => {
   switch (leagueType) {
@@ -242,6 +231,14 @@ export default function AggregateRankings() {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
   const [aggregateName, setAggregateName] = useState("")
+  
+  // Use Sleeper API for real player data
+  const { 
+    players, 
+    loading, 
+    error, 
+    currentWeek 
+  } = useSleeperRankings(selectedPosition)
 
   const toggleRanking = (rankingId: string) => {
     if (selectedRankings.includes(rankingId)) {
@@ -278,7 +275,18 @@ export default function AggregateRankings() {
   })
 
   // Show community rankings by default, aggregated rankings when selections are made
-  const currentPlayers = selectedRankings.length > 0 ? mockAggregatedPlayers : mockCommunityPlayers
+  const currentPlayers = selectedRankings.length > 0 ? mockAggregatedPlayers : players.slice(0, 10).map(player => ({
+    id: player.id,
+    name: player.name,
+    team: player.team,
+    position: player.position,
+    averageRank: player.rank,
+    totalRankings: Math.floor(Math.random() * 500) + 200, // Mock data for now
+    accuracy: Math.floor(Math.random() * 15) + 85, // Mock accuracy
+    trend: Math.random() > 0.5 ? "up" : "down" as "up" | "down" | "neutral",
+    projectedPoints: player.projectedPoints,
+    rankings: [{ source: "Community Average", rank: player.rank }],
+  }))
 
   const PlayerModal = ({ playerId }: { playerId: string }) => {
     const player = currentPlayers.find((p) => p.id === playerId)
@@ -400,6 +408,41 @@ export default function AggregateRankings() {
       </div>
     </div>
   )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+            <div className="space-y-4">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="h-20 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">Error loading data: {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 text-red-600 hover:text-red-800 underline"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
