@@ -1,6 +1,7 @@
 'use client';
 import { RankingPlayer } from '@/lib/types';
 import { getPositionColor, getInjuryStatusColor } from '@/lib/sleeper-utils';
+import { getCurrentSeasonInfo } from '@/lib/utils/season';
 import { X, Star, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface PlayerModalProps {
@@ -126,13 +127,25 @@ export function PlayerModal({ player, isOpen, onClose, onStar }: PlayerModalProp
               </div>
             )}
             
-            {/* Placeholder for additional stats */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Week 8 Outlook</h3>
-              <p className="text-blue-800 text-sm">
-                Projected to be a strong performer this week based on matchup and recent form.
-              </p>
-            </div>
+            {/* Current Week Context */}
+            {(() => {
+              const seasonInfo = getCurrentSeasonInfo();
+              const currentWeek = seasonInfo.currentWeek || 1;
+              const weekType = seasonInfo.isPreSeason ? 'Preseason' : `Week ${currentWeek}`;
+              
+              return (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-900 mb-2">{weekType} Outlook</h3>
+                  <p className="text-blue-800 text-sm">
+                    {player.matchup 
+                      ? `${player.matchup.isHome ? 'Home vs' : 'Away @'} ${player.matchup.opponent} - `
+                      : ''
+                    }
+                    Projected to be a strong performer based on matchup and recent form.
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Performance Trends - Placeholder */}
             <div className="bg-gray-50 rounded-lg p-4">

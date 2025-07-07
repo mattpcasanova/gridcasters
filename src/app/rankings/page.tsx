@@ -46,6 +46,7 @@ import { getPositionColor } from "@/lib/sleeper-utils"
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
   const [selectedWeek, setSelectedWeek] = useState<number | 'preseason' | null>(null)
+  const [hasPreseasonRankings, setHasPreseasonRankings] = useState(false)
   const [scoringFormat, setScoringFormat] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('rankbet-scoring-format') || 'half_ppr';
@@ -57,14 +58,38 @@ export default function Rankings() {
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   
+  // Check if user has preseason rankings
+  useEffect(() => {
+    const checkPreseasonRankings = async () => {
+      try {
+        const seasonInfo = getCurrentSeasonInfo();
+        const queryParams = new URLSearchParams({
+          position: 'OVR',
+          season: seasonInfo.season.toString(),
+          type: 'preseason'
+        });
+        
+        const response = await fetch(`/api/rankings?${queryParams.toString()}`);
+        if (response.ok) {
+          const { rankings } = await response.json();
+          setHasPreseasonRankings(rankings && rankings.length > 0);
+        }
+      } catch (error) {
+        console.log('Could not check preseason rankings:', error);
+      }
+    };
+    
+    checkPreseasonRankings();
+  }, []);
+
   // Initialize selected week on mount
   useEffect(() => {
     if (selectedWeek === null) {
       const seasonInfo = getCurrentSeasonInfo();
-      const defaultWeek = getDefaultWeek();
-      setSelectedWeek(seasonInfo.isPreSeason ? 'preseason' : defaultWeek);
+      const defaultWeek = getDefaultWeek(hasPreseasonRankings);
+      setSelectedWeek(seasonInfo.isPreSeason && !hasPreseasonRankings ? 'preseason' : defaultWeek);
     }
-  }, [selectedWeek]);
+  }, [selectedWeek, hasPreseasonRankings]);
 
   // Save scoring format to localStorage when it changes
   useEffect(() => {
@@ -118,6 +143,11 @@ export default function Rankings() {
         
         if (selectedPosition === 'OVR' && result.positionRankingsUpdated) {
           message += ' Individual position rankings have been updated to maintain consistency.';
+        }
+        
+        // If this was a preseason ranking save, update the state
+        if (rankingType === 'preseason') {
+          setHasPreseasonRankings(true);
         }
         
         alert(message);

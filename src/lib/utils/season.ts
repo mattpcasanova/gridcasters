@@ -47,8 +47,14 @@ export function getDefaultRankingType(): 'preseason' | 'weekly' {
   return seasonInfo.isPreSeason ? 'preseason' : 'weekly';
 }
 
-export function getDefaultWeek(): number | null {
+export function getDefaultWeek(hasPreseasonRankings: boolean = false): number | null {
   const seasonInfo = getCurrentSeasonInfo();
+  
+  // If user has saved preseason rankings and we're still in preseason, default to week 1
+  if (seasonInfo.isPreSeason && hasPreseasonRankings) {
+    return 1;
+  }
+  
   if (seasonInfo.isPreSeason) {
     return null; // Pre-season doesn't have weeks
   }
