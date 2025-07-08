@@ -10,7 +10,7 @@ interface CircularProgressProps {
 
 export function CircularProgress({ value, size = "md", showText = true }: CircularProgressProps) {
   // Convert size to number
-  const sizeValue = typeof size === "number" ? size : size === "sm" ? 40 : size === "md" ? 60 : 80
+  const sizeValue = typeof size === "number" ? size : size === "sm" ? 50 : size === "md" ? 70 : 90
   const radius = (sizeValue - 8) / 2
   const strokeWidth = Math.max(2, sizeValue / 15)
   const circumference = 2 * Math.PI * radius

@@ -10,13 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BarChart3, TrendingUp, Trophy, Users, Target, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react"
+import { BarChart3, TrendingUp, Trophy, Users, Target, Plus, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { useRouter } from "next/navigation"
 import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
 import { useRecentActivity } from "@/lib/hooks/use-recent-activity"
+import { getCurrentSeasonInfo } from "@/lib/utils/season"
+import { CircularProgress } from "@/components/ui/circular-progress"
 
 const getPositionColor = (position: string) => {
   switch (position) {
@@ -71,6 +73,10 @@ export default function Dashboard() {
   } = useLeaderboard()
   
   const { recentRankings, loading: activityLoading } = useRecentActivity()
+  
+  const seasonInfo = getCurrentSeasonInfo()
+  const currentWeek = seasonInfo.currentWeek || 1
+  const isPreSeason = seasonInfo.isPreSeason
   
   // Fetch user profile data
   useEffect(() => {
@@ -188,7 +194,12 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold mb-2">
               Welcome back, {profile ? getFirstName(profile) : "User"}!
             </h1>
-            <p className="text-slate-600 dark:text-slate-400">Here's how your rankings are performing this week.</p>
+            <p className="text-slate-600 dark:text-slate-400">
+              {isPreSeason 
+                ? "Get ready for Week 1! Create your rankings now."
+                : `Here's how your rankings are performing in Week ${currentWeek}.`
+              }
+            </p>
           </div>
 
         {/* Leaderboard Selection */}
@@ -213,27 +224,25 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Stats Overview - Note: No accuracy scores shown for active week */}
+        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Previous Week Accuracy"
-            value="87.3%"
+            value={isPreSeason ? "Pending" : "-"}
             icon={BarChart3}
-            trend={{ value: "+2.1% from Week 6", direction: "up", icon: ArrowUp }}
-            progress={87.3}
-            subtitle="Week 7 Final Score"
+            subtitle={isPreSeason ? "Awaiting Week 1" : `Week ${Math.max(1, currentWeek - 1)} Score`}
           />
 
           <StatCard
             title="League Rank"
             value={`#${getUserRank(selectedView)}`}
             icon={Trophy}
-            trend={{ value: "+2 positions", direction: "up", icon: ArrowUp }}
+            trend={{ value: "+2 positions", direction: "up", icon: ArrowUpRight }}
             subtitle={`in ${getViewLabel(selectedView)}`}
           />
 
           <StatCard
-            title="Week 8 Rankings"
+            title={`Week ${currentWeek} Rankings`}
             value="6"
             icon={Target}
             subtitle="Accuracy pending"
@@ -243,7 +252,7 @@ export default function Dashboard() {
             title="Followers"
             value="247"
             icon={Users}
-            trend={{ value: "+12 this week", direction: "up", icon: ArrowUp }}
+            trend={{ value: "+12 this week", direction: "up", icon: ArrowUpRight }}
           />
         </div>
 
@@ -296,18 +305,16 @@ export default function Dashboard() {
                         <div className="flex items-center space-x-2">
                           {ranking.accuracy !== null ? (
                             <div className="flex items-center space-x-2">
-                              <div className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded text-xs font-medium">
-                                {ranking.accuracy}%
-                              </div>
+                              <CircularProgress value={ranking.accuracy} size="sm" />
                               {ranking.trend === "up" ? (
-                                <ArrowUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                <ArrowUpRight className="w-4 h-4 text-green-600 dark:text-green-400" />
                               ) : (
-                                <ArrowDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                <ArrowDownRight className="w-4 h-4 text-red-600 dark:text-red-400" />
                               )}
                             </div>
                           ) : (
-                            <div className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded text-xs font-medium">
-                              {ranking.status}
+                            <div className="text-sm text-slate-600 dark:text-slate-400">
+                              Active
                             </div>
                           )}
                         </div>
@@ -373,8 +380,8 @@ export default function Dashboard() {
                           <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global • {user.followers} followers</div>
                         </div>
                       </div>
-                      <div className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded text-xs font-medium">
-                        {user.accuracy}%
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        Active
                       </div>
                     </Link>
                   ))}
