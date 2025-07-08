@@ -11,12 +11,11 @@ import { SearchInput } from "@/components/ui/search-input"
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { CircularProgress } from "@/components/ui/circular-progress"
-import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown, BarChart3 } from "lucide-react"
+import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown } from "lucide-react"
 import Link from "next/link"
 import { useHeaderButtons } from "@/components/layout/root-layout-client"
 import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
 import { getCurrentSeasonInfo } from "@/lib/utils/season"
-import { SegmentedControl } from "@/components/ui/segmented-control"
 
 interface LeaderboardUser {
   id: number;
@@ -35,6 +34,7 @@ interface LeaderboardUser {
   weeklyAccuracy?: number;
   weeklyRank?: number;
   change?: number;
+  weeklyChange?: number; // Added for weekly change
 }
 
 interface GroupData {
@@ -64,6 +64,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 96.1,
     weeklyRank: 1,
     change: 0,
+    weeklyChange: 0, // Added for mock data
   },
   {
     id: 2,
@@ -81,6 +82,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 93.4,
     weeklyRank: 2,
     change: 1,
+    weeklyChange: 1, // Added for mock data
   },
   {
     id: 3,
@@ -99,6 +101,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 89.7,
     weeklyRank: 5,
     change: -2,
+    weeklyChange: -2, // Added for mock data
   },
   {
     id: 4,
@@ -116,6 +119,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 91.2,
     weeklyRank: 3,
     change: 1,
+    weeklyChange: 1, // Added for mock data
   },
   {
     id: 5,
@@ -133,6 +137,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 90.8,
     weeklyRank: 4,
     change: 1,
+    weeklyChange: 1, // Added for mock data
   },
   {
     id: 6,
@@ -150,6 +155,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 87.3,
     weeklyRank: 6,
     change: 2,
+    weeklyChange: 2, // Added for mock data
   },
   {
     id: 7,
@@ -167,6 +173,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyAccuracy: 85.1,
     weeklyRank: 7,
     change: 5,
+    weeklyChange: 5, // Added for mock data
   },
 ]
 
@@ -220,16 +227,17 @@ export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState("overall")
   const [searchTerm, setSearchTerm] = useState("")
   const [pprType, setPprType] = useState("combined")
+  const [selectedWeek, setSelectedWeek] = useState("Week 1")
+  const { selectedView, setSelectedView, getViewLabel, getUserRank } = useLeaderboard()
   
   // Get current season info and default to current week
   const seasonInfo = getCurrentSeasonInfo()
-  const currentWeek = seasonInfo.isPreSeason ? 1 : (seasonInfo.currentWeek || 1)
-  const [selectedWeek, setSelectedWeek] = useState(`Week ${currentWeek}`)
-  
+  const currentWeek = seasonInfo.currentWeek || 1
+  const isPreSeason = seasonInfo.isPreSeason
+
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
   const [groups, setGroups] = useState<GroupData[]>(groupData)
   const { setRightButtons } = useHeaderButtons()
-  const { selectedView, setSelectedView, getViewLabel, getUserRank } = useLeaderboard()
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
   const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
@@ -404,143 +412,359 @@ export default function Leaderboard() {
     )
   }
 
+  // Add PPR type selection before the main tabs
+  const renderPPRTabs = () => (
+    <div className="mb-6">
+      <Tabs value={pprType} onValueChange={setPprType} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="combined">Combined</TabsTrigger>
+          <TabsTrigger value="standard">Standard</TabsTrigger>
+          <TabsTrigger value="half">Half PPR</TabsTrigger>
+          <TabsTrigger value="full">Full PPR</TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
+  )
+
+  // Update the description based on PPR type
+  const getPPRDescription = () => {
+    switch (pprType) {
+      case "standard": return "Standard scoring rankings"
+      case "half": return "Half PPR scoring rankings"
+      case "full": return "Full PPR scoring rankings"
+      default: return "Overall performance across all scoring types"
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">Leaderboard</h1>
-              <p className="text-slate-600 dark:text-slate-400">See how you stack up against other rankers</p>
+              <p className="text-slate-600 dark:text-slate-400">Outrank the Competition</p>
             </div>
-            
-            {/* PPR Type Selection */}
-            <div className="w-full md:w-auto">
-              <SegmentedControl
-                value={pprType}
-                onValueChange={setPprType}
-                items={[
-                  { value: "combined", label: "Combined" },
-                  { value: "standard", label: "Standard" },
-                  { value: "half", label: "Half PPR" },
-                  { value: "full", label: "Full PPR" },
-                ]}
-              />
+            <div className="flex items-center space-x-4">
+              <Select value={selectedView} onValueChange={(value: 'global' | 'friends' | 'group1' | 'group2') => {
+                setSelectedView(value)
+              }}>
+                <SelectTrigger className="w-48 bg-white dark:bg-slate-800 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 shadow-sm">
+                  <SelectValue placeholder="Select leaderboard" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global Rankings</SelectItem>
+                  <SelectItem value="friends">Friends Only</SelectItem>
+                  <SelectItem value="group1">Fantasy Experts Group</SelectItem>
+                  <SelectItem value="group2">College Friends</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+        </div>
 
-          {/* Search and Filter Section */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-                <div className="flex-1">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title={`Your Rank (${getViewLabel(selectedView)})`}
+            value={`#${getUserRank(selectedView) || 'N/A'}`}
+            icon={Trophy}
+            trend={{
+              value: "+2 positions this week",
+              direction: "up",
+              icon: TrendingUp
+            }}
+          />
+          <StatCard
+            title="Total Rankings"
+            value="1,247"
+            subtitle="Active this week"
+            icon={Users}
+          />
+          <StatCard
+            title="Your Accuracy"
+            value="Pending"
+            icon={TrendingUp}
+            subtitle="Awaiting Week 1"
+          />
+        </div>
+
+        {/* PPR Type Selection */}
+        <div className="mb-6">
+          <Tabs value={pprType} onValueChange={setPprType} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="combined">Combined</TabsTrigger>
+              <TabsTrigger value="standard">Standard</TabsTrigger>
+              <TabsTrigger value="half">Half PPR</TabsTrigger>
+              <TabsTrigger value="full">Full PPR</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overall">Overall</TabsTrigger>
+            <TabsTrigger value="weekly">Weekly</TabsTrigger>
+            <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="groups">Groups</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overall">
+            <Card>
+              <CardHeader>
+                <CardTitle>Overall Leaderboard</CardTitle>
+                <CardDescription>
+                  {pprType === "combined" ? "Overall performance across all scoring types" :
+                   pprType === "standard" ? "Standard scoring rankings" :
+                   pprType === "half" ? "Half PPR scoring rankings" :
+                   "Full PPR scoring rankings"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
                   <SearchInput
+                    placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search users..."
-                    className="w-full bg-white dark:bg-slate-800 shadow-sm"
+                    className="max-w-md"
                   />
                 </div>
-                <Select
-                  value={selectedView}
-                  onValueChange={setSelectedView}
-                  className="w-full md:w-48"
-                >
-                  <SelectTrigger className="bg-white dark:bg-slate-800 shadow-sm">
-                    <SelectValue placeholder="Select view" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="global">Global Rankings</SelectItem>
-                    <SelectItem value="friends">Friends Only</SelectItem>
-                    <SelectItem value="group1">Fantasy Experts Group</SelectItem>
-                    <SelectItem value="group2">College Friends</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard
-              title="Total Rankings"
-              value="1,247"
-              icon={BarChart3}
-              subtitle="Across all users"
-            />
-            <StatCard
-              title="Your Position"
-              value="#3"
-              icon={Trophy}
-              subtitle={`in ${getViewLabel(selectedView)}`}
-            />
-            <StatCard
-              title="Active Users"
-              value="247"
-              icon={Users}
-              subtitle="This week"
-            />
-          </div>
+                <div className="space-y-4">
+                  {filteredData.map((entry: LeaderboardUser) => renderUserRow(entry))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {/* Leaderboard Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Weekly Rankings</CardTitle>
-              <CardDescription>
-                {pprType === "combined" ? "Overall performance across all scoring types" :
-                 pprType === "standard" ? "Standard scoring rankings" :
-                 pprType === "half" ? "Half PPR scoring rankings" :
-                 "Full PPR scoring rankings"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {filteredData.map((user, index) => (
-                  <Link
-                    key={user.id}
-                    href={user.isCurrentUser ? "/profile" : `/profile/${user.id}`}
-                    className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                      user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm font-medium text-slate-500">#{index + 1}</span>
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={user.user.avatar} />
-                        <AvatarFallback>
-                          {user.user.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium flex items-center space-x-2">
-                          <span>{user.user.name}</span>
-                          {user.isCurrentUser && <span className="text-blue-600 dark:text-blue-400">(You)</span>}
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm text-slate-500">
-                          <span>{user.rankings} rankings</span>
-                          <span>•</span>
-                          <span>{user.followers} followers</span>
-                          {user.change !== undefined && (
-                            <>
-                              <span>•</span>
-                              <span className={user.change > 0 ? "text-green-500" : "text-red-500"}>
-                                {user.change > 0 ? "+" : ""}{user.change} this week
-                              </span>
-                            </>
+          <TabsContent value="weekly">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Weekly Leaderboard</CardTitle>
+                    <CardDescription>
+                      {pprType === "combined" ? "Overall performance across all scoring types" :
+                       pprType === "standard" ? "Standard scoring rankings" :
+                       pprType === "half" ? "Half PPR scoring rankings" :
+                       "Full PPR scoring rankings"}
+                    </CardDescription>
+                  </div>
+                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableWeeks().map((week) => (
+                        <SelectItem key={week} value={week}>
+                          {week}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
+                  <SearchInput
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  {weeklyData
+                    .filter((user: LeaderboardUser) =>
+                      user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((entry: LeaderboardUser) => (
+                      <div key={entry.id} className="relative">
+                        {renderUserRow(entry, true)}
+                        {entry.weeklyChange && (
+                          <span className={`absolute right-4 top-4 text-sm font-medium ${
+                            entry.weeklyChange > 0 ? "text-green-500" : "text-red-500"
+                          }`}>
+                            {entry.weeklyChange > 0 ? "+" : ""}{entry.weeklyChange}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="friends">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Friends Leaderboard</CardTitle>
+                    <CardDescription>See how you rank among your friends</CardDescription>
+                  </div>
+                  <Link href="/find-friends">
+                    <Button variant="outline" size="sm">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Find Friends
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {friendsData.length > 1 ? (
+                  <>
+                    <div className="mb-6">
+                      <SearchInput
+                        placeholder="Search friends..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-md"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      {friendsData
+                        .filter((user: LeaderboardUser) =>
+                          user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .sort((a, b) => a.rank - b.rank)
+                        .map((entry: LeaderboardUser, index: number) => (
+                          <div key={entry.id} className="relative">
+                            {renderUserRow({...entry, rank: index + 1})}
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Friends Yet</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      Follow other users to see how you rank among friends
+                    </p>
+                    <Link href="/find-friends">
+                      <Button>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Find Friends
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="groups">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Group Leaderboards</CardTitle>
+                    <CardDescription>Rankings within your groups</CardDescription>
+                  </div>
+                  <Link href="/find-groups">
+                    <Button variant="outline" size="sm">
+                      <Users className="w-4 h-4 mr-2" />
+                      Find Groups
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
+                  <SearchInput
+                    placeholder="Search groups..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+                
+                <div className="space-y-4">
+                  {groups
+                    .filter((group: GroupData) =>
+                      group.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((group: GroupData) => (
+                    <Link
+                      key={group.id}
+                      href={`/group/${group.id}`}
+                    >
+                      <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer">
+                      
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={group.avatar} />
+                          <AvatarFallback>
+                            {group.name.split(' ').map((n: string) => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-semibold">{group.name}</h3>
+                            {group.isJoined && (
+                              <Badge variant="outline" className="text-xs">
+                                Member
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            {group.members} members • {group.avgAccuracy}% avg accuracy
+                          </p>
+                          {group.isJoined && group.userRank && (
+                            <p className="text-xs text-slate-500">
+                              Your rank: #{group.userRank}
+                            </p>
                           )}
                         </div>
                       </div>
-                    </div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Accuracy pending
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <CircularProgress value={group.avgAccuracy} size={60} showText />
+                          <p className="text-xs text-slate-500 mt-1">group avg</p>
+                        </div>
+
+                        <Button
+                          variant={group.isJoined ? "outline" : "default"}
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleGroupJoin(group.id);
+                          }}
+                          className={group.isJoined 
+                            ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                            : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+                          }
+                        >
+                          {group.isJoined ? (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Joined
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Join
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
