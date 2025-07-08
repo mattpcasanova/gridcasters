@@ -13,6 +13,15 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "GridCasters - Fantasy Football Ranking Platform",
   description: "Create, track, and compare your fantasy football player rankings with statistical accuracy scoring.",
+  icons: {
+    icon: [
+      {
+        url: "/logo.png",
+        type: "image/png",
+      },
+    ],
+    apple: "/logo.png",
+  },
 }
 
 export default async function RootLayout({

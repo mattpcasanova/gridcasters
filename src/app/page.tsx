@@ -17,12 +17,9 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Image src="/logo.svg" alt="GridCasters Logo" width={40} height={40} className="w-10 h-10" />
-            <span className="text-2xl font-bold">
-              <span className="text-blue-400">Grid</span>
-              <span className="text-green-400">Casters</span>
-            </span>
+          <div className="flex items-center space-x-2">
+            <Image src="/logo.png" alt="GridCasters Logo" width={40} height={40} className="w-10 h-10" />
+            <span className="text-xl font-bold">GridCasters</span>
           </div>
           <nav className="hidden md:flex items-center space-x-6">
             <a href="#features" className="text-slate-300 hover:text-white transition-colors">
@@ -327,12 +324,9 @@ export default function LandingPage() {
       <footer className="border-t border-slate-800 bg-slate-900/50 py-12 px-4">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-6">
-              <Image src="/logo.svg" alt="GridCasters Logo" width={32} height={32} className="w-8 h-8" />
-              <span className="text-xl font-bold">
-                <span className="text-blue-400">Grid</span>
-                <span className="text-green-400">Casters</span>
-              </span>
+            <div className="flex items-center space-x-2">
+              <Image src="/logo.png" alt="GridCasters Logo" width={32} height={32} className="w-8 h-8" />
+              <span className="text-lg font-bold">GridCasters</span>
             </div>
             <div className="flex space-x-6 text-slate-400">
               <Link href="/privacy" className="hover:text-white transition-colors">

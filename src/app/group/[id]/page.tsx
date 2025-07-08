@@ -329,11 +329,11 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                           {member.isHost && <Crown className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />}
                           {member.verified && (
                             <Image
-                              src="/logo.svg"
-                              alt="GridCasters Verified"
-                              width={16}
-                              height={16}
-                              className="w-4 h-4"
+                              src="/logo.png"
+                              alt="GridCasters Logo"
+                              width={40}
+                              height={40}
+                              className="w-10 h-10"
                             />
                           )}
                           {member.isCurrentUser && (

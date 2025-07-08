@@ -552,8 +552,8 @@ export default function AggregateRankings() {
                           <div className="flex items-center space-x-2">
                             {ranking.verified && (
                               <Image
-                                src="/logo.svg"
-                                alt="Verified"
+                                src="/logo.png"
+                                alt="GridCasters Logo"
                                 width={12}
                                 height={12}
                                 className="w-3 h-3"
@@ -629,8 +629,8 @@ export default function AggregateRankings() {
                                 <p className="font-medium">{ranking.user}</p>
                                 {ranking.verified && (
                                   <Image
-                                    src="/logo.svg"
-                                    alt="Verified"
+                                    src="/logo.png"
+                                    alt="GridCasters Logo"
                                     width={16}
                                     height={16}
                                     className="w-4 h-4"
