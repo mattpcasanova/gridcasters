@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Badge as UIBadge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
@@ -30,6 +30,8 @@ import {
   Minus,
   Target,
   LogOut,
+  Upload,
+  Plus,
 } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -37,6 +39,8 @@ import { useSupabase } from "@/lib/hooks/use-supabase"
 import { signOut } from "@/lib/utils/client-auth"
 import { toast } from "sonner"
 import { useRecentActivity } from "@/lib/hooks/use-recent-activity"
+import { BADGES, getTierColor, getTierBgColor, getCategoryLabel, type Badge as BadgeType } from "@/lib/constants/badges"
+import Image from "next/image"
 
 const getPositionColor = (position: string) => {
   switch (position) {
@@ -50,6 +54,21 @@ const getPositionColor = (position: string) => {
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
     default:
       return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
+  }
+}
+
+const getPositionIconColor = (position: string) => {
+  switch (position) {
+    case "QB":
+      return "text-red-800 dark:text-red-400"
+    case "WR":
+      return "text-blue-800 dark:text-blue-400"
+    case "RB":
+      return "text-green-800 dark:text-green-400"
+    case "TE":
+      return "text-yellow-800 dark:text-yellow-400"
+    default:
+      return "text-slate-800 dark:text-slate-400"
   }
 }
 
@@ -116,7 +135,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [selectedBadges, setSelectedBadges] = useState([1, 2])
+  const [selectedBadges, setSelectedBadges] = useState<string[]>(['rookie_forecaster', 'rising_star'])
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [editForm, setEditForm] = useState({
@@ -250,6 +269,46 @@ export default function Profile() {
     }
   }
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('avatar', file)
+
+    try {
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(`${profile?.id}/avatar`, file, {
+          contentType: file.type,
+          upsert: false,
+        })
+
+      if (error) throw error
+
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(`${profile?.id}/avatar`)
+
+      if (data) {
+        const { data: updatedProfile } = await supabase
+          .from('profiles')
+          .update({ avatar_url: data.publicUrl })
+          .eq('id', profile?.id)
+          .select()
+          .single()
+
+        if (updatedProfile) {
+          setProfile(updatedProfile)
+          toast.success('Avatar updated successfully')
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      toast.error('Failed to update avatar')
+    }
+  }
+
   const getInitials = (profile: UserProfile) => {
     if (profile.first_name && profile.last_name) {
       return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
@@ -373,10 +432,26 @@ export default function Profile() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={profile.avatar_url || "/placeholder-user.jpg"} />
-                  <AvatarFallback className="text-2xl">{getInitials(profile)}</AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                  <Avatar className="w-24 h-24">
+                    <AvatarImage src={profile.avatar_url || "/placeholder-user.jpg"} />
+                    <AvatarFallback className="text-2xl">{getInitials(profile)}</AvatarFallback>
+                  </Avatar>
+                  {isEditing && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
+                      <Label htmlFor="avatar" className="cursor-pointer">
+                        <Upload className="w-6 h-6 text-white" />
+                      </Label>
+                      <input
+                        id="avatar"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
@@ -390,10 +465,10 @@ export default function Profile() {
                     ) : (
                       <h1 className="text-3xl font-bold">{getDisplayName(profile)}</h1>
                     )}
-                    <Badge variant="outline" className="text-xs">
+                    <UIBadge variant="outline" className="text-xs">
                       <Settings className="w-3 h-3 mr-1" />
                       {isPrivate ? "Private" : "Public"}
-                    </Badge>
+                    </UIBadge>
                   </div>
                   <p className="text-slate-600 dark:text-slate-400 mb-2">
                     @{profile.username} • Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -402,15 +477,23 @@ export default function Profile() {
                   {/* Featured Badges */}
                   <div className="flex items-center space-x-2 mb-4">
                     {selectedBadges.map((badgeId) => {
-                      const badge = achievements.find((a) => a.id === badgeId)
-                      if (!badge || !badge.earned) return null
+                      const badge = BADGES.find((b) => b.id === badgeId)
+                      if (!badge) return null
                       return (
                         <div
                           key={badgeId}
-                          className="flex items-center space-x-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full"
+                          className={`flex items-center space-x-1 px-2 py-1 rounded-full ${getTierBgColor(badge.tier)}`}
                         >
-                          <Award className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
-                          <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">{badge.name}</span>
+                          <Image
+                            src={badge.icon}
+                            alt={badge.name}
+                            width={16}
+                            height={16}
+                            className={getTierColor(badge.tier)}
+                          />
+                          <span className={`text-xs font-medium ${getTierColor(badge.tier)}`}>
+                            {badge.name}
+                          </span>
                         </div>
                       )
                     })}
@@ -471,18 +554,18 @@ export default function Profile() {
                   )}
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold">87.3%</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Accuracy</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                      <CircularProgress value={87.3} size="lg" />
+                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">156</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Rank</p>
+                    <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">#156</div>
+                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold">47</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Rankings</p>
+                    <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">47</div>
+                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
                     </div>
                   </div>
                 </div>
@@ -510,18 +593,10 @@ export default function Profile() {
                         <Share className="w-4 h-4 mr-2" />
                         Share Profile
                       </Button>
-                      <Button variant="outline" asChild>
-                        <Link href="/settings">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Settings
-                        </Link>
+                      <Button variant="outline" onClick={handleLogout}>
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
                       </Button>
-                      <div className="border-t pt-2 mt-2">
-                        <Button variant="outline" onClick={handleLogout} className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <LogOut className="w-4 h-4 mr-2" />
-                          Sign Out
-                        </Button>
-                      </div>
                     </>
                   )}
                 </div>
@@ -530,279 +605,198 @@ export default function Profile() {
           </Card>
         </div>
 
-        {/* Rest of the component remains the same */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="rankings">Rankings</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                title="Overall Accuracy"
-                value="87.3%"
-                icon={Target}
-                trend={{ value: "+2.1%", direction: "up", icon: TrendingUp }}
-                subtitle="vs last month"
-              />
-              <StatCard
-                title="Current Rank"
-                value="#156"
-                icon={Trophy}
-                trend={{ value: "+12 positions", direction: "up", icon: TrendingUp }}
-                subtitle="positions gained"
-              />
-              <StatCard
-                title="Total Rankings"
-                value="47"
-                icon={BarChart3}
-                trend={{ value: "+8", direction: "up", icon: TrendingUp }}
-                subtitle="this season"
-              />
-              <StatCard
-                title="Followers"
-                value="234"
-                icon={Award}
-                trend={{ value: "+15", direction: "up", icon: TrendingUp }}
-                subtitle="new this week"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your latest ranking submissions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {rankingsLoading ? (
-                      <div className="space-y-3">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg animate-pulse">
-                            <div className="space-y-2">
-                              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-48"></div>
-                              <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-12"></div>
-                              <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-8"></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : recentRankings.length > 0 ? (
-                      recentRankings.slice(0, 3).map((ranking) => (
-                        <Link
-                          key={ranking.id}
-                          href={`/rankings/${ranking.id}`}
-                          className="block"
-                        >
-                          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-                            <div>
-                              <p className="font-medium">{ranking.name}</p>
-                              <p className="text-sm text-slate-600 dark:text-slate-400">{ranking.date}</p>
-                            </div>
-                            <div className="text-right">
-                              {ranking.accuracy !== null ? (
-                                <>
-                                  <p className="font-bold">{ranking.accuracy}%</p>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400">accuracy</p>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded text-xs font-medium">
-                                    {ranking.status}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </Link>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <BarChart3 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
-                        <p className="text-gray-600 mb-4">Create your first ranking to see activity here</p>
-                        <Button asChild>
-                          <Link href="/rankings">
-                            <TrendingUp className="w-4 h-4 mr-2" />
-                            Create Ranking
-                          </Link>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance Trends</CardTitle>
-                  <CardDescription>Your accuracy over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Weekly Accuracy</span>
-                      <span className="text-sm">89.7%</span>
-                    </div>
-                    <Progress value={89.7} className="h-2" />
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Monthly Accuracy</span>
-                      <span className="text-sm">87.3%</span>
-                    </div>
-                    <Progress value={87.3} className="h-2" />
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Season Accuracy</span>
-                      <span className="text-sm">85.1%</span>
-                    </div>
-                    <Progress value={85.1} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="rankings">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Rankings */}
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>My Rankings</CardTitle>
-                <CardDescription>All your submitted rankings and their performance</CardDescription>
+                <CardTitle>Recent Rankings</CardTitle>
+                <CardDescription>Your latest player rankings and their performance</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Week</TableHead>
-                      <TableHead>Accuracy</TableHead>
-                      <TableHead>Rank</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockRankings.map((ranking) => (
-                      <TableRow key={ranking.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800">
-                        <TableCell className="font-medium">
-                          <Link href={`/rankings/${ranking.id}`} className="block">
-                            {ranking.title}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getPositionColor(ranking.position)}>
-                            {ranking.position}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{ranking.week}</TableCell>
-                        <TableCell>{ranking.accuracy}%</TableCell>
-                        <TableCell>#{ranking.rank}</TableCell>
-                        <TableCell>{ranking.date}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Accuracy by Position</CardTitle>
-                  <CardDescription>Your performance across different positions</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { position: "QB", accuracy: 94.2, color: "bg-red-500" },
-                      { position: "RB", accuracy: 89.7, color: "bg-green-500" },
-                      { position: "WR", accuracy: 85.1, color: "bg-blue-500" },
-                      { position: "TE", accuracy: 82.3, color: "bg-yellow-500" },
-                    ].map((item) => (
-                      <div key={item.position} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                          <span className="font-medium">{item.position}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm">{item.accuracy}%</span>
-                          <CircularProgress value={item.accuracy} size={40} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Weekly Performance</CardTitle>
-                  <CardDescription>Your accuracy trends over recent weeks</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { week: "Week 8", accuracy: 89.7, trend: "up" },
-                      { week: "Week 7", accuracy: 87.3, trend: "down" },
-                      { week: "Week 6", accuracy: 91.2, trend: "up" },
-                      { week: "Week 5", accuracy: 85.8, trend: "down" },
-                    ].map((item) => (
-                      <div key={item.week} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                        <span className="font-medium">{item.week}</span>
-                        <div className="flex items-center space-x-2">
-                          <span>{item.accuracy}%</span>
-                          {item.trend === "up" ? (
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                          ) : item.trend === "down" ? (
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                          ) : (
-                            <Minus className="w-4 h-4 text-slate-500" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="achievements">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {achievements.map((achievement) => {
-                const Icon = achievement.icon
-                return (
-                  <Card key={achievement.id} className={achievement.earned ? "border-yellow-200 dark:border-yellow-800" : ""}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start space-x-4">
-                        <div className={`p-3 rounded-full ${achievement.earned ? "bg-yellow-100 dark:bg-yellow-900/20" : "bg-slate-100 dark:bg-slate-800"}`}>
-                          <Icon className={`w-6 h-6 ${achievement.earned ? "text-yellow-600 dark:text-yellow-400" : "text-slate-500"}`} />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold mb-1">{achievement.name}</h3>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{achievement.description}</p>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={achievement.progress} className="flex-1 h-2" />
-                            <span className="text-sm font-medium">{achievement.progress}%</span>
+                <div className="space-y-4">
+                  {rankingsLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                            <div className="w-16 h-6 bg-gray-200 rounded"></div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  ) : recentRankings.length > 0 ? (
+                    recentRankings.map((ranking, index) => (
+                      <Link
+                        key={index}
+                        href={`/rankings/${ranking.id}`}
+                        className="block"
+                      >
+                        <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${getPositionColor(ranking.position)}`}
+                            >
+                              <span className={`font-bold text-xs ${getPositionIconColor(ranking.position)}`}>
+                                {ranking.position}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="font-medium">{ranking.name}</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">{ranking.date}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {ranking.accuracy !== null ? (
+                              <div className="flex items-center space-x-2">
+                                <CircularProgress value={ranking.accuracy} size="sm" />
+                                {ranking.trend === "up" ? (
+                                  <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                ) : (
+                                  <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-slate-600 dark:text-slate-400">
+                                Active
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <BarChart3 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
+                      <p className="text-gray-600 mb-4">Create your first ranking to see activity here</p>
+                      <Link href="/rankings">
+                        <Button>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Ranking
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Analytics */}
+          <div className="space-y-6">
+            {/* Performance Stats */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Stats</CardTitle>
+                <CardDescription>Your ranking performance metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Percentile Stats */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">92nd</div>
+                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Percentile</p>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">Top 8%</div>
+                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Global</p>
+                    </div>
+                  </div>
+
+                  {/* Position Accuracy */}
+                  <div>
+                    <h4 className="font-medium mb-4">Accuracy by Position</h4>
+                    <div className="space-y-4">
+                      {[
+                        { position: "QB", accuracy: 94.2 },
+                        { position: "RB", accuracy: 89.7 },
+                        { position: "WR", accuracy: 85.1 },
+                        { position: "TE", accuracy: 82.3 },
+                      ].map((item) => (
+                        <div key={item.position} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-3 h-3 rounded-full ${getPositionColor(item.position)}`} />
+                            <span className="font-medium">{item.position}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <CircularProgress value={item.accuracy} size="sm" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Achievements */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Achievements</CardTitle>
+                <CardDescription>Your earned badges and progress</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {Object.entries(
+                    BADGES.reduce<Record<BadgeType['category'], BadgeType[]>>((acc, badge) => {
+                      if (!acc[badge.category]) acc[badge.category] = []
+                      acc[badge.category].push(badge)
+                      return acc
+                    }, {} as Record<BadgeType['category'], BadgeType[]>)
+                  ).map(([category, badges]) => (
+                    <div key={category}>
+                      <h4 className="font-medium mb-4">{getCategoryLabel(category as BadgeType['category'])}</h4>
+                      <div className="space-y-4">
+                        {badges.map((badge) => {
+                          const isEarned = selectedBadges.includes(badge.id)
+                          return (
+                            <div
+                              key={badge.id}
+                              className={`flex items-center space-x-4 p-3 rounded-lg ${
+                                isEarned ? getTierBgColor(badge.tier) : 'bg-slate-50 dark:bg-slate-800'
+                              }`}
+                            >
+                              <Image
+                                src={badge.icon}
+                                alt={badge.name}
+                                width={32}
+                                height={32}
+                                className={isEarned ? getTierColor(badge.tier) : 'opacity-50'}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <h5 className={`font-medium ${isEarned ? getTierColor(badge.tier) : ''}`}>
+                                    {badge.name}
+                                  </h5>
+                                  {isEarned && (
+                                    <UIBadge variant="outline" className={`text-xs ${getTierColor(badge.tier)}`}>
+                                      Earned
+                                    </UIBadge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                  {badge.description}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          </TabsContent>
-        </Tabs>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
       {showShareModal && <ShareModal />}
