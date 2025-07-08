@@ -40,9 +40,9 @@ export default function CreateGroup() {
       return
     }
 
-    // Validate file size (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB')
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB')
       return
     }
 
@@ -236,7 +236,7 @@ export default function CreateGroup() {
                       className="hidden"
                     />
                     <p className="text-xs text-slate-500 mt-4">
-                      Recommended: Square image, at least 200x200px (max 2MB)
+                      Recommended: Square image, at least 200x200px (max 5MB)
                     </p>
                   </div>
 
