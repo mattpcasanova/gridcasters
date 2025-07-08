@@ -65,7 +65,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
   const logoHref = isSignedIn ? "/dashboard" : "/"
   const supabase = useSupabase()
 
-  // Fetch user profile data
+  // Fetch user profile data and subscribe to changes
   useEffect(() => {
     if (!isSignedIn) return
 
@@ -92,6 +92,28 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
     }
 
     fetchProfile()
+
+    // Subscribe to profile changes
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
+        },
+        (payload) => {
+          const newData = payload.new as UserProfile
+          setProfile(newData)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [supabase, isSignedIn])
 
   const getInitials = (profile: UserProfile) => {

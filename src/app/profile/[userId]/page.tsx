@@ -32,9 +32,9 @@ const userData = {
   followers: 1247,
   following: 892,
   featuredBadges: [
-    { name: "Top 1% Accuracy", description: "Achieved 95%+ accuracy in season rankings" },
-    { name: "Sleeper Expert", description: "Identified 10+ breakout players before consensus" },
-    { name: "Consistency King", description: "Top 10% accuracy for 3 consecutive seasons" },
+    { id: 'super_forecaster', name: "Top 1% Accuracy", description: "Achieved 95%+ accuracy in season rankings" },
+    { id: 'sleeper_expert', name: "Sleeper Expert", description: "Identified 10+ breakout players before consensus" },
+    { id: 'consistency_king', name: "Consistency King", description: "Top 10% accuracy for 3 consecutive seasons" }
   ],
   stats: {
     overallAccuracy: 87.3,
@@ -304,33 +304,31 @@ export default function UserProfile() {
 
                 {/* Badges */}
                 <div className="mt-4 flex flex-wrap gap-4">
-                  {userData.featuredBadges.map((badge, index) => (
-                    <div
-                      key={index}
-                      className={`relative flex items-center space-x-3 p-4 rounded-lg ${
-                        badge.name.includes("Top 1%")
-                          ? "bg-blue-50/50 dark:bg-blue-900/20"
-                          : badge.name.includes("Sleeper")
-                          ? "bg-amber-50/50 dark:bg-amber-900/20"
-                          : "bg-slate-50/50 dark:bg-slate-800/50"
-                      } transition-all`}
-                    >
-                      <div className="relative w-14 h-14 flex items-center justify-center">
-                        <Image
-                          src="/badges/rookie_forecaster_bronze.png"
-                          alt={badge.name}
-                          width={56}
-                          height={56}
-                          className="w-full h-full object-contain"
-                          quality={100}
-                        />
+                  {userData.featuredBadges.map((featuredBadge) => {
+                    const badge = BADGES.find((b) => b.id === featuredBadge.id)
+                    if (!badge) return null
+                    return (
+                      <div
+                        key={badge.id}
+                        className={`relative flex items-center space-x-3 p-4 rounded-lg ${getTierGradient(badge.tier)} transition-all`}
+                      >
+                        <div className="relative w-14 h-14 flex items-center justify-center">
+                          <Image
+                            src={badge.icon}
+                            alt={badge.name}
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-contain"
+                            quality={100}
+                          />
+                        </div>
+                        <div>
+                          <h3 className={`font-semibold ${badge.name.includes("Top 1%") ? "text-blue-600 dark:text-blue-400" : badge.name.includes("Sleeper") ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}`}>{badge.name}</h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{badge.description}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className={`font-semibold ${badge.name.includes("Top 1%") ? "text-blue-600 dark:text-blue-400" : badge.name.includes("Sleeper") ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}`}>{badge.name}</h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">{badge.description}</p>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
