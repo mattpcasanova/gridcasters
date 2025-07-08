@@ -770,77 +770,105 @@ export default function Profile() {
                 <CardDescription>Badges and milestones earned on RankBet. Click to showcase up to 3 badges on your profile.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {BADGES.map((badge) => {
-                    const badgeStatus = earnedBadges[badge.id]
-                    const isSelected = selectedBadges.includes(badge.id)
-                    return (
-                      <button
-                        key={badge.id}
-                        onClick={() => toggleBadgeSelection(badge.id)}
-                        className={`p-4 border rounded-lg text-left transition-all ${
-                          badge.tier === 'bronze'
-                            ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                            : badge.tier === 'silver'
-                            ? 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
-                            : badge.tier === 'gold'
-                            ? 'bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                            : 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                        } ${
-                          isSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
-                        } ${
-                          !badgeStatus?.earned ? 'opacity-75' : ''
-                        }`}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div
-                            className={`p-3 rounded-lg ${
-                              badgeStatus?.earned
-                                ? `bg-gradient-to-br ${
-                                    badge.tier === 'bronze'
-                                      ? 'from-amber-500 to-amber-600'
-                                      : badge.tier === 'silver'
-                                      ? 'from-slate-400 to-slate-500'
-                                      : badge.tier === 'gold'
-                                      ? 'from-yellow-400 to-yellow-500'
-                                      : 'from-blue-400 to-blue-500'
-                                  }`
-                                : "bg-slate-300 dark:bg-slate-600"
-                            }`}
-                          >
-                            <div className="relative w-14 h-14 flex items-center justify-center">
-                              <Image
-                                src={badge.icon}
-                                alt={badge.name}
-                                width={56}
-                                height={56}
-                                className="w-full h-full object-contain"
-                                quality={100}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{badge.name}</h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{badge.description}</p>
-                            {badgeStatus?.earned ? (
-                              <UIBadge variant="outline" className={`text-xs ${isSelected ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : ''}`}>
-                                {isSelected ? 'Selected' : 'Earned'}
-                              </UIBadge>
-                            ) : (
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                                  <span>Progress</span>
-                                  <span>{badgeStatus?.progress || 0}%</span>
+                {/* Group badges by category */}
+                {(['ranking', 'performance', 'consistency', 'social', 'position', 'seasonal', 'milestone', 'special'] as BadgeType['category'][]).map(category => {
+                  const categoryBadges = BADGES.filter(badge => badge.category === category)
+                  if (categoryBadges.length === 0) return null
+
+                  return (
+                    <div key={category} className="mb-8 last:mb-0">
+                      <h2 className="text-xl font-semibold mb-4">{getCategoryLabel(category)}</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categoryBadges.map((badge) => {
+                          const badgeStatus = earnedBadges[badge.id]
+                          const isSelected = selectedBadges.includes(badge.id)
+                          return (
+                            <button
+                              key={badge.id}
+                              onClick={() => toggleBadgeSelection(badge.id)}
+                              className={`p-4 border rounded-lg text-left transition-all ${
+                                badge.tier === 'bronze'
+                                  ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                                  : badge.tier === 'silver'
+                                  ? 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                                  : badge.tier === 'gold'
+                                  ? 'bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                                  : badge.tier === 'diamond'
+                                  ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                                  : badge.tier === 'platinum'
+                                  ? 'bg-purple-50/50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                                  : badge.tier === 'verified'
+                                  ? 'bg-green-50/50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                  : badge.tier === 'special'
+                                  ? 'bg-pink-50/50 dark:bg-pink-900/20 border-pink-200 dark:border-pink-800'
+                                  : 'bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
+                              } ${
+                                isSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
+                              } ${
+                                !badgeStatus?.earned ? 'opacity-75' : ''
+                              }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <div
+                                  className={`p-3 rounded-lg ${
+                                    badgeStatus?.earned
+                                      ? `bg-gradient-to-br ${
+                                          badge.tier === 'bronze'
+                                            ? 'from-amber-500 to-amber-600'
+                                            : badge.tier === 'silver'
+                                            ? 'from-slate-400 to-slate-500'
+                                            : badge.tier === 'gold'
+                                            ? 'from-yellow-400 to-yellow-500'
+                                            : badge.tier === 'diamond'
+                                            ? 'from-blue-400 to-blue-500'
+                                            : badge.tier === 'platinum'
+                                            ? 'from-purple-400 to-purple-500'
+                                            : badge.tier === 'verified'
+                                            ? 'from-green-400 to-green-500'
+                                            : badge.tier === 'special'
+                                            ? 'from-pink-400 to-pink-500'
+                                            : 'from-indigo-400 to-indigo-500'
+                                        }`
+                                      : "bg-slate-300 dark:bg-slate-600"
+                                  }`}
+                                >
+                                  <div className="relative w-14 h-14 flex items-center justify-center">
+                                    <Image
+                                      src={badge.icon}
+                                      alt={badge.name}
+                                      width={56}
+                                      height={56}
+                                      className="w-full h-full object-contain"
+                                      quality={100}
+                                    />
+                                  </div>
                                 </div>
-                                <Progress value={badgeStatus?.progress || 0} className="h-1" />
+                                <div className="flex-1">
+                                  <h3 className={`font-semibold ${getTierColor(badge.tier)}`}>{badge.name}</h3>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">{badge.description}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-500">{badge.subtitle}</p>
+                                  {badgeStatus?.earned ? (
+                                    <UIBadge variant="outline" className={`text-xs mt-2 ${isSelected ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : ''}`}>
+                                      {isSelected ? 'Selected' : 'Earned'}
+                                    </UIBadge>
+                                  ) : (
+                                    <div className="space-y-1 mt-2">
+                                      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                                        <span>Progress</span>
+                                        <span>{badgeStatus?.progress || 0}%</span>
+                                      </div>
+                                      <Progress value={badgeStatus?.progress || 0} className="h-1" />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
               </CardContent>
             </Card>
           </TabsContent>
