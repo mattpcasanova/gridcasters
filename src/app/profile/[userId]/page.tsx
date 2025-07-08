@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/hooks/use-supabase"
-import { BADGES } from "@/lib/constants/badges"
+import { BADGES, getTierBgColor, getTierColor } from "@/lib/constants/badges"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -32,9 +32,9 @@ const userData = {
   followers: 1247,
   following: 892,
   featuredBadges: [
-    { id: 'super_forecaster', name: "Top 1% Accuracy", description: "Achieved 95%+ accuracy in season rankings" },
-    { id: 'sleeper_expert', name: "Sleeper Expert", description: "Identified 10+ breakout players before consensus" },
-    { id: 'consistency_king', name: "Consistency King", description: "Top 10% accuracy for 3 consecutive seasons" }
+    { id: 'grid_genius', name: "Grid Genius", description: "Reached top 1st percentile" },
+    { id: 'active_forecaster', name: "Active Forecaster", description: "Created 20 rankings" },
+    { id: 'rookie_forecaster', name: "Rookie Forecaster", description: "Created your first ranking" }
   ],
   stats: {
     overallAccuracy: 87.3,
@@ -134,28 +134,51 @@ const getPositionColor = (position: string) => {
   }
 }
 
-const getTierGradient = (tier: 'bronze' | 'silver' | 'gold' | 'diamond' | null) => {
-  switch (tier) {
-    case 'bronze':
-      return 'bg-gradient-to-br from-amber-100/50 to-amber-200/50 dark:from-amber-900/20 dark:to-amber-800/20'
-    case 'silver':
-      return 'bg-gradient-to-br from-slate-100/50 to-slate-200/50 dark:from-slate-800/20 dark:to-slate-700/20'
-    case 'gold':
-      return 'bg-gradient-to-br from-yellow-100/50 to-yellow-200/50 dark:from-yellow-900/20 dark:to-yellow-800/20'
-    case 'diamond':
-      return 'bg-gradient-to-br from-blue-100/50 to-blue-200/50 dark:from-blue-900/20 dark:to-blue-800/20'
-    default:
-      return 'bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-slate-900/20 dark:to-slate-800/20'
-  }
-}
-
 export default function UserProfile() {
   const params = useParams()
   const router = useRouter()
   const [isFollowing, setIsFollowing] = useState(userData.isFollowing)
   const [followerCount, setFollowerCount] = useState(userData.followers)
   const [isUploading, setIsUploading] = useState(false)
+  const [profileData, setProfileData] = useState<{ id: string } | null>(null)
   const supabase = useSupabase()
+
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', params.userId)
+          .single()
+
+        if (error) {
+          console.error('Error fetching profile:', error)
+          return
+        }
+
+        setProfileData(profile)
+
+        // Check if already following
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', user.id)
+          .eq('following_id', profile.id)
+          .single()
+
+        setIsFollowing(!!followData)
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      }
+    }
+
+    fetchProfile()
+  }, [supabase, params.userId])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -165,7 +188,15 @@ export default function UserProfile() {
   const handleFollowToggle = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        toast.error('Please sign in to follow users')
+        return
+      }
+
+      if (!profileData?.id) {
+        toast.error('Could not find user profile')
+        return
+      }
 
       const newFollowingState = !isFollowing
       
@@ -175,7 +206,7 @@ export default function UserProfile() {
           .from('follows')
           .insert({
             follower_id: user.id,
-            following_id: params.userId,
+            following_id: profileData.id,
           })
         if (error) throw error
       } else {
@@ -184,7 +215,7 @@ export default function UserProfile() {
           .delete()
           .match({
             follower_id: user.id,
-            following_id: params.userId,
+            following_id: profileData.id,
           })
         if (error) throw error
       }
@@ -310,7 +341,7 @@ export default function UserProfile() {
                     return (
                       <div
                         key={badge.id}
-                        className={`relative flex items-center space-x-3 p-4 rounded-lg ${getTierGradient(badge.tier)} transition-all`}
+                        className={`relative flex items-center space-x-3 p-4 rounded-lg ${getTierBgColor(badge.tier)} transition-all`}
                       >
                         <div className="relative w-14 h-14 flex items-center justify-center">
                           <Image
