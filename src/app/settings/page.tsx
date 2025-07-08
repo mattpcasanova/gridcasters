@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { GradientButton } from "@/components/ui/gradient-button"
+import { useSupabase } from "@/lib/hooks/use-supabase"
+import { toast } from "sonner"
 import {
   Save,
   Upload,
@@ -28,13 +30,12 @@ import {
 
 export default function Settings() {
   const [profileData, setProfileData] = useState({
-    firstName: "Matt",
-    lastName: "Casanova",
-    username: "mattcasanova",
-    email: "matt.casanova@example.com",
-    bio: "Fantasy football enthusiast and data analyst. Always looking to improve my rankings and help others do the same!",
-    location: "New York, NY",
-    website: "https://mattcasanova.com",
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    bio: "",
+    avatar_url: ""
   })
 
   const [notifications, setNotifications] = useState({
@@ -66,10 +67,67 @@ export default function Settings() {
 
   const [twoFactor, setTwoFactor] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
+  const supabase = useSupabase()
+  const [isLoading, setIsLoading] = useState(true)
 
-  const handleProfileSave = () => {
-    // Save profile data
-    console.log("Saving profile:", profileData)
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (error) throw error
+
+        setProfileData({
+          firstName: profile.first_name || "",
+          lastName: profile.last_name || "",
+          username: profile.username || "",
+          email: user.email || "",
+          bio: profile.bio || "",
+          avatar_url: profile.avatar_url || ""
+        })
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+        toast.error('Failed to load profile')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [supabase])
+
+  const handleProfileSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user found')
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          username: profileData.username,
+          bio: profileData.bio
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      toast.success('Changes saved successfully')
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      toast.error('Failed to save changes')
+    }
   }
 
   const handleNotificationSave = () => {
@@ -91,6 +149,128 @@ export default function Settings() {
     console.log("Changing password")
     setPasswords({ current: "", new: "", confirm: "" })
   }
+
+  const handleAvatarUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error('No file selected')
+      return
+    }
+
+    // Check file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB')
+      return
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('File must be an image')
+      return
+    }
+
+    try {
+      setIsUploading(true)
+      toast.loading('Uploading avatar...')
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        throw new Error('Authentication error: ' + userError.message)
+      }
+      
+      if (!user) {
+        throw new Error('No user found')
+      }
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `avatar-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+
+      console.log('Uploading file:', {
+        fileName,
+        filePath,
+        fileSize: file.size,
+        fileType: file.type
+      })
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-avatars') // Changed from 'avatars' to 'profile-avatars'
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: file.type
+        })
+
+      if (uploadError) {
+        throw new Error('Upload error: ' + uploadError.message)
+      }
+
+      console.log('File uploaded successfully')
+
+      const { data } = supabase.storage
+        .from('profile-avatars') // Changed from 'avatars' to 'profile-avatars'
+        .getPublicUrl(filePath)
+
+      if (!data.publicUrl) {
+        throw new Error('Error getting public URL')
+      }
+
+      console.log('Got public URL:', data.publicUrl)
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) {
+        throw new Error('Profile update error: ' + updateError.message)
+      }
+
+      console.log('Profile updated successfully')
+
+      // Update local state instead of reloading
+      setProfileData(prev => ({
+        ...prev,
+        avatar_url: data.publicUrl
+      }))
+
+      toast.dismiss() // Dismiss loading toast
+      toast.success('Avatar updated successfully')
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      toast.dismiss() // Dismiss loading toast
+      toast.error(error instanceof Error ? error.message : 'Failed to upload avatar')
+    } finally {
+      setIsUploading(false)
+    }
+  }, [supabase, setProfileData])
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      handleAvatarUpload(file)
+    }
+  }, [handleAvatarUpload])
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleAvatarUpload(file)
+    }
+  }, [handleAvatarUpload])
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -127,96 +307,124 @@ export default function Settings() {
                 <CardDescription>Update your personal information and profile details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="w-20 h-20">
-                    <AvatarImage src="/placeholder-user.jpg" />
-                    <AvatarFallback className="text-xl">MC</AvatarFallback>
-                  </Avatar>
+                <div 
+                  className={`flex items-center space-x-4 relative ${dragActive ? 'ring-2 ring-blue-500 rounded-lg' : ''}`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <div className="relative">
+                    <Avatar className="w-20 h-20 border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                      <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
+                        <AvatarImage 
+                          src={profileData.avatar_url || "/placeholder-user.jpg"} 
+                          className="w-full h-full object-cover"
+                        />
+                        <AvatarFallback className="text-xl">
+                          {profileData.firstName?.[0]}{profileData.lastName?.[0]}
+                        </AvatarFallback>
+                      </div>
+                    </Avatar>
+                    <div className="absolute inset-0 rounded-full shadow-lg pointer-events-none"></div>
+                  </div>
                   <div>
-                    <Button variant="outline" className="mb-2 bg-transparent">
+                    <label 
+                      htmlFor="avatar-upload"
+                      className={`
+                        relative cursor-pointer inline-flex items-center px-4 py-2 border rounded-md
+                        ${isUploading 
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                          : 'bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800'
+                        }
+                      `}
+                    >
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload New Photo
-                    </Button>
-                    <p className="text-sm text-slate-500">JPG, PNG or GIF. Max size 2MB.</p>
+                      {isUploading ? 'Uploading...' : 'Upload New Photo'}
+                      <input
+                        type="file"
+                        id="avatar-upload"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        disabled={isUploading}
+                      />
+                    </label>
+                    <p className="text-sm text-slate-500 mt-2">
+                      {dragActive 
+                        ? 'Drop your image here'
+                        : 'JPG, PNG or GIF. Max size 2MB. Drag & drop supported.'
+                      }
+                    </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={profileData.firstName}
-                      onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-                    />
+                {isLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-10 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-md"></div>
+                    <div className="h-10 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-md"></div>
+                    <div className="h-20 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-md"></div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={profileData.lastName}
-                      onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={profileData.firstName}
+                          onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={profileData.lastName}
+                          onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={profileData.username}
-                    onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={profileData.username}
+                        onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                        disabled
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={profileData.bio}
-                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    placeholder="Tell us about yourself..."
-                    className="min-h-[100px]"
-                  />
-                  <p className="text-sm text-slate-500">{profileData.bio.length}/500 characters</p>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={profileData.bio}
+                        onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                        placeholder="Tell us about yourself..."
+                        className="min-h-[100px]"
+                      />
+                      <p className="text-sm text-slate-500">{profileData.bio.length}/500 characters</p>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={profileData.location}
-                      onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
-                      placeholder="City, State"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      value={profileData.website}
-                      onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
-                      placeholder="https://yourwebsite.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <GradientButton onClick={handleProfileSave} icon={Save}>
-                    Save Changes
-                  </GradientButton>
-                </div>
+                    <div className="pt-4 border-t">
+                      <GradientButton onClick={handleProfileSave} icon={Save}>
+                        Save Changes
+                      </GradientButton>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

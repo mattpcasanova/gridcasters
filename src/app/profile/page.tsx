@@ -463,9 +463,14 @@ export default function Profile() {
                 <div className="flex items-start space-x-6 flex-1">
                   {/* Profile Picture */}
                   <div className="relative group">
-                    <Avatar className="w-24 h-24 border-4 border-white dark:border-slate-900 shadow-lg">
-                      <AvatarImage src={profile?.avatar_url || "/placeholder-user.jpg"} />
-                      <AvatarFallback className="text-2xl">{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                    <Avatar className="w-24 h-24 border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                      <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
+                        <AvatarImage 
+                          src={profile?.avatar_url || "/placeholder-user.jpg"} 
+                          className="w-full h-full object-cover"
+                        />
+                        <AvatarFallback className="text-xl">{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                      </div>
                     </Avatar>
                     {isEditing && (
                       <label 
@@ -482,6 +487,7 @@ export default function Profile() {
                         />
                       </label>
                     )}
+                    <div className="absolute inset-0 rounded-full shadow-lg pointer-events-none"></div>
                   </div>
 
                   <div className="flex-1">
