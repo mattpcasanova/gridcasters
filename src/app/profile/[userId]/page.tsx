@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,9 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { StatCard } from "@/components/ui/stat-card"
-import { Calendar, MapPin, Users, UserPlus, MessageCircle, Trophy, Star, TrendingUp, Award } from "lucide-react"
+import { CircularProgress } from "@/components/ui/circular-progress"
+import { Calendar, MapPin, Users, UserPlus, MessageCircle, Trophy, Star, TrendingUp, Award, Camera, Settings, LogOut, Share } from "lucide-react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import Image from "next/image"
+import { useParams, useRouter } from "next/navigation"
+import { useSupabase } from "@/lib/hooks/use-supabase"
+import { BADGES } from "@/lib/constants/badges"
+import { cn } from "@/lib/utils"
 
 // Mock user data - in a real app, this would be fetched based on the ID
 const userData = {
@@ -19,7 +24,7 @@ const userData = {
   displayName: "Mike Chen",
   bio: "Fantasy football enthusiast and data analyst. Always looking for the next sleeper pick! 🏈📊",
   avatar: "/placeholder-user.jpg",
-  joinedDate: "March 2023",
+  joinedDate: "July 2025",
   location: "San Francisco, CA",
   isPrivate: false,
   isFollowing: false,
@@ -128,15 +133,74 @@ const getPositionColor = (position: string) => {
   }
 }
 
+const getTierGradient = (tier: 'bronze' | 'silver' | 'gold' | 'diamond' | null) => {
+  switch (tier) {
+    case 'bronze':
+      return 'bg-gradient-to-br from-amber-100/50 to-amber-200/50 dark:from-amber-900/20 dark:to-amber-800/20'
+    case 'silver':
+      return 'bg-gradient-to-br from-slate-100/50 to-slate-200/50 dark:from-slate-800/20 dark:to-slate-700/20'
+    case 'gold':
+      return 'bg-gradient-to-br from-yellow-100/50 to-yellow-200/50 dark:from-yellow-900/20 dark:to-yellow-800/20'
+    case 'diamond':
+      return 'bg-gradient-to-br from-blue-100/50 to-blue-200/50 dark:from-blue-900/20 dark:to-blue-800/20'
+    default:
+      return 'bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-slate-900/20 dark:to-slate-800/20'
+  }
+}
+
 export default function UserProfile() {
   const params = useParams()
+  const router = useRouter()
   const [isFollowing, setIsFollowing] = useState(userData.isFollowing)
   const [followerCount, setFollowerCount] = useState(userData.followers)
+  const [isUploading, setIsUploading] = useState(false)
+  const supabase = useSupabase()
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth/signin')
+  }
 
   const handleFollowToggle = () => {
     setIsFollowing(!isFollowing)
     setFollowerCount(isFollowing ? followerCount - 1 : followerCount + 1)
   }
+
+  const handleAvatarUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      setIsUploading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const fileExt = file.name.split('.').pop()
+      const filePath = `${user.id}/avatar.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-avatars')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-avatars')
+        .getPublicUrl(filePath)
+
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+
+      // Refresh the page to show the new avatar
+      window.location.reload()
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+    } finally {
+      setIsUploading(false)
+    }
+  }, [supabase])
 
   const publicRankings = userData.recentRankings.filter((ranking) => ranking.isPublic)
 
@@ -146,127 +210,126 @@ export default function UserProfile() {
         {/* Profile Header */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={userData.avatar || "/placeholder.svg"} />
-                <AvatarFallback className="text-2xl">
-                  {userData.displayName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex items-start space-x-6">
+              {/* Profile Picture */}
+              <div className="relative group">
+                <Avatar className="w-24 h-24 border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                  <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
+                    <AvatarImage 
+                      src={userData.avatar || "/placeholder-user.jpg"} 
+                      className="w-full h-full object-cover"
+                    />
+                    <AvatarFallback className="text-xl">
+                      {userData.displayName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </div>
+                </Avatar>
+                <div className="absolute inset-0 rounded-full shadow-lg pointer-events-none"></div>
+              </div>
 
               <div className="flex-1">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                <div className="flex items-start justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold">{userData.displayName}</h1>
-                    <p className="text-slate-600 dark:text-slate-400">@{userData.username}</p>
+                    <div className="flex items-center space-x-3">
+                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{userData.displayName}</h1>
+                      <Badge variant="outline" className="text-xs">Public</Badge>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400">@{userData.username} • Joined {userData.joinedDate}</p>
                   </div>
-                  <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-                    {isFollowing ? (
-                      <Button
-                        onClick={handleFollowToggle}
-                        variant="outline"
-                        className="border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Following
-                      </Button>
-                    ) : (
-                      <GradientButton
-                        onClick={handleFollowToggle}
-                        icon={UserPlus}
-                      >
-                        Follow
-                      </GradientButton>
-                    )}
-                    <Button variant="outline">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Message
+                  <div className="flex items-center space-x-3">
+                    <Button
+                      variant="outline"
+                      className="border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px]"
+                    >
+                      <div className="bg-white dark:bg-slate-900 rounded-md px-3 py-1 flex items-center space-x-2">
+                        <Share className="w-4 h-4" />
+                        <span>Share Profile</span>
+                      </div>
                     </Button>
+                    <GradientButton
+                      onClick={handleFollowToggle}
+                      icon={UserPlus}
+                    >
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </GradientButton>
                   </div>
                 </div>
 
-                {/* Featured Badges */}
-                {userData.featuredBadges.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {userData.featuredBadges.map((badge, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="bg-gradient-to-r from-blue-100 to-green-100 text-blue-800 dark:from-blue-900/20 dark:to-green-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                        title={badge.description}
-                      >
-                        <Trophy className="w-3 h-3 mr-1" />
-                        {badge.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                <p className="mt-4 text-slate-700 dark:text-slate-300">{userData.bio}</p>
 
-                <p className="text-slate-700 dark:text-slate-300 mb-4">{userData.bio}</p>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Joined {userData.joinedDate}
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {userData.location}
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="flex items-center">
-                      <Users className="w-4 h-4 mr-1" />
-                      <strong>{followerCount}</strong> followers
-                    </span>
-                    <span>
-                      <strong>{userData.following}</strong> following
-                    </span>
-                  </div>
+                {/* Badges */}
+                <div className="mt-4 flex flex-wrap gap-4">
+                  {userData.featuredBadges.map((badge, index) => (
+                    <div
+                      key={index}
+                      className="relative flex items-center space-x-3 p-4 rounded-lg bg-amber-50/50 dark:bg-amber-900/20 transition-all"
+                    >
+                      <div className="relative w-14 h-14 flex items-center justify-center">
+                        <Image
+                          src="/badges/rookie_forecaster_bronze.png"
+                          alt={badge.name}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-contain"
+                          quality={100}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-amber-600 dark:text-amber-400">{badge.name}</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{badge.description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            </div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
+                    <div className="flex items-center space-x-2">
+                      <CircularProgress value={userData.stats.overallAccuracy} size="sm" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
+                    <h2 className="text-2xl font-bold">#{userData.stats.seasonRank}</h2>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
+                    <h2 className="text-2xl font-bold">{userData.stats.totalRankings}</h2>
+                  </div>
+                </div>
+              </Card>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            title="Overall Accuracy"
-            value={`${userData.stats.overallAccuracy}%`}
-            icon={TrendingUp}
-            progress={userData.stats.overallAccuracy}
-          />
-          <StatCard
-            title="Percentile Rank"
-            value={`${userData.stats.percentile}%`}
-            subtitle="among all users"
-            icon={Award}
-          />
-          <StatCard
-            title="Season Rank"
-            value={`#${userData.stats.seasonRank}`}
-            subtitle="out of 12,847 users"
-            icon={Trophy}
-          />
-          <StatCard
-            title="Total Rankings"
-            value={userData.stats.totalRankings.toString()}
-            subtitle="this season"
-            icon={Star}
-          />
-        </div>
-
-        {/* Tabs Content */}
-        <Tabs defaultValue="rankings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="rankings">Rankings</TabsTrigger>
+        {/* Main Content */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="rankings">
+          <TabsContent value="overview">
             <Card>
               <CardHeader>
                 <CardTitle>Recent Rankings</CardTitle>
@@ -296,13 +359,92 @@ export default function UserProfile() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-green-600 dark:text-green-400">{ranking.accuracy}%</div>
-                          <div className="text-xs text-slate-500">accuracy</div>
+                        <div className="text-right flex items-center space-x-2">
+                          <div>
+                            <div className="font-semibold text-green-600 dark:text-green-400">{ranking.accuracy}%</div>
+                            <div className="text-xs text-slate-500">accuracy</div>
+                          </div>
+                          <CircularProgress value={ranking.accuracy} size="sm" />
                         </div>
                       </div>
                     </Link>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Analytics</CardTitle>
+                <CardDescription>Detailed breakdown of your ranking performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Position Accuracy */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Accuracy by Position</h3>
+                    <div className="space-y-3">
+                      {[
+                        { position: 'QB', accuracy: 89.2 },
+                        { position: 'RB', accuracy: 85.7 },
+                        { position: 'WR', accuracy: 82.4 },
+                        { position: 'TE', accuracy: 87.1 }
+                      ].map(({ position, accuracy }) => (
+                        <div key={position} className="flex items-center justify-between">
+                          <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
+                            {position}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold">{accuracy}%</span>
+                            <CircularProgress value={accuracy} size="sm" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Percentile Rankings */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Percentile Rankings</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Overall', value: 94.8 },
+                        { label: 'Weekly', value: 92.3 },
+                        { label: 'Preseason', value: 88.5 },
+                        { label: 'Consistency', value: 91.2 }
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold">Top {(100 - value).toFixed(1)}%</span>
+                            <CircularProgress value={value} size="sm" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Streak Stats */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Current Streaks</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Top 10%', value: 4, max: 5 },
+                        { label: 'Weekly Wins', value: 3, max: 5 },
+                        { label: 'Perfect Picks', value: 2, max: 5 }
+                      ].map(({ label, value, max }) => (
+                        <div key={label} className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold">{value} weeks</span>
+                            <CircularProgress value={value / max * 100} size="sm" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -315,37 +457,44 @@ export default function UserProfile() {
                 <CardDescription>Badges and milestones earned on RankBet</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {userData.achievements.map((achievement) => {
-                    const IconComponent = achievement.icon
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {BADGES.map((badge) => {
+                    const isEarned = Math.random() > 0.5 // Replace with actual earned logic
                     return (
                       <div
-                        key={achievement.id}
+                        key={badge.id}
                         className={`p-4 border rounded-lg ${
-                          achievement.earned
+                          isEarned
                             ? "bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border-blue-200 dark:border-blue-800"
                             : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-60"
                         }`}
                       >
                         <div className="flex items-start space-x-3">
                           <div
-                            className={`p-2 rounded-lg ${
-                              achievement.earned
-                                ? "bg-gradient-to-br from-blue-500 to-green-500 text-white"
-                                : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400"
+                            className={`p-3 rounded-lg ${
+                              isEarned
+                                ? "bg-gradient-to-br from-blue-500 to-green-500"
+                                : "bg-slate-300 dark:bg-slate-600"
                             }`}
                           >
-                            <IconComponent className="w-5 h-5" />
+                            <div className="relative w-12 h-12 flex items-center justify-center">
+                              <Image
+                                src={badge.icon}
+                                alt={badge.name}
+                                width={48}
+                                height={48}
+                                className="w-full h-full"
+                              />
+                            </div>
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold">{achievement.name}</h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{achievement.description}</p>
-                            {achievement.earned && achievement.date && (
+                            <h3 className="font-semibold">{badge.name}</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{badge.description}</p>
+                            {isEarned ? (
                               <Badge variant="outline" className="text-xs">
-                                Earned {achievement.date}
+                                Earned
                               </Badge>
-                            )}
-                            {!achievement.earned && (
+                            ) : (
                               <Badge variant="secondary" className="text-xs">
                                 Not Earned
                               </Badge>
