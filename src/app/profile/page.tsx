@@ -135,7 +135,20 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false)
   const [isPrivate, setIsPrivate] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [selectedBadges, setSelectedBadges] = useState<string[]>(['rookie_forecaster', 'rising_star'])
+  const [isSelectingBadges, setIsSelectingBadges] = useState(false)
+  const [earnedBadges, setEarnedBadges] = useState<{[key: string]: { earned: boolean, progress: number }}>({
+    rookie_forecaster: { earned: true, progress: 100 },
+    active_forecaster: { earned: true, progress: 100 },
+    seasoned_forecaster: { earned: true, progress: 100 },
+    elite_forecaster: { earned: false, progress: 80 }, // 80 rankings out of 100 required
+    rising_forecaster: { earned: true, progress: 100 },
+    top_performer: { earned: true, progress: 100 },
+    super_forecaster: { earned: true, progress: 100 },
+    grid_genius: { earned: true, progress: 100 },
+    steady_eddie: { earned: true, progress: 100 },
+    consistency_king: { earned: true, progress: 100 }
+  })
+  const [selectedBadges, setSelectedBadges] = useState<string[]>(['active_forecaster', 'rookie_forecaster', 'grid_genius'])
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [editForm, setEditForm] = useState({
@@ -309,6 +322,20 @@ export default function Profile() {
     }
   }
 
+  const toggleBadgeSelection = (badgeId: string) => {
+    if (!earnedBadges[badgeId]?.earned) return
+    
+    setSelectedBadges(prev => {
+      if (prev.includes(badgeId)) {
+        return prev.filter(id => id !== badgeId)
+      }
+      if (prev.length < 3) {
+        return [...prev, badgeId]
+      }
+      return prev
+    })
+  }
+
   const getInitials = (profile: UserProfile) => {
     if (profile.first_name && profile.last_name) {
       return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
@@ -428,172 +455,96 @@ export default function Profile() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="container mx-auto px-4 py-8">
         {/* Profile Header */}
-        <div className="mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                <div className="relative group">
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={profile.avatar_url || "/placeholder-user.jpg"} />
-                    <AvatarFallback className="text-2xl">{getInitials(profile)}</AvatarFallback>
-                  </Avatar>
-                  {isEditing && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
-                      <Label htmlFor="avatar" className="cursor-pointer">
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex flex-col space-y-4">
+              {/* Profile Info */}
+              <div className="flex items-start">
+                <div className="flex items-start space-x-6 flex-1">
+                  {/* Profile Picture */}
+                  <div className="relative group">
+                    <Avatar className="w-24 h-24 border-4 border-white dark:border-slate-900 shadow-lg">
+                      <AvatarImage src={profile?.avatar_url || "/placeholder-user.jpg"} />
+                      <AvatarFallback className="text-2xl">{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                    </Avatar>
+                    {isEditing && (
+                      <label 
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                        htmlFor="avatar"
+                      >
                         <Upload className="w-6 h-6 text-white" />
-                      </Label>
-                      <input
-                        id="avatar"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    {isEditing ? (
-                      <Input
-                        value={editForm.display_name}
-                        onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
-                        className="text-2xl font-bold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
-                        placeholder="Display Name"
-                      />
-                    ) : (
-                      <h1 className="text-3xl font-bold">{getDisplayName(profile)}</h1>
-                    )}
-                    <UIBadge variant="outline" className="text-xs">
-                      <Settings className="w-3 h-3 mr-1" />
-                      {isPrivate ? "Private" : "Public"}
-                    </UIBadge>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 mb-2">
-                    @{profile.username} • Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </p>
-
-                  {/* Featured Badges */}
-                  <div className="flex items-center space-x-2 mb-4">
-                    {selectedBadges.map((badgeId) => {
-                      const badge = BADGES.find((b) => b.id === badgeId)
-                      if (!badge) return null
-                      return (
-                        <div
-                          key={badgeId}
-                          className={`flex items-center space-x-1 px-2 py-1 rounded-full ${getTierBgColor(badge.tier)}`}
-                        >
-                          <Image
-                            src={badge.icon}
-                            alt={badge.name}
-                            width={16}
-                            height={16}
-                            className={getTierColor(badge.tier)}
-                          />
-                          <span className={`text-xs font-medium ${getTierColor(badge.tier)}`}>
-                            {badge.name}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Bio */}
-                  <div className="mb-4">
-                    {isEditing ? (
-                      <Textarea
-                        value={editForm.bio}
-                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-                        placeholder="Tell us about yourself..."
-                        className="min-h-[80px]"
-                      />
-                    ) : (
-                      <p className="text-slate-700 dark:text-slate-300">
-                        {profile.bio || "No bio provided yet."}
-                      </p>
+                        <input
+                          id="avatar"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </label>
                     )}
                   </div>
 
-                  {/* Name Fields (only show in edit mode) */}
-                  {isEditing && (
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      {isEditing ? (
                         <Input
-                          id="firstName"
-                          value={editForm.first_name}
-                          onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
-                          placeholder="First Name"
+                          value={editForm.display_name}
+                          onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
+                          className="text-2xl font-bold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
+                          placeholder="Display Name"
                         />
-                      </div>
-                      <div>
-                        <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={editForm.last_name}
-                          onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
-                          placeholder="Last Name"
-                        />
-                      </div>
+                      ) : (
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{getDisplayName(profile)}</h1>
+                      )}
+                      <UIBadge variant="outline" className="text-xs">Public</UIBadge>
                     </div>
-                  )}
-
-                  {/* Privacy Toggle (only show in edit mode) */}
-                  {isEditing && (
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Switch
-                        id="private"
-                        checked={isPrivate}
-                        onCheckedChange={setIsPrivate}
-                      />
-                      <Label htmlFor="private" className="text-sm">
-                        Private Profile
-                      </Label>
-                    </div>
-                  )}
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                      <CircularProgress value={87.3} size="lg" />
-                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">#156</div>
-                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">47</div>
-                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
-                    </div>
+                    <p className="text-slate-600 dark:text-slate-400">@{profile?.username} • Joined {new Date(profile?.created_at || '').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-col space-y-2 min-w-[140px]">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
+                    onClick={() => router.push('/settings')}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
                   {isEditing ? (
                     <>
-                      <GradientButton onClick={handleSave}>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </GradientButton>
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => setIsEditing(false)}
+                      >
                         <X className="w-4 h-4 mr-2" />
                         Cancel
                       </Button>
+                      <GradientButton
+                        onClick={handleSave}
+                        className="w-full justify-start"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save
+                      </GradientButton>
                     </>
                   ) : (
                     <>
-                      <GradientButton onClick={() => setIsEditing(true)}>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
+                        onClick={() => setIsEditing(true)}
+                      >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Profile
-                      </GradientButton>
-                      <Button variant="outline" onClick={() => setShowShareModal(true)}>
-                        <Share className="w-4 h-4 mr-2" />
-                        Share Profile
                       </Button>
-                      <Button variant="outline" onClick={handleLogout}>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleLogout}
+                        className="w-full justify-start border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
                         <LogOut className="w-4 h-4 mr-2" />
                         Sign Out
                       </Button>
@@ -601,14 +552,67 @@ export default function Profile() {
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+
+              {/* Badges */}
+              <div className="flex flex-wrap gap-4">
+                {selectedBadges.map((badgeId) => {
+                  const badge = BADGES.find((b) => b.id === badgeId)
+                  if (!badge) return null
+                  return (
+                    <div
+                      key={badgeId}
+                      className={`relative flex items-center space-x-3 p-4 rounded-lg ${
+                        badge.tier === 'bronze'
+                          ? 'bg-amber-50/50 dark:bg-amber-900/20'
+                          : badge.tier === 'silver'
+                          ? 'bg-slate-50/50 dark:bg-slate-800/50'
+                          : badge.tier === 'gold'
+                          ? 'bg-yellow-50/50 dark:bg-yellow-900/20'
+                          : 'bg-blue-50/50 dark:bg-blue-900/20'
+                      } transition-all`}
+                    >
+                      <div className="relative w-14 h-14 flex items-center justify-center">
+                        <Image
+                          src={badge.icon}
+                          alt={badge.name}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-contain"
+                          quality={100}
+                        />
+                      </div>
+                      <div>
+                        <h3 className={`font-semibold ${getTierColor(badge.tier)}`}>{badge.name}</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{badge.description}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {isEditing ? (
+                <Textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  placeholder="Tell us about yourself..."
+                  className="mt-4"
+                />
+              ) : (
+                <p className="text-slate-700 dark:text-slate-300">{profile?.bio}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Rankings */}
-          <div className="lg:col-span-2">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
             <Card>
               <CardHeader>
                 <CardTitle>Recent Rankings</CardTitle>
@@ -616,190 +620,234 @@ export default function Profile() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {rankingsLoading ? (
-                    <div className="space-y-4">
-                      {[...Array(6)].map((_, i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="flex items-center space-x-3 p-4 border rounded-lg">
-                            <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
-                            <div className="flex-1 space-y-2">
-                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                            </div>
-                            <div className="w-16 h-6 bg-gray-200 rounded"></div>
+                  {recentRankings?.map((ranking) => (
+                    <Link
+                      key={ranking.id}
+                      href={`/rankings/${ranking.id}`}
+                    >
+                      <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white font-bold">
+                            {ranking.position}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : recentRankings.length > 0 ? (
-                    recentRankings.map((ranking, index) => (
-                      <Link
-                        key={index}
-                        href={`/rankings/${ranking.id}`}
-                        className="block"
-                      >
-                        <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${getPositionColor(ranking.position)}`}
-                            >
-                              <span className={`font-bold text-xs ${getPositionIconColor(ranking.position)}`}>
+                          <div>
+                            <h3 className="font-semibold">{ranking.name}</h3>
+                            <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                              <UIBadge className={getPositionColor(ranking.position)} variant="outline">
                                 {ranking.position}
-                              </span>
+                              </UIBadge>
+                              <span>{new Date(ranking.date).toLocaleDateString()}</span>
                             </div>
-                            <div>
-                              <div className="font-medium">{ranking.name}</div>
-                              <div className="text-sm text-slate-500 dark:text-slate-400">{ranking.date}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {ranking.accuracy !== null ? (
-                              <div className="flex items-center space-x-2">
-                                <CircularProgress value={ranking.accuracy} size="sm" />
-                                {ranking.trend === "up" ? (
-                                  <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                ) : (
-                                  <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-slate-600 dark:text-slate-400">
-                                Active
-                              </div>
-                            )}
                           </div>
                         </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <BarChart3 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
-                      <p className="text-gray-600 mb-4">Create your first ranking to see activity here</p>
-                      <Link href="/rankings">
-                        <Button>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create Ranking
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Analytics */}
-          <div className="space-y-6">
-            {/* Performance Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Stats</CardTitle>
-                <CardDescription>Your ranking performance metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Percentile Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">92nd</div>
-                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Percentile</p>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">Top 8%</div>
-                      <p className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-400">Global</p>
-                    </div>
-                  </div>
-
-                  {/* Position Accuracy */}
-                  <div>
-                    <h4 className="font-medium mb-4">Accuracy by Position</h4>
-                    <div className="space-y-4">
-                      {[
-                        { position: "QB", accuracy: 94.2 },
-                        { position: "RB", accuracy: 89.7 },
-                        { position: "WR", accuracy: 85.1 },
-                        { position: "TE", accuracy: 82.3 },
-                      ].map((item) => (
-                        <div key={item.position} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-3 h-3 rounded-full ${getPositionColor(item.position)}`} />
-                            <span className="font-medium">{item.position}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <CircularProgress value={item.accuracy} size="sm" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Achievements */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Achievements</CardTitle>
-                <CardDescription>Your earned badges and progress</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {Object.entries(
-                    BADGES.reduce<Record<BadgeType['category'], BadgeType[]>>((acc, badge) => {
-                      if (!acc[badge.category]) acc[badge.category] = []
-                      acc[badge.category].push(badge)
-                      return acc
-                    }, {} as Record<BadgeType['category'], BadgeType[]>)
-                  ).map(([category, badges]) => (
-                    <div key={category}>
-                      <h4 className="font-medium mb-4">{getCategoryLabel(category as BadgeType['category'])}</h4>
-                      <div className="space-y-4">
-                        {badges.map((badge) => {
-                          const isEarned = selectedBadges.includes(badge.id)
-                          return (
-                            <div
-                              key={badge.id}
-                              className={`flex items-center space-x-4 p-3 rounded-lg ${
-                                isEarned ? getTierBgColor(badge.tier) : 'bg-slate-50 dark:bg-slate-800'
-                              }`}
-                            >
-                              <Image
-                                src={badge.icon}
-                                alt={badge.name}
-                                width={32}
-                                height={32}
-                                className={isEarned ? getTierColor(badge.tier) : 'opacity-50'}
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <h5 className={`font-medium ${isEarned ? getTierColor(badge.tier) : ''}`}>
-                                    {badge.name}
-                                  </h5>
-                                  {isEarned && (
-                                    <UIBadge variant="outline" className={`text-xs ${getTierColor(badge.tier)}`}>
-                                      Earned
-                                    </UIBadge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">
-                                  {badge.description}
-                                </p>
-                              </div>
+                        <div className="text-right flex items-center space-x-2">
+                          <div>
+                            <div className="font-semibold text-green-600 dark:text-green-400">
+                              {ranking.accuracy !== null ? `${ranking.accuracy}%` : 'Pending'}
                             </div>
-                          )
-                        })}
+                            <div className="text-xs text-slate-500">accuracy</div>
+                          </div>
+                          {ranking.accuracy !== null && (
+                            <CircularProgress value={ranking.accuracy} size="sm" />
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>
+          </TabsContent>
 
-      {showShareModal && <ShareModal />}
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Analytics</CardTitle>
+                <CardDescription>Detailed breakdown of your ranking performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <Card className={`p-4 ${getTierBgColor('bronze')}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
+                        <div className="flex items-center space-x-2">
+                          <CircularProgress value={87} size="sm" />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className={`p-4 ${getTierBgColor('bronze')}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
+                        <h2 className="text-2xl font-bold">#156</h2>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className={`p-4 ${getTierBgColor('bronze')}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
+                        <h2 className="text-2xl font-bold">47</h2>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Position Accuracy */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Accuracy by Position</h3>
+                    <div className="space-y-3">
+                      {[
+                        { position: 'QB', accuracy: 89.2 },
+                        { position: 'RB', accuracy: 85.7 },
+                        { position: 'WR', accuracy: 82.4 },
+                        { position: 'TE', accuracy: 87.1 }
+                      ].map(({ position, accuracy }) => (
+                        <div key={position} className="flex items-center justify-between">
+                          <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
+                            {position}
+                          </span>
+                          <CircularProgress value={accuracy} size="sm" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Percentile Rankings */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Percentile Rankings</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Overall', value: 94.8 },
+                        { label: 'Weekly', value: 92.3 },
+                        { label: 'Preseason', value: 88.5 },
+                        { label: 'Consistency', value: 91.2 }
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold">Top {(100 - value).toFixed(1)}%</span>
+                            <CircularProgress value={value} size="sm" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Streak Stats */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Current Streaks</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Top 10%', value: 4, max: 5 },
+                        { label: 'Weekly Wins', value: 3, max: 5 },
+                        { label: 'Perfect Picks', value: 2, max: 5 }
+                      ].map(({ label, value, max }) => (
+                        <div key={label} className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold">{value} weeks</span>
+                            <CircularProgress value={value / max * 100} size="sm" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements">
+            <Card>
+              <CardHeader>
+                <CardTitle>Achievements</CardTitle>
+                <CardDescription>Badges and milestones earned on RankBet. Click to showcase up to 3 badges on your profile.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {BADGES.map((badge) => {
+                    const badgeStatus = earnedBadges[badge.id]
+                    const isSelected = selectedBadges.includes(badge.id)
+                    return (
+                      <button
+                        key={badge.id}
+                        onClick={() => toggleBadgeSelection(badge.id)}
+                        className={`p-4 border rounded-lg text-left transition-all ${
+                          badge.tier === 'bronze'
+                            ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                            : badge.tier === 'silver'
+                            ? 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                            : badge.tier === 'gold'
+                            ? 'bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                            : 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        } ${
+                          isSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
+                        } ${
+                          !badgeStatus?.earned ? 'opacity-75' : ''
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div
+                            className={`p-3 rounded-lg ${
+                              badgeStatus?.earned
+                                ? `bg-gradient-to-br ${
+                                    badge.tier === 'bronze'
+                                      ? 'from-amber-500 to-amber-600'
+                                      : badge.tier === 'silver'
+                                      ? 'from-slate-400 to-slate-500'
+                                      : badge.tier === 'gold'
+                                      ? 'from-yellow-400 to-yellow-500'
+                                      : 'from-blue-400 to-blue-500'
+                                  }`
+                                : "bg-slate-300 dark:bg-slate-600"
+                            }`}
+                          >
+                            <div className="relative w-14 h-14 flex items-center justify-center">
+                              <Image
+                                src={badge.icon}
+                                alt={badge.name}
+                                width={56}
+                                height={56}
+                                className="w-full h-full object-contain"
+                                quality={100}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{badge.name}</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{badge.description}</p>
+                            {badgeStatus?.earned ? (
+                              <UIBadge variant="outline" className={`text-xs ${isSelected ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : ''}`}>
+                                {isSelected ? 'Selected' : 'Earned'}
+                              </UIBadge>
+                            ) : (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                                  <span>Progress</span>
+                                  <span>{badgeStatus?.progress || 0}%</span>
+                                </div>
+                                <Progress value={badgeStatus?.progress || 0} className="h-1" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {showShareModal && <ShareModal />}
+      </div>
     </div>
   )
 } 
