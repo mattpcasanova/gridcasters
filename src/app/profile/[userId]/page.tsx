@@ -16,6 +16,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { BADGES } from "@/lib/constants/badges"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 // Mock user data - in a real app, this would be fetched based on the ID
 const userData = {
@@ -161,9 +162,41 @@ export default function UserProfile() {
     router.push('/auth/signin')
   }
 
-  const handleFollowToggle = () => {
-    setIsFollowing(!isFollowing)
-    setFollowerCount(isFollowing ? followerCount - 1 : followerCount + 1)
+  const handleFollowToggle = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const newFollowingState = !isFollowing
+      
+      // Update the follows table
+      if (newFollowingState) {
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: params.userId,
+          })
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .match({
+            follower_id: user.id,
+            following_id: params.userId,
+          })
+        if (error) throw error
+      }
+
+      // Update local state
+      setIsFollowing(newFollowingState)
+      setFollowerCount(newFollowingState ? followerCount + 1 : followerCount - 1)
+      toast.success(newFollowingState ? 'Following user' : 'Unfollowed user')
+    } catch (error) {
+      console.error('Error toggling follow:', error)
+      toast.error('Failed to update follow status')
+    }
   }
 
   const handleAvatarUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,7 +246,7 @@ export default function UserProfile() {
             <div className="flex items-start space-x-6">
               {/* Profile Picture */}
               <div className="relative group">
-                <Avatar className="w-24 h-24 border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                <Avatar className="w-24 h-24 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px]">
                   <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
                     <AvatarImage 
                       src={userData.avatar || "/placeholder-user.jpg"} 
@@ -242,7 +275,7 @@ export default function UserProfile() {
                   <div className="flex items-center space-x-3">
                     <Button
                       variant="outline"
-                      className="border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                      className="border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
                     >
                       <Share className="w-4 h-4 mr-2" />
                       Share Profile
@@ -411,10 +444,7 @@ export default function UserProfile() {
                           <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
                             {position}
                           </span>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold">{accuracy}%</span>
-                            <CircularProgress value={accuracy} size="sm" />
-                          </div>
+                          <CircularProgress value={accuracy} size="sm" />
                         </div>
                       ))}
                     </div>

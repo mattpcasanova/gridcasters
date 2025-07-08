@@ -150,7 +150,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
               </NoSSR>
 
               <Link href="/profile">
-                <Avatar className="cursor-pointer border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                <Avatar className="cursor-pointer w-12 h-12 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px]">
                   <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
                     <AvatarImage 
                       src={profile?.avatar_url || "/placeholder-user.jpg"} 
