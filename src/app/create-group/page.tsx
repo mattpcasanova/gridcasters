@@ -102,7 +102,10 @@ export default function CreateGroup() {
 
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) throw userError
+      if (userError) {
+        console.error('Auth error:', userError)
+        throw userError
+      }
       if (!user) {
         toast.error('You must be signed in to create a group')
         return
@@ -110,21 +113,37 @@ export default function CreateGroup() {
 
       let avatarUrl = null
       if (imageFile) {
-        // Upload image
-        const fileExt = imageFile.name.split('.').pop()
-        const fileName = `${Math.random()}.${fileExt}`
-        const { error: uploadError, data } = await supabase.storage
-          .from('group-avatars')
-          .upload(`${user.id}/${fileName}`, imageFile)
+        try {
+          // Create unique filename
+          const fileExt = imageFile.name.split('.').pop()
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+          const filePath = `${user.id}/${fileName}`
 
-        if (uploadError) throw uploadError
+          // Upload image
+          const { error: uploadError } = await supabase.storage
+            .from('group-avatars')
+            .upload(filePath, imageFile, {
+              cacheControl: '3600',
+              upsert: false
+            })
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('group-avatars')
-          .getPublicUrl(`${user.id}/${fileName}`)
+          if (uploadError) {
+            console.error('Upload error:', uploadError)
+            throw uploadError
+          }
 
-        avatarUrl = publicUrl
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('group-avatars')
+            .getPublicUrl(filePath)
+
+          avatarUrl = publicUrl
+          console.log('Image uploaded successfully:', avatarUrl)
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError)
+          toast.error('Failed to upload image. Please try again.')
+          return
+        }
       }
 
       // Create group
@@ -140,7 +159,14 @@ export default function CreateGroup() {
         .select()
         .single()
 
-      if (groupError) throw groupError
+      if (groupError) {
+        console.error('Group creation error:', groupError)
+        throw groupError
+      }
+
+      if (!group) {
+        throw new Error('No group data returned after creation')
+      }
 
       // Send invites
       if (invites.length > 0) {
@@ -153,14 +179,18 @@ export default function CreateGroup() {
             status: 'pending'
           })))
 
-        if (inviteError) throw inviteError
+        if (inviteError) {
+          console.error('Invite error:', inviteError)
+          // Don't throw here, just log the error since the group was created
+          toast.error('Group created, but failed to send some invites')
+        }
       }
 
       toast.success('Group created successfully')
       router.push(`/group/${group.id}`)
     } catch (error) {
       console.error('Error creating group:', error)
-      toast.error('Failed to create group')
+      toast.error('Failed to create group. Please try again.')
     } finally {
       setLoading(false)
     }
