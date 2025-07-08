@@ -111,9 +111,12 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
     <header className="border-b bg-white dark:bg-slate-800 dark:border-slate-700">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-8">
-          <Link href="/" className="flex items-center space-x-2">
-            <Image src="/logo.png" alt="GridCasters Logo" width={40} height={40} className="w-10 h-10" />
-            <span className="text-xl font-bold">GridCasters</span>
+          <Link href="/" className="flex items-center space-x-3">
+            <Image src="/logo.png" alt="GridCasters Logo" width={48} height={48} className="w-12 h-12" />
+            <span className="text-2xl font-bold">
+              <span className="text-blue-600 dark:text-blue-400">Grid</span>
+              <span className="text-green-600 dark:text-green-400">Casters</span>
+            </span>
           </Link>
 
           {isSignedIn && (

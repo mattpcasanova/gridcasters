@@ -17,15 +17,18 @@ const FeatureHighlights = dynamic(() => Promise.resolve(function FeatureHighligh
       <div className="relative z-10 max-w-md text-center text-white mx-auto">
         {/* Logo */}
         <div className="mb-12">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="inline-block group transition-transform hover:scale-105">
             <Image
               src="/logo.png"
-              alt="GridCasters Logo"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+              alt="GridCasters"
+              width={48}
+              height={48}
+              className="w-12 h-12"
             />
-            <span className="text-xl font-bold">GridCasters</span>
+            <span className="text-2xl font-bold">
+              <span className="text-blue-600 dark:text-blue-400">Grid</span>
+              <span className="text-green-600 dark:text-green-400">Casters</span>
+            </span>
           </Link>
         </div>
 
@@ -72,15 +75,19 @@ const FeatureHighlights = dynamic(() => Promise.resolve(function FeatureHighligh
 const MobileLogo = dynamic(() => Promise.resolve(function MobileLogoComponent() {
   return (
     <div className="lg:hidden text-center mb-8">
-      <Link href="/" className="flex items-center space-x-2">
+      <Link href="/" className="inline-block">
         <Image
           src="/logo.png"
-          alt="GridCasters Logo"
-          width={40}
-          height={40}
-          className="w-10 h-10"
+          alt="GridCasters"
+          width={80}
+          height={80}
+          className="mx-auto"
+          priority
         />
-        <span className="text-xl font-bold">GridCasters</span>
+        <span className="text-2xl font-bold mt-2 block">
+          <span className="text-blue-600 dark:text-blue-400">Grid</span>
+          <span className="text-green-600 dark:text-green-400">Casters</span>
+        </span>
       </Link>
     </div>
   );
