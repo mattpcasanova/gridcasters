@@ -27,6 +27,16 @@ CREATE TABLE IF NOT EXISTS group_members (
 ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public groups are viewable by everyone" ON groups;
+DROP POLICY IF EXISTS "Users can create groups" ON groups;
+DROP POLICY IF EXISTS "Hosts can update their groups" ON groups;
+DROP POLICY IF EXISTS "Hosts can delete their groups" ON groups;
+DROP POLICY IF EXISTS "Members are viewable by group members" ON group_members;
+DROP POLICY IF EXISTS "Users can request to join groups" ON group_members;
+DROP POLICY IF EXISTS "Hosts can manage group members" ON group_members;
+DROP POLICY IF EXISTS "Hosts can remove group members" ON group_members;
+
 -- Groups policies
 CREATE POLICY "Public groups are viewable by everyone"
   ON groups FOR SELECT
@@ -102,6 +112,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create trigger to add host as member
+DROP TRIGGER IF EXISTS on_group_created ON groups;
 CREATE TRIGGER on_group_created
   AFTER INSERT ON groups
   FOR EACH ROW
