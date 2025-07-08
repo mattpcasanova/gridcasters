@@ -374,9 +374,18 @@ export default function Leaderboard() {
               </Badge>
             )}
             {showWeeklyRank && entry.change !== undefined && (
-              <span className={entry.change > 0 ? "text-green-500" : entry.change < 0 ? "text-red-500" : "text-slate-500"}>
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${
+                  entry.change > 0 
+                    ? "border-green-200 text-green-600 dark:border-green-800 dark:text-green-400" 
+                    : entry.change < 0 
+                    ? "border-red-200 text-red-600 dark:border-red-800 dark:text-red-400" 
+                    : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-400"
+                }`}
+              >
                 {entry.change > 0 ? `+${entry.change}` : entry.change}
-              </span>
+              </Badge>
             )}
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
