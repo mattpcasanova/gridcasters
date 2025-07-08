@@ -36,6 +36,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { signOut } from "@/lib/utils/client-auth"
 import { toast } from "sonner"
+import { useRecentActivity } from "@/lib/hooks/use-recent-activity"
 
 const getPositionColor = (position: string) => {
   switch (position) {
@@ -124,6 +125,9 @@ export default function Profile() {
     first_name: '',
     last_name: '',
   })
+  
+  // Get real recent rankings data
+  const { recentRankings, loading: rankingsLoading } = useRecentActivity()
 
   // Fetch user profile data
   useEffect(() => {
@@ -575,24 +579,63 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockRankings.slice(0, 3).map((ranking) => (
-                      <Link
-                        key={ranking.id}
-                        href={`/rankings/${ranking.id}`}
-                        className="block"
-                      >
-                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-                          <div>
-                            <p className="font-medium">{ranking.title}</p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{ranking.date}</p>
+                    {rankingsLoading ? (
+                      <div className="space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg animate-pulse">
+                            <div className="space-y-2">
+                              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-48"></div>
+                              <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-12"></div>
+                              <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-8"></div>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold">{ranking.accuracy}%</p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">#{ranking.rank}</p>
+                        ))}
+                      </div>
+                    ) : recentRankings.length > 0 ? (
+                      recentRankings.slice(0, 3).map((ranking) => (
+                        <Link
+                          key={ranking.id}
+                          href={`/rankings/${ranking.id}`}
+                          className="block"
+                        >
+                          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div>
+                              <p className="font-medium">{ranking.name}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{ranking.date}</p>
+                            </div>
+                            <div className="text-right">
+                              {ranking.accuracy !== null ? (
+                                <>
+                                  <p className="font-bold">{ranking.accuracy}%</p>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">accuracy</p>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded text-xs font-medium">
+                                    {ranking.status}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <BarChart3 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
+                        <p className="text-gray-600 mb-4">Create your first ranking to see activity here</p>
+                        <Button asChild>
+                          <Link href="/rankings">
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            Create Ranking
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

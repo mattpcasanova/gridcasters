@@ -11,6 +11,7 @@ import { ArrowLeft, Share, Star, Trophy, TrendingUp, TrendingDown, Calendar, Use
 import Link from "next/link"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { Loading } from "@/components/ui/loading"
+import { getPositionLimits } from "@/lib/constants/position-limits"
 
 // Mock data for the ranking detail
 const getRankingData = (id: string) => {
@@ -388,7 +389,9 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {ranking.players.map((player: any, index: number) => (
+              {ranking.players
+                .slice(0, getPositionLimits(ranking.position).rankingLimit)
+                .map((player: any, index: number) => (
                 <div
                   key={player.id}
                   className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border rounded-lg"
@@ -397,12 +400,23 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
                     <div className="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-sm">
                       {player.rank}
                     </div>
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${player.name.split(" ").map((n: string) => n[0]).join("")}`} />
-                      <AvatarFallback>
-                        {player.name.split(" ").map((n: string) => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5">
+                        <img 
+                          src={`https://sleepercdn.com/content/nfl/players/thumb/${player.id}.jpg`}
+                          alt={player.name}
+                          className="w-full h-full rounded-full bg-gray-200 object-cover"
+                          onError={(e) => {
+                            // Fallback to team logo or placeholder
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://sleepercdn.com/images/team_logos/nfl/${player.team?.toLowerCase()}.png`;
+                            target.onerror = () => {
+                              target.src = '/placeholder-user.jpg';
+                            };
+                          }}
+                        />
+                      </div>
+                    </div>
                     <div>
                       <div className="flex items-center space-x-2">
                         <p className="font-semibold">{player.name}</p>

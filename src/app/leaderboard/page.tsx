@@ -416,7 +416,7 @@ export default function Leaderboard() {
               <Select value={selectedView} onValueChange={(value: 'global' | 'friends' | 'group1' | 'group2') => {
                 setSelectedView(value)
               }}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-48 bg-white dark:bg-slate-800 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 shadow-sm">
                   <SelectValue placeholder="Select leaderboard" />
                 </SelectTrigger>
                 <SelectContent>
@@ -435,7 +435,6 @@ export default function Leaderboard() {
           <StatCard
             title={`Your Rank (${getViewLabel(selectedView)})`}
             value={`#${getUserRank(selectedView) || 'N/A'}`}
-            subtitle="+2 positions this week"
             icon={Trophy}
             trend={{
               value: "+2 positions this week",
@@ -452,7 +451,6 @@ export default function Leaderboard() {
           <StatCard
             title="Your Accuracy"
             value={`${currentUser?.accuracy || 0}%`}
-            subtitle="+3.2% from last week"
             icon={TrendingUp}
             trend={{
               value: "+3.2% from last week",
@@ -617,12 +615,27 @@ export default function Leaderboard() {
                 </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-6">
+                  <SearchInput
+                    placeholder="Search groups..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+                
                 <div className="space-y-4">
-                  {groups.map((group: GroupData) => (
-                    <div
+                  {groups
+                    .filter((group: GroupData) =>
+                      group.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((group: GroupData) => (
+                    <Link
                       key={group.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all"
+                      href={`/group/${group.id}`}
                     >
+                      <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer">
+                      
                       <div className="flex items-center space-x-4">
                         <Avatar className="w-12 h-12">
                           <AvatarImage src={group.avatar} />
@@ -660,7 +673,10 @@ export default function Leaderboard() {
                         <Button
                           variant={group.isJoined ? "outline" : "default"}
                           size="sm"
-                          onClick={() => toggleGroupJoin(group.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleGroupJoin(group.id);
+                          }}
                           className={group.isJoined 
                             ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
                             : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
@@ -679,7 +695,8 @@ export default function Leaderboard() {
                           )}
                         </Button>
                       </div>
-                    </div>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
