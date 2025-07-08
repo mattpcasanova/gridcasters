@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchInput } from "@/components/ui/search-input"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { SegmentedControl } from "@/components/ui/segmented-control"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Filter,
   GripVertical,
@@ -275,15 +275,13 @@ export default function Rankings() {
             {/* Scoring Format */}
             <div className="border-t border-gray-200 pt-4 mb-4">
               <h4 className="font-medium mb-2">Scoring Format</h4>
-              <SegmentedControl
-                value={scoringFormat}
-                onChange={setScoringFormat}
-                options={[
-                  { label: "Standard", value: "std" },
-                  { label: "Half PPR", value: "half_ppr" },
-                  { label: "Full PPR", value: "ppr" }
-                ]}
-              />
+              <Tabs value={scoringFormat} onValueChange={setScoringFormat} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="std">Standard</TabsTrigger>
+                  <TabsTrigger value="half_ppr">Half PPR</TabsTrigger>
+                  <TabsTrigger value="ppr">Full PPR</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
             
             {/* Week Selection */}

@@ -23,15 +23,11 @@ export default function SignUp() {
     email: '',
     password: '',
     username: '',
-    firstName: '',
-    lastName: '',
   })
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     username?: string;
-    firstName?: string;
-    lastName?: string;
     general?: string;
   }>({})
 
@@ -52,15 +48,6 @@ export default function SignUp() {
       newErrors.password = 'Password must be at least 8 characters';
     } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
       newErrors.password = 'Password must contain at least one letter and one number';
-    }
-    
-    // Name validation
-    if (!formData.firstName) {
-      newErrors.firstName = 'First name is required';
-    }
-    
-    if (!formData.lastName) {
-      newErrors.lastName = 'Last name is required';
     }
     
     // Username validation
@@ -101,9 +88,7 @@ export default function SignUp() {
       const result = await signUp(supabase, {
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
-        username: formData.username.toLowerCase().trim(),
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim()
+        username: formData.username.toLowerCase().trim()
       });
       
       // Check if email confirmation is needed
@@ -179,68 +164,6 @@ export default function SignUp() {
             <p className="text-sm text-red-700 dark:text-red-400">{errors.general}</p>
           </div>
         )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label 
-              htmlFor="firstName" 
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-            >
-              First Name
-            </Label>
-            <Input
-              id="firstName"
-              name="firstName"
-              type="text"
-              autoComplete="given-name"
-              required
-              className={cn(
-                "mt-1",
-                errors.firstName && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
-              )}
-              placeholder="Enter your first name"
-              value={formData.firstName}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, firstName: e.target.value }))
-                if (errors.firstName) setErrors(prev => ({ ...prev, firstName: undefined }))
-              }}
-              disabled={isLoading}
-            />
-            {errors.firstName && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.firstName}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label 
-              htmlFor="lastName" 
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-            >
-              Last Name
-            </Label>
-            <Input
-              id="lastName"
-              name="lastName"
-              type="text"
-              autoComplete="family-name"
-              required
-              className={cn(
-                "mt-1",
-                errors.lastName && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
-              )}
-              placeholder="Enter your last name"
-              value={formData.lastName}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, lastName: e.target.value }))
-                if (errors.lastName) setErrors(prev => ({ ...prev, lastName: undefined }))
-              }}
-              disabled={isLoading}
-            />
-            {errors.lastName && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.lastName}</p>
-            )}
-          </div>
-        </div>
 
         <div className="space-y-2">
           <Label 

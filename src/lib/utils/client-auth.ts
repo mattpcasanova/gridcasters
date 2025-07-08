@@ -8,10 +8,10 @@ export type SignInData = {
   password: string;
 };
 
-export type SignUpData = SignInData & {
+export type SignUpData = {
+  email: string;
+  password: string;
   username: string;
-  firstName: string;
-  lastName: string;
 };
 
 export type SignUpResult = {
@@ -98,7 +98,7 @@ export async function signIn(
 
 export async function signUp(
   supabase: SupabaseClient<Database>,
-  { email, password, username, firstName, lastName }: SignUpData
+  { email, password, username }: SignUpData
 ): Promise<SignUpResult> {
   console.log('Starting sign up for:', email);
 
@@ -112,9 +112,7 @@ export async function signUp(
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         data: {
           username: username,
-          display_name: `${firstName} ${lastName}`,
-          first_name: firstName,
-          last_name: lastName
+          display_name: username
         }
       }
     });

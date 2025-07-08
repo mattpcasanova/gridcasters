@@ -26,6 +26,7 @@ export default function SignIn() {
   })
   const [errors, setErrors] = useState<{
     emailOrUsername?: string;
+    email?: string;
     password?: string;
     general?: string;
   }>({})
