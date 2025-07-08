@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { ArrowLeft, Upload, Users, X, UserPlus } from "lucide-react"
+import { ArrowLeft, Upload, Users, X, UserPlus, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { toast } from "sonner"
@@ -27,16 +27,56 @@ export default function CreateGroup() {
   const [loading, setLoading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [isDragging, setIsDragging] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [invites, setInvites] = useState<InviteMember[]>([])
   const router = useRouter()
   const supabase = useSupabase()
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = useCallback((file: File) => {
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      return
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB')
+      return
+    }
+
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (file) {
+      handleImageChange(file)
+    }
+  }, [handleImageChange])
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setImageFile(file)
-      setImagePreview(URL.createObjectURL(file))
+      handleImageChange(file)
     }
   }
 
@@ -75,10 +115,16 @@ export default function CreateGroup() {
         const fileName = `${Math.random()}.${fileExt}`
         const { error: uploadError, data } = await supabase.storage
           .from('group-avatars')
-          .upload(fileName, imageFile)
+          .upload(`${user.id}/${fileName}`, imageFile)
 
         if (uploadError) throw uploadError
-        avatarUrl = data.path
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('group-avatars')
+          .getPublicUrl(`${user.id}/${fileName}`)
+
+        avatarUrl = publicUrl
       }
 
       // Create group
@@ -144,33 +190,54 @@ export default function CreateGroup() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Group Image */}
-                  <div className="flex items-center space-x-6">
-                    <Avatar className="w-20 h-20">
-                      <AvatarImage src={imagePreview} />
-                      <AvatarFallback>
-                        <Users className="w-8 h-8" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <Label htmlFor="image" className="cursor-pointer">
-                        <div className="flex items-center space-x-2">
-                          <Button type="button" variant="outline" size="sm">
-                            <Upload className="w-4 h-4 mr-2" />
-                            Upload Image
-                          </Button>
+                  <div
+                    className={`relative flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
+                      isDragging
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500"
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    {imagePreview ? (
+                      <div className="relative group">
+                        <Avatar className="w-32 h-32">
+                          <AvatarImage src={imagePreview} />
+                          <AvatarFallback>
+                            <Users className="w-12 h-12" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
+                          <Label htmlFor="image" className="cursor-pointer">
+                            <Upload className="w-6 h-6 text-white" />
+                          </Label>
                         </div>
-                      </Label>
-                      <input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">
-                        Recommended: Square image, at least 200x200px
-                      </p>
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <ImageIcon className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                        <Label htmlFor="image" className="cursor-pointer">
+                          <div className="flex flex-col items-center">
+                            <Button type="button" variant="outline" size="sm" className="mb-2">
+                              <Upload className="w-4 h-4 mr-2" />
+                              Choose Image
+                            </Button>
+                            <p className="text-sm text-slate-500">or drag and drop</p>
+                          </div>
+                        </Label>
+                      </div>
+                    )}
+                    <input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileInput}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-slate-500 mt-4">
+                      Recommended: Square image, at least 200x200px (max 2MB)
+                    </p>
                   </div>
 
                   <div className="space-y-2">
