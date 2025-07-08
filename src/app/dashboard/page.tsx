@@ -276,7 +276,7 @@ export default function Dashboard() {
                     recentRankings.map((ranking, index) => (
                     <Link
                       key={index}
-                      href={`/rankings?week=${ranking.week}&position=${ranking.position}`}
+                      href={`/rankings/${ranking.id}`}
                       className="block"
                     >
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">

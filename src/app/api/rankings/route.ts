@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 
+// Helper function to convert scoring format to readable string
+function getScoringFormatText(scoringFormat: string): string {
+  switch (scoringFormat) {
+    case 'std':
+      return 'Standard';
+    case 'ppr':
+      return 'Full PPR';
+    case 'half_ppr':
+    default:
+      return 'Half PPR';
+  }
+}
+
 // Helper function to update individual position rankings based on OVR ranking
-async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string) {
+async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string, scoringFormat?: string) {
   // Group players by position from the OVR ranking
   const playersByPosition: Record<string, any[]> = {};
   
@@ -42,10 +55,12 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
       // Update existing position ranking
       positionRankingId = existingPositionRanking.id;
       
+      const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+      
       await supabase
         .from('rankings')
         .update({
-          title: type === 'preseason' ? `Pre-Season ${pos} Rankings` : `Week ${week} ${pos} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${pos} ${scoringText} Rankings` : `Week ${week} ${pos} ${scoringText} Rankings`,
           updated_at: new Date().toISOString()
         })
         .eq('id', positionRankingId);
@@ -57,11 +72,13 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
         .eq('ranking_id', positionRankingId);
     } else {
       // Create new position ranking
+      const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+      
       const { data: newPositionRanking, error: createError } = await supabase
         .from('rankings')
         .insert({
           user_id: userId,
-          title: type === 'preseason' ? `Pre-Season ${pos} Rankings` : `Week ${week} ${pos} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${pos} ${scoringText} Rankings` : `Week ${week} ${pos} ${scoringText} Rankings`,
           position: pos,
           type,
           week,
@@ -116,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Authenticated user ID:', user.id);
 
-    const { players, position, week, season, type = 'weekly' } = await request.json();
+    const { players, position, week, season, type = 'weekly', scoringFormat = 'half_ppr' } = await request.json();
 
     if (!players || !position || !season) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -155,10 +172,12 @@ export async function POST(request: NextRequest) {
       rankingId = existingRanking.id;
       console.log('Found existing ranking with ID:', rankingId);
       
+      const scoringText = getScoringFormatText(scoringFormat);
+      
       const { error: updateError } = await supabase
         .from('rankings')
         .update({
-          title: type === 'preseason' ? `Pre-Season ${position} Rankings` : `Week ${weekValue} ${position} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${position} ${scoringText} Rankings` : `Week ${weekValue} ${position} ${scoringText} Rankings`,
           updated_at: new Date().toISOString()
         })
         .eq('id', rankingId);
@@ -180,11 +199,13 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Create new ranking
+      const scoringText = getScoringFormatText(scoringFormat);
+      
       const { data: newRanking, error: createError } = await supabase
         .from('rankings')
         .insert({
           user_id: user.id,
-          title: type === 'preseason' ? `Pre-Season ${position} Rankings` : `Week ${weekValue} ${position} Rankings`,
+          title: type === 'preseason' ? `Pre-Season ${position} ${scoringText} Rankings` : `Week ${weekValue} ${position} ${scoringText} Rankings`,
           position,
           type,
           week: weekValue,
@@ -271,7 +292,7 @@ export async function POST(request: NextRequest) {
 
     // If this is an OVR ranking, update individual position rankings to maintain consistency
     if (position === 'OVR') {
-      await updatePositionRankingsFromOVR(supabase, user.id, players, weekValue, season, type);
+      await updatePositionRankingsFromOVR(supabase, user.id, players, weekValue, season, type, scoringFormat);
     }
 
     return NextResponse.json({ 

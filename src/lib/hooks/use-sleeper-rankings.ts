@@ -354,7 +354,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
           position: position,
           week: rankingType === 'preseason' ? null : currentWeek,
           season: seasonInfo.season,
-          type: rankingType
+          type: rankingType,
+          scoringFormat: scoringFormat
         }),
       });
 

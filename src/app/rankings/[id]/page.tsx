@@ -1,14 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { NavigationHeader } from "@/components/layout/navigation-header"
+
 import { CircularProgress } from "@/components/ui/circular-progress"
 import { ArrowLeft, Share, Star, Trophy, TrendingUp, TrendingDown, Calendar, Users } from "lucide-react"
 import Link from "next/link"
+import { useSupabase } from "@/lib/hooks/use-supabase"
+import { Loading } from "@/components/ui/loading"
 
 // Mock data for the ranking detail
 const getRankingData = (id: string) => {
@@ -149,8 +151,122 @@ const getPositionColor = (position: string) => {
 }
 
 export default function RankingDetailPage({ params }: { params: { id: string } }) {
-  const ranking = getRankingData(params.id)
+  const [ranking, setRanking] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
+  const supabase = useSupabase()
+
+  useEffect(() => {
+    const fetchRanking = async () => {
+      try {
+        setLoading(true)
+        
+        const { data: rankingData, error: rankingError } = await supabase
+          .from('rankings')
+          .select(`
+            *,
+            profiles!inner(
+              username,
+              display_name,
+              avatar_url
+            ),
+            player_rankings(
+              player_id,
+              player_name,
+              team,
+              position,
+              rank_position,
+              is_starred
+            )
+          `)
+          .eq('id', params.id)
+          .single()
+
+        if (rankingError) {
+          setError('Ranking not found')
+          return
+        }
+
+        // Transform the data to match the expected structure
+        const transformedRanking = {
+          id: rankingData.id,
+          title: rankingData.title,
+          position: rankingData.position,
+          week: rankingData.week ? `Week ${rankingData.week}` : 'Pre-Season',
+          season: rankingData.season.toString(),
+          accuracy: rankingData.accuracy_score || null,
+          rank: null, // This would need to be calculated based on leaderboard position
+          totalRankings: 0, // This would need to be calculated
+          createdDate: new Date(rankingData.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          user: {
+            name: rankingData.profiles.display_name || rankingData.profiles.username,
+            username: rankingData.profiles.username,
+            avatar: rankingData.profiles.avatar_url || '/placeholder-user.jpg',
+            verified: false
+          },
+          players: rankingData.player_rankings
+            .sort((a: any, b: any) => a.rank_position - b.rank_position)
+            .map((player: any) => ({
+              id: player.player_id,
+              name: player.player_name,
+              team: player.team,
+              position: player.position,
+              rank: player.rank_position,
+              projectedPoints: 0, // This would need to be fetched from Sleeper
+              isStarred: player.is_starred,
+              actualPoints: 0, // This would need to be fetched from Sleeper
+              accuracy: null // This would need to be calculated
+            }))
+        }
+
+        setRanking(transformedRanking)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching ranking:', err)
+        setError('Failed to load ranking')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRanking()
+  }, [params.id, supabase])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <Loading />
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !ranking) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Ranking Not Found</h1>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              {error || 'The ranking you are looking for does not exist.'}
+            </p>
+            <Link href="/profile">
+              <Button>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Profile
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const ShareModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -165,9 +281,9 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
           <div className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
             <Avatar className="w-12 h-12">
               <AvatarImage src={ranking.user.avatar} />
-              <AvatarFallback>
-                {ranking.user.name.split(" ").map(n => n[0]).join("").toUpperCase()}
-              </AvatarFallback>
+                                <AvatarFallback>
+                    {ranking.user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+                  </AvatarFallback>
             </Avatar>
             <div>
               <p className="font-semibold">{ranking.title}</p>
@@ -195,8 +311,6 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <NavigationHeader />
-
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <div className="mb-6">
@@ -216,7 +330,7 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={ranking.user.avatar} />
                   <AvatarFallback className="text-xl">
-                    {ranking.user.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                    {ranking.user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
 
@@ -247,7 +361,7 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
                       <p className="text-sm text-slate-600 dark:text-slate-400">Total Rankings</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold">{ranking.players.filter(p => p.isStarred).length}</p>
+                      <p className="text-2xl font-bold">{ranking.players.filter((p: any) => p.isStarred).length}</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400">My Guys</p>
                     </div>
                   </div>
@@ -274,7 +388,7 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {ranking.players.map((player, index) => (
+              {ranking.players.map((player: any, index: number) => (
                 <div
                   key={player.id}
                   className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border rounded-lg"
@@ -284,9 +398,9 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
                       {player.rank}
                     </div>
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${player.name.split(" ").map(n => n[0]).join("")}`} />
+                      <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${player.name.split(" ").map((n: string) => n[0]).join("")}`} />
                       <AvatarFallback>
-                        {player.name.split(" ").map(n => n[0]).join("")}
+                        {player.name.split(" ").map((n: string) => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div>

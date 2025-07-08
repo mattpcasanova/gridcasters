@@ -279,7 +279,7 @@ export default function UserProfile() {
                   {publicRankings.map((ranking) => (
                     <Link
                       key={ranking.id}
-                      href={`/rankings?week=${ranking.week.toLowerCase().replace(" ", "")}&position=${ranking.position.toLowerCase()}`}
+                      href={`/rankings/${ranking.id}`}
                     >
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                         <div className="flex items-center space-x-4">

@@ -15,6 +15,7 @@ import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserP
 import Link from "next/link"
 import { useHeaderButtons } from "@/components/layout/root-layout-client"
 import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
+import { getCurrentSeasonInfo } from "@/lib/utils/season"
 
 interface LeaderboardUser {
   id: number;
@@ -217,11 +218,16 @@ const groupData: GroupData[] = [
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState("overall")
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedWeek, setSelectedWeek] = useState("Week 8")
+  
+  // Get current season info and default to current week
+  const seasonInfo = getCurrentSeasonInfo()
+  const currentWeek = seasonInfo.isPreSeason ? 1 : (seasonInfo.currentWeek || 1)
+  const [selectedWeek, setSelectedWeek] = useState(`Week ${currentWeek}`)
+  
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
   const [groups, setGroups] = useState<GroupData[]>(groupData)
   const { setRightButtons } = useHeaderButtons()
-  const { selectedView } = useLeaderboard()
+  const { selectedView, setSelectedView, getViewLabel, getUserRank } = useLeaderboard()
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
   const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
@@ -282,22 +288,42 @@ export default function Leaderboard() {
 
   const weeklyData = [...leaderboardData].sort((a, b) => (a.weeklyRank || 999) - (b.weeklyRank || 999))
 
-  const renderUserRow = (entry: LeaderboardUser, showWeeklyRank = false) => (
+  // Generate available weeks (only current and past weeks)
+  const getAvailableWeeks = () => {
+    const weeks = []
+    for (let i = 1; i <= currentWeek; i++) {
+      weeks.push(`Week ${i}`)
+    }
+    return weeks.reverse() // Most recent first
+  }
+
+  const renderUserRow = (entry: LeaderboardUser, showWeeklyRank = false) => {
+    const rank = showWeeklyRank ? (entry.weeklyRank || 999) : entry.rank
+    
+    // Determine background gradient based on rank
+    let backgroundClass = "hover:bg-slate-50 dark:hover:bg-slate-800"
+    if (rank === 1) {
+      backgroundClass = "bg-gradient-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/30 dark:to-yellow-800/30 border-yellow-300 dark:border-yellow-700"
+    } else if (rank === 2) {
+      backgroundClass = "bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800/50 dark:to-gray-700/50 border-gray-300 dark:border-gray-600"
+    } else if (rank === 3) {
+      backgroundClass = "bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 border-orange-300 dark:border-orange-700"
+    } else if (entry.isCurrentUser) {
+      backgroundClass = "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+    }
+
+    return (
     <div
       key={entry.id}
-      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-        entry.isCurrentUser 
-          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" 
-          : "hover:bg-slate-50 dark:hover:bg-slate-800"
-      }`}
+      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${backgroundClass}`}
     >
       <div className="flex items-center space-x-4">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-          (showWeeklyRank ? (entry.weeklyRank || 999) : entry.rank) <= 3 
+          rank <= 3 
             ? "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white" 
             : "bg-slate-100 dark:bg-slate-700"
         }`}>
-          {showWeeklyRank ? (entry.weeklyRank || 'N/A') : entry.rank}
+          {rank}
         </div>
 
         <Link href={`/profile/${entry.id}`}>
@@ -373,22 +399,42 @@ export default function Leaderboard() {
         )}
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Leaderboard</h1>
-          <p className="text-slate-600 dark:text-slate-400">Outrank the Competition</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Leaderboard</h1>
+              <p className="text-slate-600 dark:text-slate-400">Outrank the Competition</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Select value={selectedView} onValueChange={(value: 'global' | 'friends' | 'group1' | 'group2') => {
+                setSelectedView(value)
+              }}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select leaderboard" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Global Rankings</SelectItem>
+                  <SelectItem value="friends">Friends Only</SelectItem>
+                  <SelectItem value="group1">Fantasy Experts Group</SelectItem>
+                  <SelectItem value="group2">College Friends</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard
-            title="Your Rank"
-            value={`#${currentUser?.rank || 'N/A'}`}
+            title={`Your Rank (${getViewLabel(selectedView)})`}
+            value={`#${getUserRank(selectedView) || 'N/A'}`}
             subtitle="+2 positions this week"
             icon={Trophy}
             trend={{
@@ -406,10 +452,10 @@ export default function Leaderboard() {
           <StatCard
             title="Your Accuracy"
             value={`${currentUser?.accuracy || 0}%`}
-            subtitle="+3.2% this week"
+            subtitle="+3.2% from last week"
             icon={TrendingUp}
             trend={{
-              value: "+3.2% this week",
+              value: "+3.2% from last week",
               direction: "up",
               icon: TrendingUp
             }}
@@ -462,11 +508,11 @@ export default function Leaderboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Week 8">Week 8</SelectItem>
-                      <SelectItem value="Week 7">Week 7</SelectItem>
-                      <SelectItem value="Week 6">Week 6</SelectItem>
-                      <SelectItem value="Week 5">Week 5</SelectItem>
-                      <SelectItem value="Week 4">Week 4</SelectItem>
+                      {getAvailableWeeks().map((week) => (
+                        <SelectItem key={week} value={week}>
+                          {week}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
