@@ -242,19 +242,28 @@ export default function UserProfile() {
                   <div className="flex items-center space-x-3">
                     <Button
                       variant="outline"
-                      className="border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px]"
+                      className="border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
                     >
-                      <div className="bg-white dark:bg-slate-900 rounded-md px-3 py-1 flex items-center space-x-2">
-                        <Share className="w-4 h-4" />
-                        <span>Share Profile</span>
-                      </div>
+                      <Share className="w-4 h-4 mr-2" />
+                      Share Profile
                     </Button>
-                    <GradientButton
-                      onClick={handleFollowToggle}
-                      icon={UserPlus}
-                    >
-                      {isFollowing ? 'Following' : 'Follow'}
-                    </GradientButton>
+                    {isFollowing ? (
+                      <Button
+                        onClick={handleFollowToggle}
+                        variant="outline"
+                        className="border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Following
+                      </Button>
+                    ) : (
+                      <GradientButton
+                        onClick={handleFollowToggle}
+                        icon={UserPlus}
+                      >
+                        Follow
+                      </GradientButton>
+                    )}
                   </div>
                 </div>
 
@@ -265,7 +274,13 @@ export default function UserProfile() {
                   {userData.featuredBadges.map((badge, index) => (
                     <div
                       key={index}
-                      className="relative flex items-center space-x-3 p-4 rounded-lg bg-amber-50/50 dark:bg-amber-900/20 transition-all"
+                      className={`relative flex items-center space-x-3 p-4 rounded-lg ${
+                        badge.name.includes("Top 1%")
+                          ? "bg-blue-50/50 dark:bg-blue-900/20"
+                          : badge.name.includes("Sleeper")
+                          ? "bg-amber-50/50 dark:bg-amber-900/20"
+                          : "bg-slate-50/50 dark:bg-slate-800/50"
+                      } transition-all`}
                     >
                       <div className="relative w-14 h-14 flex items-center justify-center">
                         <Image
@@ -278,7 +293,7 @@ export default function UserProfile() {
                         />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-amber-600 dark:text-amber-400">{badge.name}</h3>
+                        <h3 className={`font-semibold ${badge.name.includes("Top 1%") ? "text-blue-600 dark:text-blue-400" : badge.name.includes("Sleeper") ? "text-amber-600 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}`}>{badge.name}</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400">{badge.description}</p>
                       </div>
                     </div>
@@ -289,7 +304,7 @@ export default function UserProfile() {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-3 gap-4 mt-6">
-              <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20">
+              <Card className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
@@ -300,7 +315,7 @@ export default function UserProfile() {
                 </div>
               </Card>
 
-              <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20">
+              <Card className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
@@ -309,7 +324,7 @@ export default function UserProfile() {
                 </div>
               </Card>
 
-              <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20">
+              <Card className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>

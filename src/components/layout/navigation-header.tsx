@@ -150,9 +150,14 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
               </NoSSR>
 
               <Link href="/profile">
-                <Avatar className="cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
-                  <AvatarImage src={profile?.avatar_url || "/placeholder-user.jpg"} />
-                  <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                <Avatar className="cursor-pointer border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                  <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
+                    <AvatarImage 
+                      src={profile?.avatar_url || "/placeholder-user.jpg"} 
+                      className="w-full h-full object-cover"
+                    />
+                    <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                  </div>
                 </Avatar>
               </Link>
             </>
