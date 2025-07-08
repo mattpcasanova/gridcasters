@@ -11,11 +11,12 @@ import { SearchInput } from "@/components/ui/search-input"
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { CircularProgress } from "@/components/ui/circular-progress"
-import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown } from "lucide-react"
+import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { useHeaderButtons } from "@/components/layout/root-layout-client"
 import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
 import { getCurrentSeasonInfo } from "@/lib/utils/season"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 
 interface LeaderboardUser {
   id: number;
@@ -218,6 +219,7 @@ const groupData: GroupData[] = [
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState("overall")
   const [searchTerm, setSearchTerm] = useState("")
+  const [pprType, setPprType] = useState("combined")
   
   // Get current season info and default to current week
   const seasonInfo = getCurrentSeasonInfo()
@@ -405,304 +407,140 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col space-y-6">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
             <div>
               <h1 className="text-3xl font-bold mb-2">Leaderboard</h1>
-              <p className="text-slate-600 dark:text-slate-400">Outrank the Competition</p>
+              <p className="text-slate-600 dark:text-slate-400">See how you stack up against other rankers</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Select value={selectedView} onValueChange={(value: 'global' | 'friends' | 'group1' | 'group2') => {
-                setSelectedView(value)
-              }}>
-                <SelectTrigger className="w-48 bg-white dark:bg-slate-800 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 shadow-sm">
-                  <SelectValue placeholder="Select leaderboard" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="global">Global Rankings</SelectItem>
-                  <SelectItem value="friends">Friends Only</SelectItem>
-                  <SelectItem value="group1">Fantasy Experts Group</SelectItem>
-                  <SelectItem value="group2">College Friends</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            {/* PPR Type Selection */}
+            <div className="w-full md:w-auto">
+              <SegmentedControl
+                value={pprType}
+                onValueChange={setPprType}
+                items={[
+                  { value: "combined", label: "Combined" },
+                  { value: "standard", label: "Standard" },
+                  { value: "half", label: "Half PPR" },
+                  { value: "full", label: "Full PPR" },
+                ]}
+              />
             </div>
           </div>
-        </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard
-            title={`Your Rank (${getViewLabel(selectedView)})`}
-            value={`#${getUserRank(selectedView) || 'N/A'}`}
-            icon={Trophy}
-            trend={{
-              value: "+2 positions this week",
-              direction: "up",
-              icon: TrendingUp
-            }}
-          />
-          <StatCard
-            title="Total Players"
-            value="2,847"
-            subtitle="Active this week"
-            icon={Users}
-          />
-          <StatCard
-            title="Your Accuracy"
-            value={`${currentUser?.accuracy || 0}%`}
-            icon={TrendingUp}
-            trend={{
-              value: "+3.2% from last week",
-              direction: "up",
-              icon: TrendingUp
-            }}
-            progress={currentUser?.accuracy}
-          />
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overall">Overall</TabsTrigger>
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="friends">Friends</TabsTrigger>
-            <TabsTrigger value="groups">Groups</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overall">
-            <Card>
-              <CardHeader>
-                <CardTitle>Overall Leaderboard</CardTitle>
-                <CardDescription>Your position and nearby competitors</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-6">
+          {/* Search and Filter Section */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+                <div className="flex-1">
                   <SearchInput
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-md"
+                    className="w-full bg-white dark:bg-slate-800 shadow-sm"
                   />
                 </div>
+                <Select
+                  value={selectedView}
+                  onValueChange={setSelectedView}
+                  className="w-full md:w-48"
+                >
+                  <SelectTrigger className="bg-white dark:bg-slate-800 shadow-sm">
+                    <SelectValue placeholder="Select view" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="global">Global Rankings</SelectItem>
+                    <SelectItem value="friends">Friends Only</SelectItem>
+                    <SelectItem value="group1">Fantasy Experts Group</SelectItem>
+                    <SelectItem value="group2">College Friends</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="space-y-4">
-                  {filteredData.map((entry: LeaderboardUser) => renderUserRow(entry))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard
+              title="Total Rankings"
+              value="1,247"
+              icon={BarChart3}
+              subtitle="Across all users"
+            />
+            <StatCard
+              title="Your Position"
+              value="#3"
+              icon={Trophy}
+              subtitle={`in ${getViewLabel(selectedView)}`}
+            />
+            <StatCard
+              title="Active Users"
+              value="247"
+              icon={Users}
+              subtitle="This week"
+            />
+          </div>
 
-          <TabsContent value="weekly">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle>Weekly Leaderboard</CardTitle>
-                    <CardDescription>This week's top performers</CardDescription>
-                  </div>
-                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableWeeks().map((week) => (
-                        <SelectItem key={week} value={week}>
-                          {week}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-6">
-                  <SearchInput
-                    placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-md"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  {weeklyData
-                    .filter((user: LeaderboardUser) =>
-                      user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((entry: LeaderboardUser) => renderUserRow(entry, true))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="friends">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle>Friends Leaderboard</CardTitle>
-                    <CardDescription>See how you rank among your friends</CardDescription>
-                  </div>
-                  <Link href="/find-friends">
-                    <Button variant="outline" size="sm">
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Find Friends
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {friendsData.length > 1 ? (
-                  <>
-                    <div className="mb-6">
-                      <SearchInput
-                        placeholder="Search friends..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="max-w-md"
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      {friendsData
-                        .filter((user: LeaderboardUser) =>
-                          user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
-                        )
-                        .sort((a, b) => a.rank - b.rank)
-                        .map((entry: LeaderboardUser, index: number) => (
-                          <div key={entry.id} className="relative">
-                            {renderUserRow({...entry, rank: index + 1})}
-                          </div>
-                        ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-12">
-                    <Users className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Friends Yet</h3>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">
-                      Follow other users to see how you rank among friends
-                    </p>
-                    <Link href="/find-friends">
-                      <Button>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Find Friends
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="groups">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle>Group Leaderboards</CardTitle>
-                    <CardDescription>Rankings within your groups</CardDescription>
-                  </div>
-                  <Link href="/find-groups">
-                    <Button variant="outline" size="sm">
-                      <Users className="w-4 h-4 mr-2" />
-                      Find Groups
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-6">
-                  <SearchInput
-                    placeholder="Search groups..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-md"
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  {groups
-                    .filter((group: GroupData) =>
-                      group.name.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((group: GroupData) => (
-                    <Link
-                      key={group.id}
-                      href={`/group/${group.id}`}
-                    >
-                      <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer">
-                      
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={group.avatar} />
-                          <AvatarFallback>
-                            {group.name.split(' ').map((n: string) => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold">{group.name}</h3>
-                            {group.isJoined && (
-                              <Badge variant="outline" className="text-xs">
-                                Member
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {group.members} members • {group.avgAccuracy}% avg accuracy
-                          </p>
-                          {group.isJoined && group.userRank && (
-                            <p className="text-xs text-slate-500">
-                              Your rank: #{group.userRank}
-                            </p>
+          {/* Leaderboard Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Rankings</CardTitle>
+              <CardDescription>
+                {pprType === "combined" ? "Overall performance across all scoring types" :
+                 pprType === "standard" ? "Standard scoring rankings" :
+                 pprType === "half" ? "Half PPR scoring rankings" :
+                 "Full PPR scoring rankings"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredData.map((user, index) => (
+                  <Link
+                    key={user.id}
+                    href={user.isCurrentUser ? "/profile" : `/profile/${user.id}`}
+                    className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                      user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-slate-500">#{index + 1}</span>
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={user.user.avatar} />
+                        <AvatarFallback>
+                          {user.user.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium flex items-center space-x-2">
+                          <span>{user.user.name}</span>
+                          {user.isCurrentUser && <span className="text-blue-600 dark:text-blue-400">(You)</span>}
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-slate-500">
+                          <span>{user.rankings} rankings</span>
+                          <span>•</span>
+                          <span>{user.followers} followers</span>
+                          {user.change !== undefined && (
+                            <>
+                              <span>•</span>
+                              <span className={user.change > 0 ? "text-green-500" : "text-red-500"}>
+                                {user.change > 0 ? "+" : ""}{user.change} this week
+                              </span>
+                            </>
                           )}
                         </div>
                       </div>
-
-                      <div className="flex items-center space-x-4">
-                        <div className="text-center">
-                          <CircularProgress value={group.avgAccuracy} size={60} showText />
-                          <p className="text-xs text-slate-500 mt-1">group avg</p>
-                        </div>
-
-                        <Button
-                          variant={group.isJoined ? "outline" : "default"}
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleGroupJoin(group.id);
-                          }}
-                          className={group.isJoined 
-                            ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
-                            : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
-                          }
-                        >
-                          {group.isJoined ? (
-                            <>
-                              <UserCheck className="w-4 h-4 mr-2" />
-                              Joined
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-4 h-4 mr-2" />
-                              Join
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      Accuracy pending
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

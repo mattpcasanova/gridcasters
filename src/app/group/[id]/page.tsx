@@ -127,11 +127,12 @@ const getMembersData = (groupId: string) => [
 export default function GroupPage({ params }: { params: { id: string } }) {
   const groupData = getGroupData(params.id)
   const membersData = getMembersData(params.id)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [followingUsers, setFollowingUsers] = useState<number[]>(
     membersData.filter((user) => user.isFollowing).map((user) => user.id),
   )
-  const [searchTerm, setSearchTerm] = useState("")
-  const [showShareModal, setShowShareModal] = useState(false)
 
   const toggleFollow = (userId: number) => {
     setFollowingUsers((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]))
@@ -200,204 +201,153 @@ export default function GroupPage({ params }: { params: { id: string } }) {
       <NavigationHeader />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Link href="/leaderboard?tab=groups">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Groups
+        <div className="flex flex-col space-y-6">
+          {/* Back Button */}
+          <div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/find-groups" className="flex items-center space-x-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Groups</span>
+              </Link>
             </Button>
-          </Link>
-        </div>
+          </div>
 
-        {/* Group Header */}
-        <div className="mb-8">
+          {/* Group Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={groupData.avatar} />
+                <AvatarFallback>
+                  {groupData.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-3xl font-bold">{groupData.name}</h1>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Created {groupData.createdDate}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <GradientButton icon={Users} onClick={() => setShowShareModal(true)}>
+                Join Group
+              </GradientButton>
+              <Button variant="outline" onClick={() => setShowShareModal(true)}>
+                <Share className="w-4 h-4 mr-2" />
+                Share Group
+              </Button>
+            </div>
+          </div>
+
+          {/* Group Info */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={groupData.avatar || "/placeholder.svg"} />
-                  <AvatarFallback className="text-2xl">
-                    <Users className="w-12 h-12" />
-                  </AvatarFallback>
-                </Avatar>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <CircularProgress value={groupData.avgAccuracy} size="lg" />
+                  <p className="mt-2 font-medium">Average Accuracy</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold">#{groupData.id}</p>
+                  <p className="mt-2 font-medium">Group Rank</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold">{groupData.members}</p>
+                  <p className="mt-2 font-medium">Members</p>
+                </div>
+              </div>
+              <div className="mt-6">
+                <p className="text-slate-600 dark:text-slate-400">
+                  {groupData.description}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h1 className="text-3xl font-bold">{groupData.name}</h1>
-                    {groupData.isPrivate && (
-                      <Badge variant="outline" className="text-xs">
-                        Private
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 mb-2">Created {groupData.createdDate}</p>
-                  <p className="text-slate-700 dark:text-slate-300 mb-4">{groupData.description}</p>
+          {/* Members List */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Group Members</CardTitle>
+                  <CardDescription>All members of {groupData.name}</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Group Settings
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <SearchInput
+                  placeholder="Search members..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-md"
+                />
+              </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <CircularProgress value={groupData.avgAccuracy} size={60} />
+              <div className="space-y-4">
+                {filteredMembers.map((member, index) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-slate-500">#{index + 1}</span>
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={member.avatar} />
+                        <AvatarFallback>
+                          {member.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium flex items-center space-x-2">
+                          <span>{member.name}</span>
+                          {member.isCurrentUser && <span className="text-blue-600 dark:text-blue-400">(You)</span>}
+                        </div>
+                        <div className="text-sm text-slate-500">
+                          {member.followers} followers
+                        </div>
                       </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Avg Accuracy</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">{groupData.members}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Members</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">#{params.id}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Group Rank</p>
+
+                    <div className="flex items-center space-x-6 text-right">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <p className="font-bold text-lg">{member.accuracy}%</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">accuracy</p>
+                        </div>
+                        <CircularProgress value={member.accuracy} size="sm" />
+                      </div>
+
+                      {member.isCurrentUser ? (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href="/profile">View Profile</Link>
+                        </Button>
+                      ) : followingUsers.includes(member.id) ? (
+                        <GradientButton size="sm" onClick={() => toggleFollow(member.id)} className="min-w-[100px]">
+                          <UserCheck className="w-4 h-4 mr-1" />
+                          Following
+                        </GradientButton>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleFollow(member.id)}
+                          className="min-w-[100px]"
+                        >
+                          Follow
+                        </Button>
+                      )}
                     </div>
                   </div>
-                </div>
-
-                <div className="flex flex-col space-y-2">
-                  <GradientButton>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Join Group
-                  </GradientButton>
-                  <Button variant="outline" onClick={() => setShowShareModal(true)}>
-                    <Share className="w-4 h-4 mr-2" />
-                    Share Group
-                  </Button>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Members Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Group Members</CardTitle>
-                <CardDescription>All members of {groupData.name}</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Group Settings
-              </Button>
-            </div>
-            <SearchInput
-              placeholder="Search members..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md mt-4"
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredMembers.map((member, index) => (
-                <div
-                  key={member.id}
-                  className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
-                    member.isCurrentUser
-                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                      : "hover:bg-slate-50 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    {/* Rank */}
-                    <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-sm">
-                      {index + 1}
-                    </div>
-
-                    {/* User Info - Clickable */}
-                    <Link
-                      href={`/profile/${member.id}?from=group`}
-                      className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-                    >
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>
-                          {member.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <p
-                            className={`font-semibold ${member.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}
-                          >
-                            {member.name}
-                          </p>
-                          {member.isHost && <Crown className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />}
-                          {member.verified && (
-                            <Image
-                              src="/logo.png"
-                              alt="GridCasters Logo"
-                              width={40}
-                              height={40}
-                              className="w-10 h-10"
-                            />
-                          )}
-                          {member.isCurrentUser && (
-                            <Badge variant="outline" className="text-xs">
-                              You
-                            </Badge>
-                          )}
-                          {member.isHost && (
-                            <Badge variant="outline" className="text-xs">
-                              Host
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">{member.username}</p>
-                      </div>
-                    </Link>
-                  </div>
-
-                  {/* Stats and Actions */}
-                  <div className="flex items-center space-x-6 text-right">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <p className="font-bold text-lg">{member.accuracy}%</p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">accuracy</p>
-                      </div>
-                      <CircularProgress value={member.accuracy} size={45} />
-                    </div>
-
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      <p>{member.followers} followers</p>
-                    </div>
-
-                    {member.isCurrentUser ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href="/profile">View Profile</Link>
-                      </Button>
-                    ) : followingUsers.includes(member.id) ? (
-                      <GradientButton size="sm" onClick={() => toggleFollow(member.id)} className="min-w-[100px]">
-                        <UserCheck className="w-4 h-4 mr-1" />
-                        Following
-                      </GradientButton>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleFollow(member.id)}
-                        className="min-w-[100px]"
-                      >
-                        Follow
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredMembers.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
-                <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No members found matching your search</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {showShareModal && <ShareModal />}

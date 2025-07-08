@@ -1,30 +1,37 @@
-'use client';
-import { cn } from '@/lib/utils';
+"use client"
 
-interface SegmentedControlProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: { label: string; value: string }[];
-  className?: string;
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+interface SegmentedControlItem {
+  value: string
+  label: string
 }
 
-export function SegmentedControl({ value, onChange, options, className }: SegmentedControlProps) {
+export interface SegmentedControlProps {
+  value: string
+  onValueChange: (value: string) => void
+  items: SegmentedControlItem[]
+  className?: string
+}
+
+export function SegmentedControl({ value, onValueChange, items, className }: SegmentedControlProps) {
   return (
-    <div className={cn("flex bg-gray-100 rounded-lg p-1", className)}>
-      {options.map((option) => (
+    <div className={cn("inline-flex rounded-lg p-1 bg-slate-100 dark:bg-slate-800", className)}>
+      {items.map((item) => (
         <button
-          key={option.value}
-          onClick={() => onChange(option.value)}
+          key={item.value}
+          onClick={() => onValueChange(item.value)}
           className={cn(
-            "flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200",
-            value === option.value
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-600 hover:text-gray-900"
+            "px-4 py-2 text-sm font-medium rounded-md transition-colors",
+            value === item.value
+              ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           )}
         >
-          {option.label}
+          {item.label}
         </button>
       ))}
     </div>
-  );
+  )
 } 
