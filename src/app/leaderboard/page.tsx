@@ -235,6 +235,16 @@ export default function Leaderboard() {
   const currentWeek = seasonInfo.currentWeek || 1
   const isPreSeason = seasonInfo.isPreSeason
 
+  // Get total rankings based on PPR type
+  const getTotalRankings = (type: string) => {
+    switch (type) {
+      case "standard": return 423
+      case "half": return 512
+      case "full": return 312
+      default: return 1247 // Combined (all types)
+    }
+  }
+
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
   const [groups, setGroups] = useState<GroupData[]>(groupData)
   const { setRightButtons } = useHeaderButtons()
@@ -364,9 +374,9 @@ export default function Leaderboard() {
               </Badge>
             )}
             {showWeeklyRank && entry.change !== undefined && (
-              <Badge variant={entry.change > 0 ? "default" : entry.change < 0 ? "destructive" : "secondary"} className="text-xs">
-                {entry.change > 0 ? `+${entry.change}` : entry.change === 0 ? "=" : entry.change}
-              </Badge>
+              <span className={entry.change > 0 ? "text-green-500" : entry.change < 0 ? "text-red-500" : "text-slate-500"}>
+                {entry.change > 0 ? `+${entry.change}` : entry.change}
+              </span>
             )}
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -478,7 +488,7 @@ export default function Leaderboard() {
           />
           <StatCard
             title="Total Rankings"
-            value="1,247"
+            value={getTotalRankings(pprType).toString()}
             subtitle="Active this week"
             icon={Users}
           />
@@ -488,18 +498,6 @@ export default function Leaderboard() {
             icon={TrendingUp}
             subtitle="Awaiting Week 1"
           />
-        </div>
-
-        {/* PPR Type Selection */}
-        <div className="mb-6">
-          <Tabs value={pprType} onValueChange={setPprType} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="combined">Combined</TabsTrigger>
-              <TabsTrigger value="standard">Standard</TabsTrigger>
-              <TabsTrigger value="half">Half PPR</TabsTrigger>
-              <TabsTrigger value="full">Full PPR</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
         {/* Main Tabs */}
@@ -514,13 +512,25 @@ export default function Leaderboard() {
           <TabsContent value="overall">
             <Card>
               <CardHeader>
-                <CardTitle>Overall Leaderboard</CardTitle>
-                <CardDescription>
-                  {pprType === "combined" ? "Overall performance across all scoring types" :
-                   pprType === "standard" ? "Standard scoring rankings" :
-                   pprType === "half" ? "Half PPR scoring rankings" :
-                   "Full PPR scoring rankings"}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Overall Leaderboard</CardTitle>
+                    <CardDescription>
+                      {pprType === "combined" ? "Overall performance across all scoring types" :
+                       pprType === "standard" ? "Standard scoring rankings" :
+                       pprType === "half" ? "Half PPR scoring rankings" :
+                       "Full PPR scoring rankings"}
+                    </CardDescription>
+                  </div>
+                  <Tabs value={pprType} onValueChange={setPprType} className="w-auto">
+                    <TabsList>
+                      <TabsTrigger value="combined">Combined</TabsTrigger>
+                      <TabsTrigger value="standard">Standard</TabsTrigger>
+                      <TabsTrigger value="half">Half PPR</TabsTrigger>
+                      <TabsTrigger value="full">Full PPR</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="mb-6">
@@ -542,7 +552,7 @@ export default function Leaderboard() {
           <TabsContent value="weekly">
             <Card>
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Weekly Leaderboard</CardTitle>
                     <CardDescription>
@@ -552,18 +562,28 @@ export default function Leaderboard() {
                        "Full PPR scoring rankings"}
                     </CardDescription>
                   </div>
-                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableWeeks().map((week) => (
-                        <SelectItem key={week} value={week}>
-                          {week}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center space-x-4">
+                    <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableWeeks().map((week) => (
+                          <SelectItem key={week} value={week}>
+                            {week}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Tabs value={pprType} onValueChange={setPprType} className="w-auto">
+                      <TabsList>
+                        <TabsTrigger value="combined">Combined</TabsTrigger>
+                        <TabsTrigger value="standard">Standard</TabsTrigger>
+                        <TabsTrigger value="half">Half PPR</TabsTrigger>
+                        <TabsTrigger value="full">Full PPR</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -582,18 +602,7 @@ export default function Leaderboard() {
                       user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
                     )
-                    .map((entry: LeaderboardUser) => (
-                      <div key={entry.id} className="relative">
-                        {renderUserRow(entry, true)}
-                        {entry.weeklyChange && (
-                          <span className={`absolute right-4 top-4 text-sm font-medium ${
-                            entry.weeklyChange > 0 ? "text-green-500" : "text-red-500"
-                          }`}>
-                            {entry.weeklyChange > 0 ? "+" : ""}{entry.weeklyChange}
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                    .map((entry: LeaderboardUser) => renderUserRow(entry, true))}
                 </div>
               </CardContent>
             </Card>
