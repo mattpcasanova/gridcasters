@@ -64,9 +64,10 @@ export function RootLayoutClient({ children, initialSession }: RootLayoutClientP
   const isSignedIn = !!session;
   const isAuthPage = pathname.startsWith('/auth');
   const isHomePage = pathname === '/';
+  const isDemoPage = pathname === '/demo';
 
-  // Don't show navigation header for non-signed in users, auth pages, or homepage
-  if (!isSignedIn || isAuthPage || isHomePage) {
+  // Don't show navigation header for non-signed in users, auth pages, homepage, or demo page
+  if (!isSignedIn || isAuthPage || isHomePage || isDemoPage) {
     return (
       <LeaderboardProvider>
         {children}

@@ -56,53 +56,53 @@ export function GridCastersDemo() {
 export function RankingsDemo() {
   const [players, setPlayers] = useState([
     { 
-      id: "1", 
+      id: "4984", 
       name: "Josh Allen", 
       team: "BUF", 
       position: "QB", 
       projected: 24.8, 
       rank: 1,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4055.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4984.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/BUF.png"
     },
     { 
-      id: "2", 
+      id: "4881", 
       name: "Lamar Jackson", 
       team: "BAL", 
       position: "QB", 
       projected: 23.2, 
       rank: 2,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4048.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4881.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/BAL.png"
     },
     { 
-      id: "3", 
+      id: "4046", 
       name: "Patrick Mahomes", 
       team: "KC", 
       position: "QB", 
       projected: 22.1, 
       rank: 3,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4049.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4046.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/KC.png"
     },
     { 
-      id: "4", 
+      id: "6770", 
       name: "Joe Burrow", 
       team: "CIN", 
       position: "QB", 
       projected: 21.9, 
       rank: 4,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6795.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6770.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/CIN.png"
     },
     { 
-      id: "5", 
+      id: "6904", 
       name: "Jalen Hurts", 
       team: "PHI", 
       position: "QB", 
       projected: 20.5, 
       rank: 5,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6786.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6904.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/PHI.png"
     },
   ])
