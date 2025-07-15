@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { GradientButton } from "@/components/ui/gradient-button"
 import { SkipForward, SkipBack, RotateCcw } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { 
   GridCastersDemo, 
   RankingsDemo, 
@@ -85,7 +86,18 @@ export default function Demo() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-green-50/30 dark:from-slate-900 dark:via-blue-900/10 dark:to-green-900/10">
-      <NavigationHeader isSignedIn={false} />
+      {/* Simple header with logo and name */}
+      <header className="border-b bg-white dark:bg-slate-800 dark:border-slate-700">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-3">
+            <Image src="/logo.png" alt="GridCasters Logo" width={48} height={48} className="w-12 h-12" />
+            <span className="text-2xl font-bold">
+              <span className="text-blue-600 dark:text-blue-400">Grid</span>
+              <span className="text-green-600 dark:text-green-400">Casters</span>
+            </span>
+          </Link>
+        </div>
+      </header>
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">

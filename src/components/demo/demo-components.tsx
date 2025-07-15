@@ -7,9 +7,9 @@ import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CircularProgress } from "@/components/ui/circular-progress"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { Trophy, Target, Users, BarChart3, GripVertical } from "lucide-react"
+import { Trophy, Target, Users, BarChart3, GripVertical, UserCheck, UserPlus } from "lucide-react"
 import Image from "next/image"
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
+import { Button } from "@/components/ui/button"
 
 export function GridCastersDemo() {
   return (
@@ -55,27 +55,107 @@ export function GridCastersDemo() {
 
 export function RankingsDemo() {
   const [players, setPlayers] = useState([
-    { id: "1", name: "Josh Allen", team: "BUF", position: "QB", projected: 24.8, rank: 1 },
-    { id: "2", name: "Lamar Jackson", team: "BAL", position: "QB", projected: 23.2, rank: 2 },
-    { id: "3", name: "Jalen Hurts", team: "PHI", position: "QB", projected: 22.1, rank: 3 },
-    { id: "4", name: "Patrick Mahomes", team: "KC", position: "QB", projected: 21.9, rank: 4 },
-    { id: "5", name: "Dak Prescott", team: "DAL", position: "QB", projected: 20.5, rank: 5 },
+    { 
+      id: "1", 
+      name: "Josh Allen", 
+      team: "BUF", 
+      position: "QB", 
+      projected: 24.8, 
+      rank: 1,
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/7328.jpg",
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/BUF.png"
+    },
+    { 
+      id: "2", 
+      name: "Lamar Jackson", 
+      team: "BAL", 
+      position: "QB", 
+      projected: 23.2, 
+      rank: 2,
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4034.jpg",
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/BAL.png"
+    },
+    { 
+      id: "3", 
+      name: "Jalen Hurts", 
+      team: "PHI", 
+      position: "QB", 
+      projected: 22.1, 
+      rank: 3,
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6798.jpg",
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/PHI.png"
+    },
+    { 
+      id: "4", 
+      name: "Patrick Mahomes", 
+      team: "KC", 
+      position: "QB", 
+      projected: 21.9, 
+      rank: 4,
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6797.jpg",
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/KC.png"
+    },
+    { 
+      id: "5", 
+      name: "Dak Prescott", 
+      team: "DAL", 
+      position: "QB", 
+      projected: 20.5, 
+      rank: 5,
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/3097.jpg",
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/DAL.png"
+    },
   ])
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return
+  const [editingRank, setEditingRank] = useState<string | null>(null)
+  const [rankValue, setRankValue] = useState("")
 
-    const items = Array.from(players)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+  const handleRankChange = (playerId: string, newRank: number) => {
+    if (newRank < 1 || newRank > players.length) return
 
-    // Update ranks
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      rank: index + 1,
-    }))
+    const updatedPlayers = [...players]
+    const playerIndex = updatedPlayers.findIndex(p => p.id === playerId)
+    const oldRank = updatedPlayers[playerIndex].rank
 
-    setPlayers(updatedItems)
+    // Update the target player's rank
+    updatedPlayers[playerIndex].rank = newRank
+
+    // Adjust other players' ranks
+    if (newRank > oldRank) {
+      // Moving down - shift players up
+      updatedPlayers.forEach((player, index) => {
+        if (index !== playerIndex && player.rank > oldRank && player.rank <= newRank) {
+          player.rank -= 1
+        }
+      })
+    } else {
+      // Moving up - shift players down
+      updatedPlayers.forEach((player, index) => {
+        if (index !== playerIndex && player.rank >= newRank && player.rank < oldRank) {
+          player.rank += 1
+        }
+      })
+    }
+
+    // Sort by rank
+    updatedPlayers.sort((a, b) => a.rank - b.rank)
+    setPlayers(updatedPlayers)
+  }
+
+  const startEditing = (playerId: string, currentRank: number) => {
+    setEditingRank(playerId)
+    setRankValue(currentRank.toString())
+  }
+
+  const finishEditing = () => {
+    if (editingRank && rankValue) {
+      const newRank = parseInt(rankValue)
+      if (newRank > 0 && newRank <= players.length) {
+        handleRankChange(editingRank, newRank)
+      }
+    }
+    setEditingRank(null)
+    setRankValue("")
   }
 
   const getPositionColor = (position: string) => {
@@ -98,72 +178,104 @@ export function RankingsDemo() {
       <div className="text-center space-y-4">
         <h3 className="text-2xl font-bold">Create Your QB Rankings</h3>
         <p className="text-slate-600 dark:text-slate-400 text-lg">
-          Drag players to arrange them in your predicted order of performance
+          Click on rank numbers to edit or drag players to reorder
         </p>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20">
             <CardTitle className="text-center">Week 8 QB Rankings</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="demo-players">
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                    {players.map((player, index) => (
-                      <Draggable key={player.id} draggableId={player.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`flex items-center space-x-4 p-4 bg-white dark:bg-slate-800 border-2 rounded-xl transition-all ${
-                              snapshot.isDragging
-                                ? "shadow-2xl scale-105 border-blue-300 bg-blue-50 dark:bg-blue-900/20"
-                                : "hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-600"
-                            }`}
-                          >
-                            <div
-                              {...provided.dragHandleProps}
-                              className="text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing"
-                            >
-                              <GripVertical className="w-6 h-6" />
-                            </div>
-
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-100 to-green-100 dark:from-blue-900/30 dark:to-green-900/30 rounded-full flex items-center justify-center font-bold text-lg border-2 border-white dark:border-slate-700 shadow-sm">
-                              {index + 1}
-                            </div>
-
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-1">
-                                <span className="font-bold text-lg">{player.name}</span>
-                                <Badge variant="outline" className="font-medium">
-                                  {player.team}
-                                </Badge>
-                                <Badge className={`font-medium ${getPositionColor(player.position)}`}>
-                                  {player.position}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                                Projected: {player.projected} pts
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+            <div className="space-y-3">
+              {players.map((player) => (
+                <div
+                  key={player.id}
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 border-2 rounded-xl hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-600 transition-all"
+                >
+                  {/* Rank Input */}
+                  <div className="w-12 text-center">
+                    {editingRank === player.id ? (
+                      <input
+                        type="number"
+                        value={rankValue}
+                        onChange={(e) => setRankValue(e.target.value)}
+                        onBlur={finishEditing}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') finishEditing()
+                          if (e.key === 'Escape') setEditingRank(null)
+                        }}
+                        className="w-12 text-center font-bold text-lg text-gray-900 border-b border-blue-500 focus:outline-none bg-transparent"
+                        autoFocus
+                        min="1"
+                        max={players.length}
+                      />
+                    ) : (
+                      <div 
+                        className="font-bold text-lg text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => startEditing(player.id, player.rank)}
+                      >
+                        {player.rank}
+                      </div>
+                    )}
                   </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+
+                  {/* Player Avatar */}
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5">
+                      <img 
+                        src={player.avatarUrl}
+                        alt={player.name}
+                        className="w-full h-full rounded-full bg-gray-200 object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = player.teamLogoUrl;
+                          target.onerror = () => {
+                            target.src = '/placeholder-user.jpg';
+                          };
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Player Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {player.name}
+                      </h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
+                        {player.position}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <img 
+                        src={player.teamLogoUrl}
+                        alt={player.team}
+                        className="w-4 h-4"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                      <span className="font-medium">{player.team}</span>
+                    </div>
+                  </div>
+
+                  {/* Projected Points */}
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-gray-900">
+                      {player.projected} pts
+                    </div>
+                    <div className="text-xs text-gray-500">projected</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="text-center">
-        <GradientButton size="lg">Save Rankings</GradientButton>
       </div>
     </div>
   )
@@ -306,11 +418,17 @@ export function LeaderboardDemo() {
 }
 
 export function CommunityDemo() {
-  const friends = [
-    { name: "Mike Johnson", accuracy: 89.2, following: true },
-    { name: "Sarah Chen", accuracy: 91.5, following: false },
-    { name: "Alex Rodriguez", accuracy: 86.8, following: true },
-  ]
+  const [friends, setFriends] = useState([
+    { id: 1, name: "Mike Johnson", accuracy: 89.2, following: true },
+    { id: 2, name: "Sarah Chen", accuracy: 91.5, following: false },
+    { id: 3, name: "Alex Rodriguez", accuracy: 86.8, following: true },
+  ])
+
+  const toggleFollow = (userId: number) => {
+    setFriends(friends.map((friend) => 
+      friend.id === userId ? { ...friend, following: !friend.following } : friend
+    ))
+  }
 
   return (
     <div className="space-y-8">
@@ -324,29 +442,53 @@ export function CommunityDemo() {
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20">
-            <CardTitle className="text-xl">Suggested Users</CardTitle>
+            <CardTitle className="text-xl">Find Other Users</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {friends.map((friend, index) => (
+              {friends.map((friend) => (
                 <div
-                  key={index}
-                  className="flex items-center space-x-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border"
+                  key={friend.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
-                  <Avatar className="w-12 h-12 border-2 border-white dark:border-slate-700 shadow-sm">
-                    <AvatarImage src="/logo.png" />
-                    <AvatarFallback className="font-bold">
-                      {friend.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="font-bold text-lg">{friend.name}</p>
-                    <p className="text-slate-600 dark:text-slate-400 font-medium">{friend.accuracy}% accuracy</p>
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="w-12 h-12 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
+                      <AvatarImage src="/logo.png" />
+                      <AvatarFallback className="font-bold">
+                        {friend.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div>
+                      <p className="font-semibold">{friend.name}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{friend.accuracy}% accuracy</p>
+                    </div>
                   </div>
-                  <GradientButton size="sm">{friend.following ? "Following" : "Follow"}</GradientButton>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="text-center">
+                      <CircularProgress value={friend.accuracy} size={40} />
+                    </div>
+
+                    {friend.following ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleFollow(friend.id)}
+                        className="border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                      >
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        Following
+                      </Button>
+                    ) : (
+                      <GradientButton size="sm" onClick={() => toggleFollow(friend.id)} icon={UserPlus}>
+                        Follow
+                      </GradientButton>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
