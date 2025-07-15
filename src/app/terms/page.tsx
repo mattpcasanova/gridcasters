@@ -46,7 +46,7 @@ export default function TermsPage() {
           {/* Content Cards */}
           <div className="space-y-8">
             {/* Introduction */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Scale className="w-5 h-5 mr-2 text-blue-400" />
@@ -67,7 +67,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Description of Service */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <CheckCircle className="w-5 h-5 mr-2 text-green-400" />
@@ -95,7 +95,7 @@ export default function TermsPage() {
             </Card>
 
             {/* User Accounts */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Users className="w-5 h-5 mr-2 text-purple-400" />
@@ -135,7 +135,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Acceptable Use */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Shield className="w-5 h-5 mr-2 text-yellow-400" />
@@ -163,7 +163,7 @@ export default function TermsPage() {
             </Card>
 
             {/* User Content */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">User-Generated Content</CardTitle>
               </CardHeader>
@@ -197,7 +197,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Intellectual Property */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Intellectual Property</CardTitle>
               </CardHeader>
@@ -231,7 +231,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Privacy and Data */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Privacy and Data Protection</CardTitle>
               </CardHeader>
@@ -255,7 +255,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Disclaimers */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
@@ -290,7 +290,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Termination */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Termination</CardTitle>
               </CardHeader>
@@ -313,7 +313,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Governing Law */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Governing Law</CardTitle>
               </CardHeader>
@@ -326,7 +326,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Changes to Terms */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Changes to Terms</CardTitle>
               </CardHeader>
@@ -342,7 +342,7 @@ export default function TermsPage() {
             </Card>
 
             {/* Contact Information */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Contact Us</CardTitle>
               </CardHeader>

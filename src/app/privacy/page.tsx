@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           {/* Content Cards */}
           <div className="space-y-8">
             {/* Introduction */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Eye className="w-5 h-5 mr-2 text-blue-400" />
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Information We Collect */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Database className="w-5 h-5 mr-2 text-green-400" />
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* How We Use Your Information */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Users className="w-5 h-5 mr-2 text-purple-400" />
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Information Sharing */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Globe className="w-5 h-5 mr-2 text-yellow-400" />
@@ -155,7 +155,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Data Security */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Lock className="w-5 h-5 mr-2 text-red-400" />
@@ -181,7 +181,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Your Rights */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Your Privacy Rights</CardTitle>
               </CardHeader>
@@ -204,7 +204,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Cookies and Tracking */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Cookies and Tracking Technologies</CardTitle>
               </CardHeader>
@@ -226,7 +226,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Children's Privacy */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Children's Privacy</CardTitle>
               </CardHeader>
@@ -240,7 +240,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Changes to Privacy Policy */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Changes to This Privacy Policy</CardTitle>
               </CardHeader>
@@ -254,7 +254,7 @@ export default function PrivacyPage() {
             </Card>
 
             {/* Contact Information */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg">
               <CardHeader>
                 <CardTitle className="text-white">Contact Us</CardTitle>
               </CardHeader>
