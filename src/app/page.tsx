@@ -259,37 +259,37 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="bg-gradient-to-br from-blue-600/20 to-green-600/20 border-blue-500/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+            <Card className="bg-gradient-to-br from-blue-900/80 to-slate-800/80 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                   <BarChart3 className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle className="text-white font-bold">Statistical Accuracy</CardTitle>
-                <CardDescription className="text-slate-200 leading-relaxed">
+                <CardDescription className="text-slate-300 leading-relaxed">
                   Track your prediction accuracy with advanced statistical analysis and performance metrics.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-600/20 to-green-600/20 border-green-500/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+            <Card className="bg-gradient-to-br from-blue-900/80 to-slate-800/80 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                   <Trophy className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle className="text-white font-bold">Competitive Rankings</CardTitle>
-                <CardDescription className="text-slate-200 leading-relaxed">
+                <CardDescription className="text-slate-300 leading-relaxed">
                   Compete with friends and the community to prove your ranking expertise.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-600/20 to-green-600/20 border-blue-500/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+            <Card className="bg-gradient-to-br from-blue-900/80 to-slate-800/80 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center mb-4 shadow-md">
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle className="text-white font-bold">Social Features</CardTitle>
-                <CardDescription className="text-slate-200 leading-relaxed">
+                <CardDescription className="text-slate-300 leading-relaxed">
                   Follow friends, join groups, and share your rankings with the community.
                 </CardDescription>
               </CardHeader>
