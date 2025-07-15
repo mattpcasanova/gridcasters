@@ -62,7 +62,7 @@ export function RankingsDemo() {
       position: "QB", 
       projected: 24.8, 
       rank: 1,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/7328.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4055.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/BUF.png"
     },
     { 
@@ -72,7 +72,7 @@ export function RankingsDemo() {
       position: "QB", 
       projected: 23.2, 
       rank: 2,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4034.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4048.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/BAL.png"
     },
     { 
@@ -82,7 +82,7 @@ export function RankingsDemo() {
       position: "QB", 
       projected: 22.1, 
       rank: 3,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6797.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/4049.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/KC.png"
     },
     { 
@@ -92,7 +92,7 @@ export function RankingsDemo() {
       position: "QB", 
       projected: 21.9, 
       rank: 4,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6798.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6795.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/CIN.png"
     },
     { 
@@ -102,7 +102,7 @@ export function RankingsDemo() {
       position: "QB", 
       projected: 20.5, 
       rank: 5,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/3097.jpg",
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6786.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/PHI.png"
     },
   ])
@@ -433,7 +433,7 @@ export function CommunityDemo() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
-        <h3 className="text-2xl font-bold">Join the Community</h3>
+        <h3 className="text-2xl font-bold">Find Other GridCasters</h3>
         <p className="text-slate-600 dark:text-slate-400 text-lg">
           Connect with fellow fantasy football enthusiasts and share your insights
         </p>
