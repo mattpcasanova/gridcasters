@@ -145,6 +145,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     }
     
     // Fall back to default Sleeper data
+    console.log(`Hook Debug - About to call transformSleeperData for position: ${positionFilter}`);
     const transformedPlayers = transformSleeperData(
       allPlayers,
       projections,
@@ -153,6 +154,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
       matchups,
       scoringFormat
     );
+    console.log(`Hook Debug - After transformSleeperData: ${transformedPlayers.length} players`);
     setPlayers(transformedPlayers);
   };
 
@@ -198,7 +200,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
             let successfulWeeks = 0;
             
             // Try current season first, then fall back to 2024
-            let season = 2025;
+            let season = 2025; // Use 2025 as default since Sleeper API now has 2025 data
             let hasValidData = false;
             
             // Test if we can get data from current season
@@ -289,41 +291,37 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
               if (rankings && rankings.length > 0) {
                 // User has a saved ranking - use it
                 const savedRanking = rankings[0];
-                const savedPlayers = savedRanking.player_rankings.map((pr: any) => ({
-                  id: pr.player_id,
-                  name: pr.player_name,
-                  team: pr.team,
-                  position: allPlayers[pr.player_id]?.position || pr.position, // Use actual player position from Sleeper data
-                  projectedPoints: (() => {
-                    const projection = (projections as any)[pr.player_id];
-                    if (!projection) return 0;
-                    
-                    switch (scoringFormat) {
-                      case 'std':
-                        return projection.pts_std || 0;
-                      case 'ppr':
-                        return projection.pts_ppr || 0;
-                      case 'half_ppr':
-                      default:
-                        return projection.pts_half_ppr || (projection.pts_ppr ? projection.pts_ppr * 0.95 : 0);
-                    }
-                  })(),
-                  avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${pr.player_id}.jpg`,
-                  teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${pr.team?.toLowerCase()}.png`,
-                  isStarred: isFavorite(pr.player_id),
-                  rank: pr.rank_position,
-                  injuryStatus: allPlayers[pr.player_id]?.injury_status,
-                  age: allPlayers[pr.player_id]?.age,
-                  college: allPlayers[pr.player_id]?.college,
-                  yearsExp: allPlayers[pr.player_id]?.years_exp,
-                  matchup: matchups && (matchups as any)[pr.team] ? {
-                    opponent: (matchups as any)[pr.team].opponent,
-                    isHome: (matchups as any)[pr.team].isHome,
-                    week: (matchups as any)[pr.team].week
-                  } : undefined
-                })).sort((a: any, b: any) => a.rank - b.rank);
+                console.log(`Loading saved ranking for ${positionFilter}: ${savedRanking.player_rankings.length} players`);
                 
-                setPlayers(savedPlayers);
+                // Create a map of saved player rankings for quick lookup
+                const savedPlayerMap = new Map();
+                savedRanking.player_rankings.forEach((pr: any) => {
+                  savedPlayerMap.set(pr.player_id, pr.rank_position);
+                });
+                
+                // Always load the full player list from Sleeper data
+                console.log(`Hook Debug - About to call transformSleeperData for position: ${positionFilter}`);
+                const fullPlayerList = transformSleeperData(
+                  allPlayers,
+                  projections,
+                  new Set(favorites.map(f => f.player_id)),
+                  positionFilter,
+                  matchups,
+                  scoringFormat
+                );
+                console.log(`Hook Debug - After transformSleeperData: ${fullPlayerList.length} players`);
+                
+                // Merge saved rankings with full player list
+                const mergedPlayers = fullPlayerList.map(player => {
+                  const savedRank = savedPlayerMap.get(player.id);
+                  return {
+                    ...player,
+                    rank: savedRank || player.rank // Use saved rank if available, otherwise use default
+                  };
+                }).sort((a, b) => a.rank - b.rank); // Sort by rank
+                
+                console.log(`Merged ${fullPlayerList.length} players with saved rankings for ${positionFilter}`);
+                setPlayers(mergedPlayers);
               } else {
                 // No saved ranking - try to load previous ranking as default for future weeks
                 await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);

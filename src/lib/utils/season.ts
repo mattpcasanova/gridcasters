@@ -17,8 +17,8 @@ export function getCurrentSeasonInfo(): SeasonInfo {
   const seasonStartDate = new Date(currentYear, 8, 5); // September 5th (approximate)
   const seasonEndDate = new Date(currentYear + 1, 0, 15); // January 15th next year (approximate)
   
-  // If we're past January, we're in the next season's pre-season period
-  const season = now.getMonth() >= 8 || now.getMonth() <= 1 ? currentYear : currentYear - 1;
+  // Use 2025 as the current season since Sleeper API now has 2025 matchups
+  const season = 2025;
   
   const isPreSeason = now < seasonStartDate;
   const isPostSeason = now > seasonEndDate;

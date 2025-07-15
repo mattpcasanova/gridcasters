@@ -642,7 +642,7 @@ export default function Profile() {
                               <UIBadge className={getPositionColor(ranking.position)} variant="outline">
                                 {ranking.position}
                               </UIBadge>
-                              <span>{new Date(ranking.date).toLocaleDateString()}</span>
+                              <span>{ranking.date}</span>
                             </div>
                           </div>
                         </div>

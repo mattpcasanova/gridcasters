@@ -205,6 +205,17 @@ export default function Rankings() {
 
   const selectedPlayer = showPlayerModal ? players.find(p => p.id === showPlayerModal) : null
 
+  // Debug: Show current limits and player counts
+  const currentLimits = getPositionLimits(selectedPosition);
+  console.log(`Rankings Debug - Position: ${selectedPosition}, Players: ${players.length}, Filtered: ${filteredPlayers.length}, Limits:`, currentLimits);
+
+  // Calculate player counts for each position
+  const getPositionPlayerCount = (position: string) => {
+    // Show the ranking cutoff limit - this is how many players actually matter for rankings
+    const limits = getPositionLimits(position);
+    return limits.rankingLimit;
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -268,7 +279,12 @@ export default function Rankings() {
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  {position}
+                  <div className="flex flex-col items-center">
+                    <span>{position}</span>
+                    <span className="text-xs opacity-75">
+                      Top {getPositionPlayerCount(position)}
+                    </span>
+                  </div>
                 </button>
               ))}
             </div>

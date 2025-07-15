@@ -34,6 +34,7 @@ export function useRecentActivity() {
         .from('rankings')
         .select('*')
         .eq('user_id', user.id)
+        .not('position', 'like', 'AGG_%') // Exclude aggregate rankings
         .order('updated_at', { ascending: false })
         .limit(6);
 
@@ -46,12 +47,15 @@ export function useRecentActivity() {
       const formattedRankings = rankings?.map((ranking: any) => {
         const isCurrentWeek = ranking.type === 'weekly' && ranking.week === 8; // This should be dynamic based on current week
         
+        // Use updated_at if available, otherwise fall back to created_at
+        const dateToUse = ranking.updated_at || ranking.created_at;
+        
         return {
           id: ranking.id,
           name: ranking.title, // Use the actual title from database which includes scoring format
           accuracy: (isCurrentWeek || ranking.type === 'preseason') ? null : Math.floor(Math.random() * 20) + 80, // Mock accuracy for active weeks and preseason
           trend: Math.random() > 0.5 ? 'up' : 'down',
-          date: formatRelativeTime(ranking.updated_at),
+          date: formatRelativeTime(dateToUse),
           position: ranking.position,
           status: (isCurrentWeek || ranking.type === 'preseason') ? 'active' : 'completed',
           week: ranking.type === 'preseason' ? 'preseason' : `week${ranking.week}`,
@@ -74,7 +78,17 @@ export function useRecentActivity() {
   }, [supabase]);
 
   const formatRelativeTime = (dateString: string): string => {
+    if (!dateString) {
+      return 'Recently';
+    }
+    
     const date = new Date(dateString);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return 'Recently';
+    }
+    
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));

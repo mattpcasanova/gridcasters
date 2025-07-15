@@ -21,6 +21,8 @@ export const transformSleeperData = (
 ): RankingPlayer[] => {
   const playerArray = Object.values(players);
   
+  console.log(`TransformSleeperData Debug - Total players from API: ${playerArray.length}`);
+  
   // Filter by position - only include relevant fantasy positions
   let filteredPlayers = playerArray.filter(player => {
     // Only include fantasy-relevant positions: QB, RB, WR, TE
@@ -41,6 +43,8 @@ export const transformSleeperData = (
     return player.position === positionFilter;
   });
 
+  console.log(`TransformSleeperData Debug - After position filter (${positionFilter}): ${filteredPlayers.length} players`);
+
   // Filter active players with teams
   filteredPlayers = filteredPlayers.filter(player => 
     player.status === 'Active' && 
@@ -49,8 +53,11 @@ export const transformSleeperData = (
     player.team !== null
   );
 
+  console.log(`TransformSleeperData Debug - After active/team filter: ${filteredPlayers.length} players`);
+
   // Get position limits
   const limits = getPositionLimits(positionFilter);
+  console.log(`TransformSleeperData Debug - Position limits for ${positionFilter}:`, limits);
 
   // Transform players
   let transformedPlayers: RankingPlayer[] = filteredPlayers
@@ -92,8 +99,12 @@ export const transformSleeperData = (
     // Sort by projected points (descending)
     .sort((a, b) => b.projectedPoints - a.projectedPoints);
 
+  console.log(`TransformSleeperData Debug - After transformation and sorting: ${transformedPlayers.length} players`);
+
   // Apply position-specific display limit
   transformedPlayers = transformedPlayers.slice(0, limits.displayLimit);
+
+  console.log(`TransformSleeperData Debug - After applying display limit (${limits.displayLimit}): ${transformedPlayers.length} players`);
 
   // Set ranks after filtering and sorting
   transformedPlayers = transformedPlayers.map((player, index) => ({

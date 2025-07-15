@@ -452,6 +452,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .eq('type', type)
       .eq('season', season || new Date().getFullYear())
+      .not('position', 'like', 'AGG_%') // Exclude aggregate rankings
       .order('created_at', { ascending: false });
 
     if (position) {
