@@ -47,6 +47,7 @@ export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
   const [selectedWeek, setSelectedWeek] = useState<number | 'preseason' | null>(null)
   const [hasPreseasonRankings, setHasPreseasonRankings] = useState<boolean | null>(null) // null = loading
+  const [selectedReference, setSelectedReference] = useState<string | null>(null)
   const [scoringFormat, setScoringFormat] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('rankbet-scoring-format') || 'half_ppr';
@@ -128,7 +129,7 @@ export default function Rankings() {
     updatePlayerRank,
     starredPlayers,
     saveRankings 
-  } = useSleeperRankings(selectedPosition, selectedWeek || undefined, scoringFormat)
+  } = useSleeperRankings(selectedPosition, selectedWeek || undefined, scoringFormat, selectedReference)
 
   const { setRightButtons } = useHeaderButtons()
 
@@ -156,13 +157,13 @@ export default function Rankings() {
     try {
       const result = await saveRankings(selectedPosition);
       
-      if (result.success) {
-        const actionText = result.action === 'created' ? 'created' : 'updated';
-        let message = `Rankings ${actionText} successfully!`;
-        
-        if (selectedPosition === 'OVR' && result.positionRankingsUpdated) {
-          message += ' Individual position rankings have been updated to maintain consistency.';
-        }
+              if (result.success) {
+          const actionText = result.action === 'created' ? 'created' : 'updated';
+          let message = `Rankings ${actionText} successfully!`;
+          
+          if ((selectedPosition === 'OVR' || selectedPosition === 'FLX') && result.positionRankingsUpdated) {
+            message += ' Individual position rankings have been updated to maintain consistency.';
+          }
         
         // If this was a preseason ranking save, update the state
         if (rankingType === 'preseason') {
@@ -327,6 +328,38 @@ export default function Rankings() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Reference Point Selection */}
+            <div className="border-t border-gray-200 pt-4">
+              <h4 className="font-medium mb-2">Reference Point</h4>
+              <Select 
+                value={selectedReference || 'default'} 
+                onValueChange={(value) => {
+                  if (value === 'default') {
+                    setSelectedReference(null);
+                  } else {
+                    setSelectedReference(value);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select reference point" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">
+                    <div className="flex items-center">
+                      <span>Default (Previous Week)</span>
+                      <span className="ml-2 text-xs text-gray-500">Auto</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="preseason">Pre-Season Rankings</SelectItem>
+                  {/* TODO: Add aggregate rankings when implemented */}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Choose what to use as a starting point for your rankings
+              </p>
             </div>
           </div>
 

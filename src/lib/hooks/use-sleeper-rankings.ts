@@ -6,7 +6,7 @@ import { RankingPlayer } from '@/lib/types';
 import { getCurrentSeasonInfo, getDefaultRankingType, getDefaultWeek } from '@/lib/utils/season';
 import { useFavorites } from '@/lib/hooks/use-favorites';
 
-export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?: number | 'preseason', scoringFormat: string = 'half_ppr') {
+export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?: number | 'preseason', scoringFormat: string = 'half_ppr', selectedReference?: string | null) {
   const [players, setPlayers] = useState<RankingPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +15,66 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
 
   const sleeperAPI = new SleeperAPI();
   const { favorites, isFavorite, toggleFavorite: toggleFavoriteDB, loading: favoritesLoading } = useFavorites();
+
+  // Helper function to load reference ranking
+  const loadReferenceRanking = async (referenceId: string, allPlayers: any, projections: any, matchups: any = {}) => {
+    try {
+      const response = await fetch('/api/rankings/reference', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          referenceRankingId: referenceId,
+          targetPosition: positionFilter,
+          targetWeek: selectedWeek === 'preseason' ? null : selectedWeek,
+          targetSeason: getCurrentSeasonInfo().season,
+          targetType: selectedWeek === 'preseason' ? 'preseason' : 'weekly'
+        })
+      });
+
+      if (response.ok) {
+        const { players: referencePlayers } = await response.json();
+        
+        // Transform reference players to include current projections and other data
+        const transformedPlayers = referencePlayers.map((player: any) => ({
+          ...player,
+          projectedPoints: (() => {
+            const projection = projections[player.id];
+            if (!projection) return 0;
+            
+            switch (scoringFormat) {
+              case 'std':
+                return projection.pts_std || 0;
+              case 'ppr':
+                return projection.pts_ppr || 0;
+              case 'half_ppr':
+              default:
+                return projection.pts_half_ppr || (projection.pts_ppr ? projection.pts_ppr * 0.95 : 0);
+            }
+          })(),
+          avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${player.id}.jpg`,
+          teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${player.team?.toLowerCase()}.png`,
+          isStarred: isFavorite(player.id),
+          injuryStatus: allPlayers[player.id]?.injury_status,
+          age: allPlayers[player.id]?.age,
+          college: allPlayers[player.id]?.college,
+          yearsExp: allPlayers[player.id]?.years_exp,
+          matchup: matchups && matchups[player.team] ? {
+            opponent: matchups[player.team].opponent,
+            isHome: matchups[player.team].isHome,
+            week: matchups[player.team].week
+          } : undefined
+        }));
+
+        setPlayers(transformedPlayers);
+        return true;
+      }
+    } catch (err) {
+      console.log('Could not load reference ranking:', err);
+    }
+    return false;
+  };
 
   // Helper function to load default or previous ranking
   const loadDefaultOrPreviousRanking = async (
@@ -195,6 +255,16 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
           }
         }
 
+        // Handle reference ranking if specified
+        if (selectedReference && selectedReference !== 'default') {
+          const referenceLoaded = await loadReferenceRanking(selectedReference, allPlayers, projections, matchups);
+          if (referenceLoaded) {
+            setError(null);
+            setLoading(false);
+            return;
+          }
+        }
+
         // For preseason rankings, always use fresh data to ensure we get the latest projections
         if (typeToLoad === 'preseason') {
           await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
@@ -282,7 +352,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     if (!favoritesLoading) {
       fetchData();
     }
-  }, [positionFilter, selectedWeek, scoringFormat, favorites, favoritesLoading]);
+  }, [positionFilter, selectedWeek, scoringFormat, selectedReference, favorites, favoritesLoading]);
 
   const toggleStar = async (playerId: string) => {
     const player = players.find(p => p.id === playerId);
