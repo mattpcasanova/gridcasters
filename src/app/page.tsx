@@ -28,12 +28,6 @@ export default function LandingPage() {
             <a href="#features" className="text-slate-300 hover:text-white transition-colors">
               Features
             </a>
-            <a href="#how-it-works" className="text-slate-300 hover:text-white transition-colors">
-              How It Works
-            </a>
-            <Link href="#pricing" className="text-slate-300 hover:text-white transition-colors">
-              Pricing
-            </Link>
           </nav>
           <div className="flex items-center space-x-3">
             <Link href="/auth/signin">
@@ -75,23 +69,15 @@ export default function LandingPage() {
                 Start Ranking <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-500 text-lg px-8 bg-transparent shadow-lg hover:shadow-xl transition-all duration-300"
-                    disabled
-                  >
-                    Watch Demo
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Coming Soon!</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Link href="/demo">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-500 text-lg px-8 bg-transparent shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Watch Demo
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
