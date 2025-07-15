@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { NavigationHeader } from "@/components/layout/navigation-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { SkipForward, SkipBack, RotateCcw } from "lucide-react"
@@ -101,14 +100,6 @@ export default function Demo() {
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">
-              <span className="text-blue-600">Grid</span>
-              <span className="text-green-600">Casters</span>
-              <span className="text-slate-600 dark:text-slate-400"> Demo</span>
-            </h1>
-          </div>
 
           {/* Progress Indicator */}
           <div className="mb-12">

@@ -77,33 +77,33 @@ export function RankingsDemo() {
     },
     { 
       id: "3", 
-      name: "Jalen Hurts", 
-      team: "PHI", 
-      position: "QB", 
-      projected: 22.1, 
-      rank: 3,
-      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6798.jpg",
-      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/PHI.png"
-    },
-    { 
-      id: "4", 
       name: "Patrick Mahomes", 
       team: "KC", 
       position: "QB", 
-      projected: 21.9, 
-      rank: 4,
+      projected: 22.1, 
+      rank: 3,
       avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6797.jpg",
       teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/KC.png"
     },
     { 
+      id: "4", 
+      name: "Joe Burrow", 
+      team: "CIN", 
+      position: "QB", 
+      projected: 21.9, 
+      rank: 4,
+      avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/6798.jpg",
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/CIN.png"
+    },
+    { 
       id: "5", 
-      name: "Dak Prescott", 
-      team: "DAL", 
+      name: "Jalen Hurts", 
+      team: "PHI", 
       position: "QB", 
       projected: 20.5, 
       rank: 5,
       avatarUrl: "https://sleepercdn.com/content/nfl/players/thumb/3097.jpg",
-      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/DAL.png"
+      teamLogoUrl: "https://sleepercdn.com/images/team_logos/nfl/PHI.png"
     },
   ])
 
@@ -185,7 +185,7 @@ export function RankingsDemo() {
       <div className="max-w-3xl mx-auto">
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20">
-            <CardTitle className="text-center">Week 8 QB Rankings</CardTitle>
+            <CardTitle className="text-center">QB Rankings</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-3">
@@ -435,14 +435,14 @@ export function CommunityDemo() {
       <div className="text-center space-y-4">
         <h3 className="text-2xl font-bold">Join the Community</h3>
         <p className="text-slate-600 dark:text-slate-400 text-lg">
-          Follow friends, share insights, and learn from top performers
+          Connect with fellow fantasy football enthusiasts and share your insights
         </p>
       </div>
 
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="shadow-lg border-2">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20">
-            <CardTitle className="text-xl">Find Other Users</CardTitle>
+            <CardTitle className="text-xl">Find Fellow GridCasters</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
