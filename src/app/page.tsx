@@ -334,9 +334,6 @@ export default function LandingPage() {
               <Link href="/terms" className="hover:text-white transition-colors">
                 Terms
               </Link>
-              <Link href="/support" className="hover:text-white transition-colors">
-                Support
-              </Link>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-slate-800 text-center text-slate-400">
