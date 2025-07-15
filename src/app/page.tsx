@@ -259,7 +259,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:rotate-1 transition-all duration-300 ease-out cursor-pointer">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-out cursor-pointer">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                   <BarChart3 className="w-6 h-6 text-white" />
@@ -271,7 +271,7 @@ export default function LandingPage() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:rotate-1 transition-all duration-300 ease-out cursor-pointer">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-out cursor-pointer">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                   <Trophy className="w-6 h-6 text-white" />
@@ -283,7 +283,7 @@ export default function LandingPage() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:rotate-1 transition-all duration-300 ease-out cursor-pointer">
+            <Card className="bg-gradient-to-br from-blue-950/90 to-slate-900/90 border-blue-600/50 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-out cursor-pointer">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center mb-4 shadow-md">
                   <Users className="w-6 h-6 text-white" />
