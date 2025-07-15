@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Position is required' }, { status: 400 });
     }
 
-    // Get available reference rankings
+    // Get available reference rankings (regular rankings)
     let query = supabase
       .from('rankings')
       .select(`
@@ -52,11 +52,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch reference rankings' }, { status: 500 });
     }
 
+    // Get aggregate rankings for this position
+    const { data: aggregateRankings, error: aggregateError } = await supabase
+      .from('rankings')
+      .select(`
+        id,
+        title,
+        position,
+        type,
+        week,
+        season,
+        created_at,
+        updated_at
+      `)
+      .eq('user_id', user.id)
+      .like('position', `AGG_${position}`)
+      .eq('season', season)
+      .order('created_at', { ascending: false });
+
+    if (aggregateError) {
+      console.error('Error fetching aggregate rankings:', aggregateError);
+    }
+
     // Group rankings by type and week
     const referenceOptions = {
       weekly: rankings?.filter(r => r.type === 'weekly') || [],
       preseason: rankings?.filter(r => r.type === 'preseason') || [],
-      aggregate: [] // TODO: Add aggregate rankings when implemented
+      aggregate: aggregateRankings?.map(r => ({
+        ...r,
+        position: r.position.replace('AGG_', ''),
+        displayTitle: r.title
+      })) || []
     };
 
     return NextResponse.json({ 

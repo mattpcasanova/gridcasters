@@ -256,11 +256,38 @@ export default function AggregateRankings() {
     }
   }
 
-  const handleSaveAggregate = () => {
+  const handleSaveAggregate = async () => {
     if (aggregateName.trim()) {
-      toast.success(`Aggregate ranking "${aggregateName}" saved successfully! It will now appear in your Reference Point dropdown.`)
-      setShowSaveModal(false)
-      setAggregateName("")
+      try {
+        const response = await fetch('/api/rankings/aggregate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: aggregateName,
+            players: mockAggregatedPlayers,
+            position: selectedPosition,
+            week: selectedWeek.replace('Week ', ''),
+            season: new Date().getFullYear(),
+            type: 'weekly',
+            scoringFormat: 'half_ppr'
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          toast.success(`Aggregate ranking "${aggregateName}" saved successfully! It will now appear in your Reference Point dropdown.`)
+          setShowSaveModal(false)
+          setAggregateName("")
+        } else {
+          toast.error(`Failed to save aggregate ranking: ${data.error}`)
+        }
+      } catch (error) {
+        console.error('Error saving aggregate ranking:', error);
+        toast.error('Failed to save aggregate ranking')
+      }
     } else {
       toast.error("Please enter an aggregate name.")
     }

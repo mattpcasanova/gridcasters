@@ -354,7 +354,7 @@ export default function Rankings() {
                     </div>
                   </SelectItem>
                   <SelectItem value="preseason">Pre-Season Rankings</SelectItem>
-                  {/* TODO: Add aggregate rankings when implemented */}
+                  {/* Aggregate rankings will be loaded dynamically */}
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500 mt-1">

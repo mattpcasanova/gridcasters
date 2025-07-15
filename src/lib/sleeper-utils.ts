@@ -53,7 +53,7 @@ export const transformSleeperData = (
   const limits = getPositionLimits(positionFilter);
 
   // Transform players
-  const transformedPlayers: RankingPlayer[] = filteredPlayers
+  let transformedPlayers: RankingPlayer[] = filteredPlayers
     .map(player => {
       return {
         id: player.player_id,
@@ -89,17 +89,19 @@ export const transformSleeperData = (
         } : undefined
       };
     })
-    // Filter out players with no projected points (0 points)
-    .filter(player => player.projectedPoints > 0)
     // Sort by projected points (descending)
-    .sort((a, b) => b.projectedPoints - a.projectedPoints)
-    // Apply position-specific display limit
-    .slice(0, limits.displayLimit)
-    // Set ranks after filtering and sorting
-    .map((player, index) => ({
-      ...player,
-      rank: index + 1
-    }));
+    .sort((a, b) => b.projectedPoints - a.projectedPoints);
+
+  // Apply position-specific display limit
+  transformedPlayers = transformedPlayers.slice(0, limits.displayLimit);
+
+  // Set ranks after filtering and sorting
+  transformedPlayers = transformedPlayers.map((player, index) => ({
+    ...player,
+    rank: index + 1
+  }));
+
+  console.log(`TransformSleeperData: ${positionFilter} - Found ${filteredPlayers.length} players, returning ${transformedPlayers.length} (limit: ${limits.displayLimit})`);
 
   return transformedPlayers;
 };

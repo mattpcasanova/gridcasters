@@ -129,15 +129,15 @@ export class SleeperAPI {
             break;
         }
         
-        if (baseProjection > 0) {
-          mockProjections[playerId] = {
-            pts_ppr: Math.round(baseProjection * 10) / 10,
-            pts_half_ppr: Math.round(baseProjection * 0.9 * 10) / 10,
-            pts_std: Math.round(baseProjection * 0.8 * 10) / 10
-          };
-        }
+        // Always create projections for all valid players (don't filter by baseProjection > 0)
+        mockProjections[playerId] = {
+          pts_ppr: Math.round(baseProjection * 10) / 10,
+          pts_half_ppr: Math.round(baseProjection * 0.9 * 10) / 10,
+          pts_std: Math.round(baseProjection * 0.8 * 10) / 10
+        };
       });
       
+      console.log(`Mock projections created: ${Object.keys(mockProjections).length} players`);
       return mockProjections;
     } catch (error) {
       console.error('Failed to create mock projections:', error);
