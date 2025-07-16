@@ -49,7 +49,7 @@ const mockGroups = [
     name: "Fantasy Experts",
     description: "Professional fantasy football analysts and experts",
     members: 247,
-    avgAccuracy: 89.4,
+    avgAccuracy: 0, // No accuracy before Week 1
     isPrivate: false,
     joined: false,
   },
@@ -58,7 +58,7 @@ const mockGroups = [
     name: "College Friends",
     description: "Fantasy league with college buddies",
     members: 12,
-    avgAccuracy: 82.1,
+    avgAccuracy: 0,
     isPrivate: true,
     joined: true,
   },
@@ -67,7 +67,7 @@ const mockGroups = [
     name: "NFL Analysts",
     description: "Deep dive NFL analysis and rankings",
     members: 156,
-    avgAccuracy: 91.2,
+    avgAccuracy: 0,
     isPrivate: false,
     joined: false,
   },
@@ -244,8 +244,13 @@ export default function FindUsers() {
 
                       <div className="flex items-center space-x-4">
                         <div className="text-center">
-                          <CircularProgress value={group.avgAccuracy} size={40} />
-                          <p className="text-xs text-slate-500 mt-1">avg accuracy</p>
+                          {group.avgAccuracy > 0 ? (
+                            <CircularProgress value={group.avgAccuracy} size={40} />
+                          ) : (
+                            <div className="w-[40px] h-[40px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                              <span className="text-xs font-medium text-slate-500">--</span>
+                            </div>
+                          )}
                         </div>
 
                         {group.joined ? (

@@ -130,7 +130,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: false,
     },
     accuracy: 0,
-    rankings: 6, // Show actual number of rankings you have
+    rankings: 18, // 6 rankings each for Standard, Half PPR, Full PPR (preseason + week 1)
     followers: 0,
     isFollowing: false,
     isCurrentUser: true,
@@ -182,7 +182,7 @@ const groupData: GroupData[] = [
     id: 1,
     name: "Fantasy Experts",
     members: 247,
-    avgAccuracy: 89.4,
+    avgAccuracy: 0, // No accuracy before Week 1
     avatar: "/placeholder-group.jpg",
     userRank: 15,
     isJoined: true,
@@ -191,7 +191,7 @@ const groupData: GroupData[] = [
     id: 2,
     name: "College Friends",
     members: 12,
-    avgAccuracy: 82.1,
+    avgAccuracy: 0,
     avatar: "/placeholder-group.jpg",
     userRank: 3,
     isJoined: true,
@@ -200,7 +200,7 @@ const groupData: GroupData[] = [
     id: 3,
     name: "NFL Analysts",
     members: 156,
-    avgAccuracy: 91.2,
+    avgAccuracy: 0,
     avatar: "/placeholder-group.jpg",
     userRank: 42,
     isJoined: true,
@@ -209,7 +209,7 @@ const groupData: GroupData[] = [
     id: 4,
     name: "Monday Night Football",
     members: 89,
-    avgAccuracy: 86.7,
+    avgAccuracy: 0,
     avatar: "/placeholder-group.jpg",
     isJoined: false,
   },
@@ -217,7 +217,7 @@ const groupData: GroupData[] = [
     id: 5,
     name: "Dynasty League Pros",
     members: 324,
-    avgAccuracy: 88.9,
+    avgAccuracy: 0,
     avatar: "/placeholder-group.jpg",
     isJoined: false,
   },
@@ -734,7 +734,7 @@ export default function Leaderboard() {
                             )}
                           </div>
                           <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {group.members} members • {group.avgAccuracy}% avg accuracy
+                            {group.members} members • {group.avgAccuracy > 0 ? `${group.avgAccuracy}%` : '--'} avg accuracy
                           </p>
                           {group.isJoined && group.userRank && (
                             <p className="text-xs text-slate-500">
@@ -746,7 +746,13 @@ export default function Leaderboard() {
 
                       <div className="flex items-center space-x-4">
                         <div className="text-center">
-                          <CircularProgress value={group.avgAccuracy} size={60} showText />
+                          {group.avgAccuracy > 0 ? (
+                            <CircularProgress value={group.avgAccuracy} size={60} showText />
+                          ) : (
+                            <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                              <span className="text-sm font-medium text-slate-500">--</span>
+                            </div>
+                          )}
                           <p className="text-xs text-slate-500 mt-1">group avg</p>
                         </div>
 
