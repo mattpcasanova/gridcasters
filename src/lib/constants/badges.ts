@@ -236,9 +236,9 @@ export const BADGES: Badge[] = [
     name: 'Week 1 Prophet',
     description: 'Top 15th percentile on Week 1 rankings',
     subtitle: 'Week 1 is chaos, but you saw through it! Elite early performance.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/week_1_prophet_diamond.png',
     category: 'seasonal',
-    tier: 'silver',
+    tier: 'diamond',
     requirement: 85
   },
   {
@@ -246,9 +246,9 @@ export const BADGES: Badge[] = [
     name: 'Playoff Predictor',
     description: 'Top 10th percentile on playoff week rankings',
     subtitle: 'When it matters most! Clutch playoff predictions.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/playoff_predictor_diamond.png',
     category: 'seasonal',
-    tier: 'gold',
+    tier: 'diamond',
     requirement: 90
   },
   {
@@ -256,7 +256,7 @@ export const BADGES: Badge[] = [
     name: 'Season Sage',
     description: 'Top 5th percentile for entire season',
     subtitle: 'Season-long excellence! Sustained elite performance.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/season_sage_diamond.png',
     category: 'seasonal',
     tier: 'diamond',
     requirement: 95
@@ -264,21 +264,11 @@ export const BADGES: Badge[] = [
 
   // Milestone Badges
   {
-    id: 'first_timer',
-    name: 'First Timer',
-    description: 'Created your first ranking',
-    subtitle: 'Everyone starts somewhere! Your forecasting journey begins.',
-    icon: '/badges/placeholder.png',
-    category: 'milestone',
-    tier: 'bronze',
-    requirement: 1
-  },
-  {
     id: 'perfect_prophet',
     name: 'Perfect Prophet',
     description: 'Reached top 1st percentile on any ranking',
     subtitle: 'Elite of the elite! You achieved the highest forecasting tier.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/perfect_prophet.png',
     category: 'milestone',
     tier: 'platinum',
     requirement: 99
@@ -288,9 +278,9 @@ export const BADGES: Badge[] = [
     name: 'Triple Threat',
     description: 'Top 10th percentile on 3 different ranking types',
     subtitle: 'Versatile excellence! Elite performance across multiple formats.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/triple_threat_diamond.png',
     category: 'milestone',
-    tier: 'gold',
+    tier: 'diamond',
     requirement: 3
   },
   {
@@ -298,7 +288,7 @@ export const BADGES: Badge[] = [
     name: 'GridCasters Veteran',
     description: 'Member for 365+ days with 50+ rankings',
     subtitle: 'True GridCasters loyalty! A year of dedicated forecasting.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/gridcasters_veteran_diamond.png',
     category: 'milestone',
     tier: 'diamond',
     requirement: 365
@@ -310,41 +300,32 @@ export const BADGES: Badge[] = [
     name: 'Expert Analyst',
     description: 'GridCasters verified expert',
     subtitle: 'Officially recognized for exceptional forecasting expertise.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/expert_analyst.png',
     category: 'special',
     tier: 'verified',
     requirement: 0
   },
   {
-    id: 'community_champion',
-    name: 'Community Champion',
-    description: 'Outstanding community contribution',
-    subtitle: 'Helped make GridCasters better for everyone!',
-    icon: '/badges/placeholder.png',
+    id: 'beta_tester',
+    name: 'Beta Tester',
+    description: 'Early GridCasters beta participant',
+    subtitle: 'Helped shape GridCasters from the beginning!',
+    icon: '/badges/beta_tester.png',
     category: 'special',
     tier: 'special',
     requirement: 0
   },
   {
-    id: 'beta_tester',
-    name: 'Beta Tester',
-    description: 'Participated in GridCasters beta',
-    subtitle: 'Thanks for helping build GridCasters from the ground up!',
-    icon: '/badges/placeholder.png',
-    category: 'special',
-    tier: 'legacy',
-    requirement: 0
-  },
-  {
     id: 'founding_forecaster',
     name: 'Founding Forecaster',
-    description: 'First 1000 users on GridCasters',
-    subtitle: 'You were here from the beginning! Founding member status.',
-    icon: '/badges/placeholder.png',
+    description: 'GridCasters founding member',
+    subtitle: 'One of the original GridCasters!',
+    icon: '/badges/founding_forecaster.png',
     category: 'special',
-    tier: 'legacy',
+    tier: 'special',
     requirement: 0
-  }
+  },
+
 ]
 
 export const getTierColor = (tier: Badge['tier']) => {
@@ -362,7 +343,7 @@ export const getTierColor = (tier: Badge['tier']) => {
     case 'verified':
       return 'text-green-500 dark:text-green-400'
     case 'special':
-      return 'text-pink-500 dark:text-pink-400'
+      return 'text-blue-500 dark:text-blue-400'
     case 'legacy':
       return 'text-indigo-500 dark:text-indigo-400'
   }
@@ -383,7 +364,7 @@ export const getTierBgColor = (tier: Badge['tier']) => {
     case 'verified':
       return 'bg-green-50/50 dark:bg-green-900/20'
     case 'special':
-      return 'bg-pink-50/50 dark:bg-pink-900/20'
+      return 'bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20'
     case 'legacy':
       return 'bg-indigo-50/50 dark:bg-indigo-900/20'
   }

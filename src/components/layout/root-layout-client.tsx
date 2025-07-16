@@ -3,6 +3,7 @@
 import { useEffect, useState, createContext, useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSupabase } from '@/lib/hooks/use-supabase';
+import { useBadgeChecking } from '@/lib/hooks/use-badge-checking';
 import { NavigationHeader } from './navigation-header';
 import { LeaderboardProvider } from '@/lib/contexts/leaderboard-context';
 import type { Session } from '@supabase/supabase-js';
@@ -33,6 +34,7 @@ export function RootLayoutClient({ children, initialSession }: RootLayoutClientP
   const [rightButtons, setRightButtons] = useState<React.ReactNode>(null);
   const pathname = usePathname();
   const supabase = useSupabase();
+  const { checkBadges } = useBadgeChecking();
 
   useEffect(() => {
     setMounted(true);
@@ -41,11 +43,15 @@ export function RootLayoutClient({ children, initialSession }: RootLayoutClientP
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
+        // Check for badges when user signs in
+        if (session && event === 'SIGNED_IN') {
+          setTimeout(() => checkBadges(), 1000); // Small delay to ensure user data is loaded
+        }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase.auth, checkBadges]);
 
   // Clear buttons when pathname changes
   useEffect(() => {

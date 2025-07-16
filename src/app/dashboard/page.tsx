@@ -136,6 +136,28 @@ export default function Dashboard() {
 
   const rightButtons = (
     <>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={async () => {
+          try {
+            const response = await fetch('/api/badges/check', { method: 'POST' });
+            if (response.ok) {
+              const data = await response.json();
+              if (data.newlyEarned && data.newlyEarned.length > 0) {
+                toast.success(`Earned ${data.newlyEarned.length} new badge(s)!`);
+              } else {
+                toast.info('No new badges earned yet. Keep creating rankings!');
+              }
+            }
+          } catch (error) {
+            console.error('Error checking badges:', error);
+          }
+        }}
+        className="mr-2"
+      >
+        Test Badges
+      </Button>
       <Link href="/rankings">
         <GradientButton size="sm" icon={Plus}>
           New Ranking

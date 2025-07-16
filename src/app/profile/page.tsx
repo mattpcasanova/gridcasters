@@ -778,22 +778,22 @@ export default function Profile() {
                             <button
                               key={badge.id}
                               onClick={() => toggleBadgeSelection(badge.id)}
-                              className={`p-4 border rounded-lg text-left transition-all ${
+                              className={`p-4 border rounded-lg text-left transition-all ${getTierBgColor(badge.tier)} ${
                                 badge.tier === 'bronze'
-                                  ? 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                                  ? 'border-amber-200 dark:border-amber-800'
                                   : badge.tier === 'silver'
-                                  ? 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                                  ? 'border-slate-200 dark:border-slate-700'
                                   : badge.tier === 'gold'
-                                  ? 'bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                                  ? 'border-yellow-200 dark:border-yellow-800'
                                   : badge.tier === 'diamond'
-                                  ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                                  ? 'border-blue-200 dark:border-blue-800'
                                   : badge.tier === 'platinum'
-                                  ? 'bg-purple-50/50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
+                                  ? 'border-purple-200 dark:border-purple-800'
                                   : badge.tier === 'verified'
-                                  ? 'bg-green-50/50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                  ? 'border-green-200 dark:border-green-800'
                                   : badge.tier === 'special'
-                                  ? 'bg-pink-50/50 dark:bg-pink-900/20 border-pink-200 dark:border-pink-800'
-                                  : 'bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
+                                  ? 'border-blue-200 dark:border-blue-800'
+                                  : 'border-indigo-200 dark:border-indigo-800'
                               } ${
                                 isSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
                               } ${
