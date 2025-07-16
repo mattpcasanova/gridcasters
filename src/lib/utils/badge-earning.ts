@@ -168,7 +168,9 @@ export const checkBadgeEarning = (
     };
 
     // Check if newly earned and notification hasn't been shown
-    if (earned && !wasEarned && !current.notification_shown) {
+    // For now, only show notification if badge wasn't previously earned
+    // This prevents spam until the migration is run
+    if (earned && !wasEarned) {
       newlyEarned.push(badge);
       // Mark notification as shown
       newProgress[badge.id].notification_shown = true;
