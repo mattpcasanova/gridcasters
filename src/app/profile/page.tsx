@@ -537,24 +537,14 @@ export default function Profile() {
                       </GradientButton>
                     </>
                   ) : (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Profile
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={handleLogout}
-                        className="w-full justify-start border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign Out
-                      </Button>
-                    </>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleLogout}
+                      className="w-full justify-start border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
                   )}
                 </div>
               </div>
