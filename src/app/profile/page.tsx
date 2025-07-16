@@ -567,12 +567,12 @@ export default function Profile() {
                           : 'bg-blue-50/50 dark:bg-blue-900/20'
                       } transition-all`}
                     >
-                      <div className="relative w-14 h-14 flex items-center justify-center">
+                      <div className="relative w-12 h-12 flex items-center justify-center">
                         <Image
                           src={badge.icon}
                           alt={badge.name}
-                          width={56}
-                          height={56}
+                          width={48}
+                          height={48}
                           className="w-full h-full object-contain"
                           quality={100}
                         />
@@ -824,12 +824,12 @@ export default function Profile() {
                                       : "bg-slate-300 dark:bg-slate-600"
                                   }`}
                                 >
-                                  <div className="relative w-14 h-14 flex items-center justify-center">
+                                  <div className="relative w-12 h-12 flex items-center justify-center">
                                     <Image
                                       src={badge.icon}
                                       alt={badge.name}
-                                      width={56}
-                                      height={56}
+                                      width={48}
+                                      height={48}
                                       className="w-full h-full object-contain"
                                       quality={100}
                                     />

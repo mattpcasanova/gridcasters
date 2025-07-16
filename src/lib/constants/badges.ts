@@ -120,7 +120,7 @@ export const BADGES: Badge[] = [
     name: 'Reliability Master',
     description: 'Maintained top 50th percentile across 10 rankings',
     subtitle: 'Incredibly reliable! 10 rankings with top-half performance.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/reliability_master_gold.png',
     category: 'consistency',
     tier: 'gold',
     requirement: 10
@@ -130,7 +130,7 @@ export const BADGES: Badge[] = [
     name: 'Forecasting Machine',
     description: 'Maintained top 40th percentile across 20 rankings',
     subtitle: 'Unstoppable consistency! 20 rankings with elite performance.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/forecasting_machine_diamond.png',
     category: 'consistency',
     tier: 'diamond',
     requirement: 20
@@ -142,7 +142,7 @@ export const BADGES: Badge[] = [
     name: 'Team Player',
     description: 'Joined your first group',
     subtitle: 'Welcome to the community! You\'ve joined your first group.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/team_player_bronze.png',
     category: 'social',
     tier: 'bronze',
     requirement: 1
@@ -152,7 +152,7 @@ export const BADGES: Badge[] = [
     name: 'Group Leader',
     description: 'Created a group with 10+ members',
     subtitle: 'Natural leader! You\'ve built a thriving forecasting group.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/group_leader_silver.png',
     category: 'social',
     tier: 'silver',
     requirement: 10
@@ -162,7 +162,7 @@ export const BADGES: Badge[] = [
     name: 'Influencer',
     description: 'Gained 100+ followers',
     subtitle: 'People trust your predictions! 100+ followers achieved.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/influencer_gold.png',
     category: 'social',
     tier: 'gold',
     requirement: 100
@@ -172,7 +172,7 @@ export const BADGES: Badge[] = [
     name: 'Grid Celebrity',
     description: 'Gained 500+ followers',
     subtitle: 'Forecasting superstar! 500+ followers follow your predictions.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/grid_celebrity_diamond.png',
     category: 'social',
     tier: 'diamond',
     requirement: 500
@@ -184,7 +184,7 @@ export const BADGES: Badge[] = [
     name: 'QB Whisperer',
     description: 'Top 10th percentile on 3 quarterback rankings',
     subtitle: 'You understand quarterbacks like no other!',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/qb_whisperer_gold.png',
     category: 'position',
     tier: 'gold',
     requirement: 3
@@ -194,7 +194,7 @@ export const BADGES: Badge[] = [
     name: 'RB Oracle',
     description: 'Top 10th percentile on 3 running back rankings',
     subtitle: 'Running back predictions are your specialty!',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/rb_oracle_gold.png',
     category: 'position',
     tier: 'gold',
     requirement: 3
@@ -204,7 +204,7 @@ export const BADGES: Badge[] = [
     name: 'WR Savant',
     description: 'Top 10th percentile on 3 wide receiver rankings',
     subtitle: 'Wide receiver predictions are your forte!',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/wr_savant_gold.png',
     category: 'position',
     tier: 'gold',
     requirement: 3
@@ -214,7 +214,7 @@ export const BADGES: Badge[] = [
     name: 'TE Expert',
     description: 'Top 10th percentile on 3 tight end rankings',
     subtitle: 'Tight end specialist! Most users struggle here.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/te_expert_gold.png',
     category: 'position',
     tier: 'gold',
     requirement: 3
@@ -224,7 +224,7 @@ export const BADGES: Badge[] = [
     name: 'Position Master',
     description: 'Top 10th percentile across all 4 positions',
     subtitle: 'Ultimate versatility! Elite performance across every position.',
-    icon: '/badges/placeholder.png',
+    icon: '/badges/position_master_diamond.png',
     category: 'position',
     tier: 'diamond',
     requirement: 4
