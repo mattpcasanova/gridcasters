@@ -58,7 +58,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: true,
     },
     accuracy: 0, // No accuracy before Week 1
-    rankings: 24, // 8 rankings each for Standard, Half PPR, Full PPR (preseason + week 1)
+    rankings: 6, // 2 rankings each for Standard, Half PPR, Full PPR (preseason + week 1)
     followers: 1247,
     isFollowing: false,
     weeklyAccuracy: 0, // No weekly accuracy before Week 1
@@ -76,7 +76,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: false,
     },
     accuracy: 0,
-    rankings: 21, // 7 rankings each for Standard, Half PPR, Full PPR
+    rankings: 9, // 3 rankings each for Standard, Half PPR, Full PPR
     followers: 892,
     isFollowing: true,
     weeklyAccuracy: 0,
@@ -94,7 +94,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: false,
     },
     accuracy: 0,
-    rankings: 15, // 5 rankings each for Standard, Half PPR, Full PPR
+    rankings: 3, // 1 ranking each for Standard, Half PPR, Full PPR
     followers: 567,
     isFollowing: false,
     weeklyAccuracy: 0,
@@ -112,7 +112,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: true,
     },
     accuracy: 0,
-    rankings: 18, // 6 rankings each for Standard, Half PPR, Full PPR
+    rankings: 6, // 2 rankings each for Standard, Half PPR, Full PPR
     followers: 423,
     isFollowing: true,
     weeklyAccuracy: 0,
@@ -149,7 +149,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: false,
     },
     accuracy: 0,
-    rankings: 12, // 4 rankings each for Standard, Half PPR, Full PPR
+    rankings: 3, // 1 ranking each for Standard, Half PPR, Full PPR
     followers: 156,
     isFollowing: true,
     weeklyAccuracy: 0,
@@ -167,7 +167,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: false,
     },
     accuracy: 0,
-    rankings: 9, // 3 rankings each for Standard, Half PPR, Full PPR
+    rankings: 0, // No rankings yet
     followers: 298,
     isFollowing: true,
     weeklyAccuracy: 0,
@@ -238,7 +238,11 @@ export default function Leaderboard() {
   // Get total rankings based on PPR type
   const getTotalRankings = (type: string) => {
     // Sum all users' rankings to get total cumulative count
-    const totalRankings = leaderboardData.reduce((sum, user) => sum + user.rankings, 0)
+    const totalRankings = leaderboardData.reduce((sum, user) => {
+      console.log(`User ${user.user.name}: ${user.rankings} rankings, running total: ${sum + user.rankings}`)
+      return sum + user.rankings
+    }, 0)
+    console.log(`Final total rankings: ${totalRankings}`)
     return totalRankings
   }
 
