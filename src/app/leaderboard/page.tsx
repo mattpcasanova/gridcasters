@@ -88,25 +88,6 @@ const mockLeaderboardData: LeaderboardUser[] = [
     id: 3,
     rank: 3,
     user: {
-      name: "Matt Casanova",
-      username: "@mattcasanova",
-      avatar: "/placeholder-user.jpg",
-      verified: false,
-    },
-    accuracy: 87.3,
-    rankings: 98,
-    followers: 234,
-    isFollowing: false,
-    isCurrentUser: true,
-    weeklyAccuracy: 89.7,
-    weeklyRank: 5,
-    change: -2,
-    weeklyChange: -2, // Added for mock data
-  },
-  {
-    id: 4,
-    rank: 4,
-    user: {
       name: "Alex Rodriguez",
       username: "@alexr",
       avatar: "/placeholder-user.jpg",
@@ -122,8 +103,8 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyChange: 1, // Added for mock data
   },
   {
-    id: 5,
-    rank: 5,
+    id: 4,
+    rank: 4,
     user: {
       name: "Emma Wilson",
       username: "@emmaw",
@@ -138,6 +119,25 @@ const mockLeaderboardData: LeaderboardUser[] = [
     weeklyRank: 4,
     change: 1,
     weeklyChange: 1, // Added for mock data
+  },
+  {
+    id: 5,
+    rank: 5,
+    user: {
+      name: "Matt Casanova",
+      username: "@mattcasanova",
+      avatar: "/placeholder-user.jpg",
+      verified: false,
+    },
+    accuracy: 87.3,
+    rankings: 0, // This should be the actual number from the database
+    followers: 0,
+    isFollowing: false,
+    isCurrentUser: true,
+    weeklyAccuracy: 89.7,
+    weeklyRank: 5,
+    change: -2,
+    weeklyChange: -2, // Added for mock data
   },
   {
     id: 6,
@@ -175,7 +175,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
     change: 5,
     weeklyChange: 5, // Added for mock data
   },
-]
+];
 
 const groupData: GroupData[] = [
   {

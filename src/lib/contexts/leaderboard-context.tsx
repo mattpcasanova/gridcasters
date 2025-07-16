@@ -34,21 +34,11 @@ const globalData = [
     followers: 892
   },
   {
-    id: "current-user",
-    name: "You",
-    username: "you",
-    accuracy: 87.3,
-    rank: 3,
-    isCurrentUser: true,
-    avatar: "/placeholder-user.jpg",
-    followers: 247
-  },
-  {
     id: "alex-m",
     name: "Alex M.",
     username: "alexm",
     accuracy: 85.1,
-    rank: 4,
+    rank: 3,
     avatar: "/placeholder-user.jpg",
     followers: 567
   },
@@ -57,9 +47,19 @@ const globalData = [
     name: "Emma W.",
     username: "emmaw",
     accuracy: 83.7,
-    rank: 5,
+    rank: 4,
     avatar: "/placeholder-user.jpg",
     followers: 423
+  },
+  {
+    id: "current-user",
+    name: "You",
+    username: "you",
+    accuracy: 87.3,
+    rank: 5,
+    isCurrentUser: true,
+    avatar: "/placeholder-user.jpg",
+    followers: 0
   }
 ];
 
@@ -72,7 +72,7 @@ const friendsData = [
     rank: 1,
     isCurrentUser: true,
     avatar: "/placeholder-user.jpg",
-    followers: 247
+    followers: 0
   },
   {
     id: "alex-m",
@@ -132,16 +132,6 @@ const group1Data = [
     followers: 1892
   },
   {
-    id: "current-user",
-    name: "You",
-    username: "you",
-    accuracy: 87.3,
-    rank: 15,
-    isCurrentUser: true,
-    avatar: "/placeholder-user.jpg",
-    followers: 247
-  },
-  {
     id: "expert-3",
     name: "Sleeper Elite",
     username: "sleeper",
@@ -158,20 +148,20 @@ const group1Data = [
     rank: 4,
     avatar: "/placeholder-user.jpg",
     followers: 1234
-  }
-];
-
-const group2Data = [
+  },
   {
     id: "current-user",
     name: "You",
     username: "you",
     accuracy: 87.3,
-    rank: 3,
+    rank: 15,
     isCurrentUser: true,
     avatar: "/placeholder-user.jpg",
-    followers: 247
-  },
+    followers: 0
+  }
+];
+
+const group2Data = [
   {
     id: "college-1",
     name: "Tommy",
@@ -189,6 +179,16 @@ const group2Data = [
     rank: 2,
     avatar: "/placeholder-user.jpg",
     followers: 67
+  },
+  {
+    id: "current-user",
+    name: "You",
+    username: "you",
+    accuracy: 87.3,
+    rank: 3,
+    isCurrentUser: true,
+    avatar: "/placeholder-user.jpg",
+    followers: 0
   },
   {
     id: "college-3",

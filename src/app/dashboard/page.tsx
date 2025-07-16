@@ -159,7 +159,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Show success message if user was redirected after email verification
     if (searchParams.get('verified') === 'true') {
-      toast.success('Email verified successfully! Welcome to RankBet!')
+      toast.success('Email verified successfully! Welcome to GridCasters!')
     }
   }, [searchParams])
 
@@ -427,45 +427,34 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {isPreSeason ? (
-                    // Show users with most rankings during preseason
-                    <div className="text-center py-8">
-                      <Trophy className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Season Starting Soon</h3>
-                      <p className="text-slate-600 dark:text-slate-400 mb-4">
-                        Rankings will appear here once Week 1 begins
-                      </p>
-                    </div>
-                  ) : (
-                    getLeaderboardData(selectedView).slice(0, 5).map((user, index) => (
-                      <Link
-                        key={index}
-                        href={user.isCurrentUser ? "/profile" : `/profile/${user.username}`}
-                        className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                          user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback>
-                              {user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className={`font-medium ${user.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}>
-                              {user.name}
-                              {user.isCurrentUser && " (You)"}
-                            </div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global • {user.followers} followers</div>
+                  {getLeaderboardData(selectedView).slice(0, 5).map((user, index) => (
+                    <Link
+                      key={index}
+                      href={user.isCurrentUser ? "/profile" : `/profile/${user.username}`}
+                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                        user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={user.avatar} />
+                          <AvatarFallback>
+                            {user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className={`font-medium ${user.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}>
+                            {user.name}
+                            {user.isCurrentUser && " (You)"}
                           </div>
+                          <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global • {user.followers} followers</div>
                         </div>
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                          Active
-                        </div>
-                      </Link>
-                    ))
-                  )}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        Active
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </CardContent>
             </Card>
