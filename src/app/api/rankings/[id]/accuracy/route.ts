@@ -49,6 +49,19 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to update accuracy score' }, { status: 500 });
     }
 
+    // Calculate percentiles for this period
+    try {
+      await supabase.rpc('update_percentiles_for_period', {
+        position_param: ranking.position,
+        type_param: ranking.type,
+        week_param: ranking.week,
+        season_param: ranking.season
+      });
+    } catch (percentileError) {
+      console.error('Error updating percentiles:', percentileError);
+      // Don't fail the request if percentile update fails
+    }
+
     return NextResponse.json({
       success: true,
       accuracyScore: accuracyResult.accuracyPercentage,

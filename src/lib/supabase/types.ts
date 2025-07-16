@@ -51,6 +51,9 @@ export interface Database {
           week: number | null
           season: number
           accuracy_score: number | null
+          percentile_rank: number | null
+          total_rankings_in_period: number | null
+          percentile_score: number | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -64,6 +67,9 @@ export interface Database {
           week?: number | null
           season: number
           accuracy_score?: number | null
+          percentile_rank?: number | null
+          total_rankings_in_period?: number | null
+          percentile_score?: number | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -77,6 +83,9 @@ export interface Database {
           week?: number | null
           season?: number
           accuracy_score?: number | null
+          percentile_rank?: number | null
+          total_rankings_in_period?: number | null
+          percentile_score?: number | null
           is_active?: boolean
           created_at?: string
           updated_at?: string

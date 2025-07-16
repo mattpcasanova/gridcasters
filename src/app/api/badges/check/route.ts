@@ -122,9 +122,23 @@ async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
     ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
-  // Mock data for now (would need actual percentile calculations)
-  const topPercentileRankings = Math.floor(Math.random() * 5); // Mock
-  const consecutiveTopPercentile = Math.floor(Math.random() * 3); // Mock
+  // Get actual percentile data
+  const { data: percentileStats } = await supabase.rpc('get_user_percentile_stats', {
+    user_uuid: userId
+  });
+
+  const stats = percentileStats?.[0] || {
+    total_rankings: 0,
+    avg_percentile: 0,
+    top_10_percentile_count: 0,
+    top_25_percentile_count: 0,
+    top_50_percentile_count: 0,
+    best_percentile: 0,
+    recent_percentile_trend: 0
+  };
+
+  const topPercentileRankings = stats.top_10_percentile_count || 0;
+  const consecutiveTopPercentile = Math.min(stats.top_10_percentile_count || 0, 3); // Simplified for now
 
   return {
     totalRankings: totalRankings || 0,
