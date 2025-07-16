@@ -57,14 +57,14 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: true,
     },
-    accuracy: 94.2,
+    accuracy: 0, // No accuracy before Week 1
     rankings: 156,
     followers: 1247,
     isFollowing: false,
-    weeklyAccuracy: 96.1,
-    weeklyRank: 1,
+    weeklyAccuracy: 0, // No weekly accuracy before Week 1
+    weeklyRank: 0, // No weekly rank before Week 1
     change: 0,
-    weeklyChange: 0, // Added for mock data
+    weeklyChange: 0,
   },
   {
     id: 2,
@@ -75,14 +75,14 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: false,
     },
-    accuracy: 91.8,
+    accuracy: 0,
     rankings: 142,
     followers: 892,
     isFollowing: true,
-    weeklyAccuracy: 93.4,
-    weeklyRank: 2,
-    change: 1,
-    weeklyChange: 1, // Added for mock data
+    weeklyAccuracy: 0,
+    weeklyRank: 0,
+    change: 0,
+    weeklyChange: 0,
   },
   {
     id: 3,
@@ -93,14 +93,14 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: false,
     },
-    accuracy: 85.1,
+    accuracy: 0,
     rankings: 78,
     followers: 567,
     isFollowing: false,
-    weeklyAccuracy: 91.2,
-    weeklyRank: 3,
-    change: 1,
-    weeklyChange: 1, // Added for mock data
+    weeklyAccuracy: 0,
+    weeklyRank: 0,
+    change: 0,
+    weeklyChange: 0,
   },
   {
     id: 4,
@@ -111,14 +111,14 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: true,
     },
-    accuracy: 83.7,
+    accuracy: 0,
     rankings: 134,
     followers: 423,
     isFollowing: true,
-    weeklyAccuracy: 90.8,
-    weeklyRank: 4,
-    change: 1,
-    weeklyChange: 1, // Added for mock data
+    weeklyAccuracy: 0,
+    weeklyRank: 0,
+    change: 0,
+    weeklyChange: 0,
   },
   {
     id: 5,
@@ -129,15 +129,15 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: false,
     },
-    accuracy: 87.3,
+    accuracy: 0,
     rankings: 0, // This should be the actual number from the database
     followers: 0,
     isFollowing: false,
     isCurrentUser: true,
-    weeklyAccuracy: 89.7,
-    weeklyRank: 5,
-    change: -2,
-    weeklyChange: -2, // Added for mock data
+    weeklyAccuracy: 0,
+    weeklyRank: 0,
+    change: 0,
+    weeklyChange: 0,
   },
   {
     id: 6,
@@ -148,14 +148,14 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: false,
     },
-    accuracy: 82.1,
+    accuracy: 0,
     rankings: 89,
     followers: 156,
     isFollowing: true,
-    weeklyAccuracy: 87.3,
-    weeklyRank: 6,
-    change: 2,
-    weeklyChange: 2, // Added for mock data
+    weeklyAccuracy: 0,
+    weeklyRank: 0,
+    change: 0,
+    weeklyChange: 0,
   },
   {
     id: 7,
@@ -166,14 +166,14 @@ const mockLeaderboardData: LeaderboardUser[] = [
       avatar: "/placeholder-user.jpg",
       verified: false,
     },
-    accuracy: 79.8,
+    accuracy: 0,
     rankings: 67,
     followers: 298,
     isFollowing: true,
-    weeklyAccuracy: 85.1,
-    weeklyRank: 7,
-    change: 5,
-    weeklyChange: 5, // Added for mock data
+    weeklyAccuracy: 0,
+    weeklyRank: 0,
+    change: 0,
+    weeklyChange: 0,
   },
 ];
 
@@ -316,7 +316,8 @@ export default function Leaderboard() {
   }
 
   const renderUserRow = (entry: LeaderboardUser, showWeeklyRank = false) => {
-    const rank = showWeeklyRank ? (entry.weeklyRank || 999) : entry.rank
+    const rank = showWeeklyRank ? (entry.weeklyRank || 0) : entry.rank
+    const accuracy = showWeeklyRank ? (entry.weeklyAccuracy || 0) : entry.accuracy
     
     // Determine background gradient based on rank
     let backgroundClass = "hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -337,11 +338,11 @@ export default function Leaderboard() {
     >
       <div className="flex items-center space-x-4">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-          rank <= 3 
+          rank <= 3 && rank > 0
             ? "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white" 
             : "bg-slate-100 dark:bg-slate-700"
         }`}>
-          {rank}
+          {rank > 0 ? rank : '--'}
         </div>
 
         <Link href={`/profile/${entry.id}`}>
@@ -371,7 +372,7 @@ export default function Leaderboard() {
                 You
               </Badge>
             )}
-            {showWeeklyRank && entry.change !== undefined && (
+            {showWeeklyRank && entry.change !== undefined && entry.change !== 0 && (
               <Badge 
                 variant="outline" 
                 className={`text-xs ${
@@ -397,7 +398,13 @@ export default function Leaderboard() {
 
       <div className="flex items-center space-x-4">
         <div className="text-center">
-          <CircularProgress value={showWeeklyRank ? entry.weeklyAccuracy || 0 : entry.accuracy} size={60} showText />
+          {accuracy > 0 ? (
+            <CircularProgress value={accuracy} size={60} showText />
+          ) : (
+            <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+              <span className="text-sm font-medium text-slate-500">--</span>
+            </div>
+          )}
           <p className="text-xs text-slate-500 mt-1">accuracy</p>
         </div>
 
@@ -485,13 +492,9 @@ export default function Leaderboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard
             title={`Your Rank (${getViewLabel(selectedView)})`}
-            value={`#${getUserRank(selectedView) || 'N/A'}`}
+            value={isPreSeason ? "#--" : `#${getUserRank(selectedView) || 'N/A'}`}
             icon={Trophy}
-            trend={{
-              value: "+2 positions this week",
-              direction: "up",
-              icon: TrendingUp
-            }}
+            subtitle={isPreSeason ? "No rankings yet" : "Your current position"}
           />
           <StatCard
             title="Total Rankings"
@@ -501,9 +504,9 @@ export default function Leaderboard() {
           />
           <StatCard
             title="Your Accuracy"
-            value="Pending"
+            value={isPreSeason ? "--" : "Pending"}
             icon={TrendingUp}
-            subtitle="Awaiting Week 1"
+            subtitle={isPreSeason ? "No scores yet" : "Awaiting Week 1"}
           />
         </div>
 

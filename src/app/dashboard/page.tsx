@@ -301,7 +301,7 @@ export default function Dashboard() {
 
           <StatCard
             title="League Rank"
-            value={`#${userStats.leagueRank}`}
+            value={isPreSeason ? "#--" : `#${userStats.leagueRank}`}
             icon={Trophy}
             subtitle={`in ${getViewLabel(selectedView)}`}
           />
