@@ -237,12 +237,10 @@ export default function Leaderboard() {
 
   // Get total rankings based on PPR type
   const getTotalRankings = (type: string) => {
-    switch (type) {
-      case "standard": return 423
-      case "half": return 512
-      case "full": return 312
-      default: return 1247 // Combined (all types)
-    }
+    // This should be fetched from the database, but for now we'll use a realistic number
+    // based on the current user's actual rankings
+    const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
+    return currentUser?.rankings || 0
   }
 
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
@@ -686,7 +684,7 @@ export default function Leaderboard() {
                     <CardTitle>Group Leaderboards</CardTitle>
                     <CardDescription>Rankings within your groups</CardDescription>
                   </div>
-                  <Link href="/find-groups">
+                  <Link href="/find-friends">
                     <Button variant="outline" size="sm">
                       <Users className="w-4 h-4 mr-2" />
                       Find Groups

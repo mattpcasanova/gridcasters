@@ -57,11 +57,24 @@ type UserProfile = {
   last_name: string | null
 }
 
+type UserStats = {
+  totalRankings: number
+  followers: number
+  following: number
+  leagueRank: string
+}
+
 export default function Dashboard() {
   const searchParams = useSearchParams()
   const supabase = useSupabase()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [userStats, setUserStats] = useState<UserStats>({
+    totalRankings: 0,
+    followers: 0,
+    following: 0,
+    leagueRank: '--'
+  })
   const [isLoading, setIsLoading] = useState(true)
   
   const { 
@@ -78,9 +91,9 @@ export default function Dashboard() {
   const currentWeek = seasonInfo.currentWeek || 1
   const isPreSeason = seasonInfo.isPreSeason
   
-  // Fetch user profile data
+  // Fetch user profile data and stats
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndStats = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
@@ -88,34 +101,65 @@ export default function Dashboard() {
           return
         }
 
-        const { data: profileData, error } = await supabase
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('username, display_name, first_name, last_name')
           .eq('id', user.id)
           .single()
 
-        if (error) {
-          console.error('Error fetching profile for dashboard:', error)
+        if (profileError) {
+          console.error('Error fetching profile for dashboard:', profileError)
           toast.error('Failed to load profile. You may need to sign out and back in.')
           return
         }
 
         setProfile(profileData)
+
+        // Fetch user stats
+        const [rankingsResult, followersResult, followingResult] = await Promise.all([
+          // Get total rankings (excluding aggregate)
+          supabase
+            .from('rankings')
+            .select('id', { count: 'exact' })
+            .eq('user_id', user.id)
+            .not('position', 'like', 'AGG_%'),
+          
+          // Get followers count
+          supabase
+            .from('follows')
+            .select('id', { count: 'exact' })
+            .eq('following_id', user.id),
+          
+          // Get following count
+          supabase
+            .from('follows')
+            .select('id', { count: 'exact' })
+            .eq('follower_id', user.id)
+        ])
+
+        setUserStats({
+          totalRankings: rankingsResult.count || 0,
+          followers: followersResult.count || 0,
+          following: followingResult.count || 0,
+          leagueRank: '--' // Will be calculated based on selected view
+        })
+
       } catch (error) {
-        console.error('Error fetching profile for dashboard:', error)
+        console.error('Error fetching profile and stats for dashboard:', error)
         toast.error('Failed to load profile. You may need to sign out and back in.')
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchProfile()
+    fetchProfileAndStats()
   }, [supabase, router])
   
   useEffect(() => {
     // Show success message if user was redirected after email verification
     if (searchParams.get('verified') === 'true') {
-      toast.success('Email verified successfully! Welcome to GridCasters!')
+      toast.success('Email verified successfully! Welcome to RankBet!')
     }
   }, [searchParams])
 
@@ -257,24 +301,23 @@ export default function Dashboard() {
 
           <StatCard
             title="League Rank"
-            value={`#${getUserRank(selectedView)}`}
+            value={`#${userStats.leagueRank}`}
             icon={Trophy}
-            trend={{ value: "+2 positions", direction: "up", icon: ArrowUpRight }}
             subtitle={`in ${getViewLabel(selectedView)}`}
           />
 
           <StatCard
             title={`Week ${currentWeek} Rankings`}
-            value="6"
+            value={userStats.totalRankings.toString()}
             icon={Target}
-            subtitle="Accuracy pending"
+            subtitle="Your rankings"
           />
 
           <StatCard
             title="Followers"
-            value="247"
+            value={userStats.followers.toString()}
             icon={Users}
-            trend={{ value: "+12 this week", direction: "up", icon: ArrowUpRight }}
+            subtitle="People following you"
           />
         </div>
 
@@ -368,7 +411,12 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Top Rankers</CardTitle>
-                    <CardDescription>{getViewLabel(selectedView)} leaders this week</CardDescription>
+                    <CardDescription>
+                      {isPreSeason 
+                        ? "Users with most rankings" 
+                        : `${getViewLabel(selectedView)} leaders this week`
+                      }
+                    </CardDescription>
                   </div>
                   <Link href="/leaderboard">
                     <Button variant="outline" size="sm">
@@ -379,34 +427,45 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {getLeaderboardData(selectedView).slice(0, 5).map((user, index) => (
-                    <Link
-                      key={index}
-                      href={user.isCurrentUser ? "/profile" : `/profile/${user.username}`}
-                      className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                        user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={user.avatar} />
-                          <AvatarFallback>
-                            {user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className={`font-medium ${user.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}>
-                            {user.name}
-                            {user.isCurrentUser && " (You)"}
+                  {isPreSeason ? (
+                    // Show users with most rankings during preseason
+                    <div className="text-center py-8">
+                      <Trophy className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Season Starting Soon</h3>
+                      <p className="text-slate-600 dark:text-slate-400 mb-4">
+                        Rankings will appear here once Week 1 begins
+                      </p>
+                    </div>
+                  ) : (
+                    getLeaderboardData(selectedView).slice(0, 5).map((user, index) => (
+                      <Link
+                        key={index}
+                        href={user.isCurrentUser ? "/profile" : `/profile/${user.username}`}
+                        className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                          user.isCurrentUser ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800" : ""
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={user.avatar} />
+                            <AvatarFallback>
+                              {user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className={`font-medium ${user.isCurrentUser ? "text-blue-600 dark:text-blue-400" : ""}`}>
+                              {user.name}
+                              {user.isCurrentUser && " (You)"}
+                            </div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global • {user.followers} followers</div>
                           </div>
-                          <div className="text-sm text-slate-500 dark:text-slate-400">#{user.rank} Global • {user.followers} followers</div>
                         </div>
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        Active
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="text-sm text-slate-600 dark:text-slate-400">
+                          Active
+                        </div>
+                      </Link>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

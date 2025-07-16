@@ -40,28 +40,45 @@ export default function FindGroups() {
     try {
       setLoading(true)
       
-      // Get groups with member count and current user's membership status
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setGroups([])
+        return
+      }
+      
+      // Get all groups with member count and current user's membership status
       const { data, error } = await supabase
         .from('groups')
         .select(`
           *,
-          members_count: group_members(count),
-          is_member: group_members!inner(
+          group_members(
+            id,
             status,
             user_id
           )
         `)
-        .eq('group_members.status', 'approved')
 
       if (error) throw error
 
       // Transform the data to match our interface
-      const transformedGroups = data.map(group => ({
-        ...group,
-        members_count: group.members_count?.[0]?.count || 0,
-        is_member: group.is_member?.length > 0,
-        member_status: group.is_member?.[0]?.status
-      }))
+      const transformedGroups = data.map(group => {
+        const members = group.group_members || []
+        const isMember = members.some((member: any) => 
+          member.user_id === user.id && member.status === 'approved'
+        )
+        const isPending = members.some((member: any) => 
+          member.user_id === user.id && member.status === 'pending'
+        )
+        const memberStatus = isMember ? 'approved' : isPending ? 'pending' : undefined
+        
+        return {
+          ...group,
+          members_count: members.length,
+          is_member: isMember || isPending,
+          member_status: memberStatus
+        }
+      })
 
       setGroups(transformedGroups)
     } catch (error) {
