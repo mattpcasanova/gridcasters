@@ -8,7 +8,7 @@ interface LeaderboardContextType {
   setSelectedView: (view: LeaderboardView) => void;
   getViewLabel: (view: LeaderboardView) => string;
   getLeaderboardData: (view: LeaderboardView) => any[];
-  getUserRank: (view: LeaderboardView) => number;
+  getUserRank: (view: LeaderboardView) => string;
 }
 
 const LeaderboardContext = createContext<LeaderboardContextType | undefined>(undefined);
@@ -243,10 +243,11 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getUserRank = (view: LeaderboardView): number => {
+  const getUserRank = (view: LeaderboardView): string => {
     const data = getLeaderboardData(view);
     const currentUser = data.find(user => user.isCurrentUser);
-    return currentUser?.rank || 0;
+    // Return -- for pre-season when there are no accuracy scores
+    return currentUser?.rank ? currentUser.rank.toString() : '--';
   };
 
   return (

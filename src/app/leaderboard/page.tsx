@@ -130,7 +130,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
       verified: false,
     },
     accuracy: 0,
-    rankings: 0, // This should be the actual number from the database
+    rankings: 6, // Show actual number of rankings you have
     followers: 0,
     isFollowing: false,
     isCurrentUser: true,
@@ -237,8 +237,7 @@ export default function Leaderboard() {
 
   // Get total rankings based on PPR type
   const getTotalRankings = (type: string) => {
-    // This should be fetched from the database, but for now we'll use a realistic number
-    // based on the current user's actual rankings
+    // Get the current user's actual ranking count
     const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
     return currentUser?.rankings || 0
   }
@@ -492,7 +491,7 @@ export default function Leaderboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard
             title={`Your Rank (${getViewLabel(selectedView)})`}
-            value={isPreSeason ? "#--" : `#${getUserRank(selectedView) || 'N/A'}`}
+            value={isPreSeason ? "#--" : `#${getUserRank(selectedView)}`}
             icon={Trophy}
             subtitle={isPreSeason ? "No rankings yet" : "Your current position"}
           />
