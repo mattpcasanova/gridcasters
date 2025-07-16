@@ -636,15 +636,11 @@ export default function Profile() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right flex items-center space-x-2">
-                          <div>
-                            <div className="font-semibold text-green-600 dark:text-green-400">
-                              {ranking.accuracy !== null ? `${ranking.accuracy}%` : 'Pending'}
-                            </div>
-                            <div className="text-xs text-slate-500">accuracy</div>
-                          </div>
-                          {ranking.accuracy !== null && (
+                        <div className="text-right">
+                          {ranking.accuracy !== null ? (
                             <CircularProgress value={ranking.accuracy} size="sm" />
+                          ) : (
+                            <div className="text-sm text-slate-500">Pending</div>
                           )}
                         </div>
                       </div>
