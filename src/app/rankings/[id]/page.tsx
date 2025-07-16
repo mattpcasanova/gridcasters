@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { CircularProgress } from "@/components/ui/circular-progress"
 import { ArrowLeft, Share, Star, Trophy, TrendingUp, TrendingDown, Calendar, Users } from "lucide-react"
+import { AccuracyScoreDisplay } from "@/components/ranking/accuracy-score-display"
 import Link from "next/link"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { Loading } from "@/components/ui/loading"
@@ -377,6 +378,21 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Accuracy Score Display */}
+        <div className="mb-8">
+          <AccuracyScoreDisplay 
+            rankingId={ranking.id}
+            position={ranking.position}
+            initialScore={ranking.accuracy}
+            showCalculateButton={true}
+            isPending={ranking.week && ranking.week.includes('Week') && parseInt(ranking.week.split(' ')[1]) >= 1}
+            pendingReason={ranking.week && ranking.week.includes('Week') ? 
+              `Week ${ranking.week.split(' ')[1]} hasn't finished yet` : 
+              "Week hasn't finished yet"
+            }
+          />
         </div>
 
         {/* Player Rankings */}

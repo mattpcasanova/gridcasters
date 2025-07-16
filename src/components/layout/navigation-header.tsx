@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { BarChart3, Trophy, Users, User, Menu } from "lucide-react"
+import { BarChart3, Trophy, Users, User, Menu, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
@@ -152,6 +152,14 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
           {rightButtons}
           {isSignedIn && (
             <>
+              {/* Help Link */}
+              <Link href="/help/accuracy-scoring">
+                <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" />
+                  <span className="text-sm">Help</span>
+                </Button>
+              </Link>
+
               <NoSSR fallback={
                 <Button variant="ghost" size="sm" className="md:hidden" disabled>
                   <Menu className="w-5 h-5" />
@@ -166,6 +174,14 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
                   <SheetContent side="left" className="w-64">
                     <div className="flex flex-col space-y-4 mt-8">
                       <NavLinks mobile onNavigate={() => setMobileMenuOpen(false)} />
+                      <Link
+                        href="/help/accuracy-scoring"
+                        className="flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-300 font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 w-full justify-start"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                        <span>Help</span>
+                      </Link>
                     </div>
                   </SheetContent>
                 </Sheet>
