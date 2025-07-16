@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Get current badge progress
     const { data: badgeProgressData } = await supabase
       .from('badge_progress')
-      .select('badge_id, earned, progress, last_checked, notification_shown')
+      .select('badge_id, earned, progress, last_checked')
       .eq('user_id', user.id);
 
     // Convert to BadgeProgress format
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         earned: bp.earned,
         progress: bp.progress,
         lastChecked: new Date(bp.last_checked).getTime(),
-        notification_shown: bp.notification_shown || false
+        notification_shown: bp.earned // Assume earned badges have been shown
       };
     });
 
@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       badge_id: badgeId,
       earned: progress.earned,
-      progress: progress.progress,
-      notification_shown: progress.notification_shown
+      progress: progress.progress
+      // notification_shown will be added after migration runs successfully
     }));
 
     if (updates.length > 0) {

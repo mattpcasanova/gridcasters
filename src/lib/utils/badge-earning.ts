@@ -180,6 +180,16 @@ export const checkBadgeEarning = (
 
 // Toast notification for newly earned badges
 export const showBadgeEarnedToast = (badge: Badge) => {
+  // Check if we've already shown this badge notification in this session
+  const shownBadges = JSON.parse(localStorage.getItem('shownBadgeNotifications') || '[]');
+  if (shownBadges.includes(badge.id)) {
+    return; // Already shown this badge notification
+  }
+
+  // Add to shown badges and save to localStorage
+  shownBadges.push(badge.id);
+  localStorage.setItem('shownBadgeNotifications', JSON.stringify(shownBadges));
+
   toast.success(
     `Congrats on earning ${badge.name} badge! To see more go to the achievements tab in Profile page`,
     {
