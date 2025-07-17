@@ -223,6 +223,108 @@ async function updatePositionRankingsFromFLX(supabase: any, userId: string, flxP
   }
 }
 
+async function getUserStats(supabase: any, userId: string): Promise<any> {
+  // Get total rankings
+  const { count: totalRankings } = await supabase
+    .from('rankings')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId);
+
+  // Get rankings by position
+  const { data: rankingsByPosition } = await supabase
+    .from('rankings')
+    .select('position')
+    .eq('user_id', userId);
+
+  const positionCounts = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  rankingsByPosition?.forEach((r: any) => {
+    if (r.position in positionCounts) {
+      positionCounts[r.position as keyof typeof positionCounts]++;
+    }
+  });
+
+  // Get followers count
+  const { count: followers } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', userId);
+
+  // Get groups joined
+  const { count: groupsJoined } = await supabase
+    .from('group_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('status', 'approved');
+
+  // Get groups created
+  const { count: groupsCreated } = await supabase
+    .from('groups')
+    .select('*', { count: 'exact', head: true })
+    .eq('host_id', userId);
+
+  // Get user profile for additional info
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('created_at, is_verified')
+    .eq('id', userId)
+    .single();
+
+  // Calculate days since joined
+  const daysSinceJoined = profile?.created_at 
+    ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  // Determine beta tester status (anyone who joined during beta period)
+  // Beta period: Before January 1, 2025 (or whenever you decide to end beta)
+  const betaEndDate = new Date('2025-01-01');
+  const isBetaTester = profile?.created_at ? new Date(profile.created_at) < betaEndDate : false;
+
+  // Determine founding member status (first 250 users)
+  const { count: totalUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+
+  // Get user's join order by checking how many users joined before them
+  const { count: usersJoinedBefore } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .lt('created_at', profile?.created_at || new Date().toISOString());
+
+  const isFoundingMember = (usersJoinedBefore || 0) < 250;
+
+  // Get actual percentile data
+  const { data: percentileStats } = await supabase.rpc('get_user_percentile_stats', {
+    user_uuid: userId
+  });
+
+  const stats = percentileStats?.[0] || {
+    total_rankings: 0,
+    avg_percentile: 0,
+    top_10_percentile_count: 0,
+    top_25_percentile_count: 0,
+    top_50_percentile_count: 0,
+    best_percentile: 0,
+    recent_percentile_trend: 0
+  };
+
+  const topPercentileRankings = stats.top_10_percentile_count || 0;
+  const consecutiveTopPercentile = Math.min(stats.top_10_percentile_count || 0, 3); // Simplified for now
+
+  return {
+    totalRankings: totalRankings || 0,
+    rankingsByPosition: positionCounts,
+    topPercentileRankings,
+    consecutiveTopPercentile,
+    followers: followers || 0,
+    groupsJoined: groupsJoined || 0,
+    groupsCreated: groupsCreated || 0,
+    daysSinceJoined,
+    isVerified: profile?.is_verified || false,
+    isBetaTester,
+    isFoundingMember,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerSupabase();
@@ -406,12 +508,75 @@ export async function POST(request: NextRequest) {
       await updatePositionRankingsFromFLX(supabase, user.id, players, weekValue, season, type, scoringFormat);
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      rankingId,
-      action: existingRanking ? 'updated' : 'created',
-      positionRankingsUpdated: position === 'OVR' || position === 'FLX' // Let the UI know if position rankings were updated
-    });
+    // Check for new badges after successful ranking creation/update
+    try {
+      // Get current user stats
+      const userStats = await getUserStats(supabase, user.id);
+      
+      // Get current badge progress
+      const { data: badgeProgressData } = await supabase
+        .from('badge_progress')
+        .select('badge_id, earned, progress, last_checked')
+        .eq('user_id', user.id);
+
+      // Convert to BadgeProgress format
+      const currentProgress: any = {};
+      badgeProgressData?.forEach((bp: any) => {
+        currentProgress[bp.badge_id] = {
+          earned: bp.earned,
+          progress: bp.progress,
+          lastChecked: new Date(bp.last_checked).getTime(),
+          notification_shown: bp.earned // Assume earned badges have been shown
+        };
+      });
+
+      // Import the badge checking function
+      const { checkBadgeEarning } = await import('@/lib/utils/badge-earning');
+      
+      // Check for new badges
+      const { newProgress, newlyEarned } = checkBadgeEarning(userStats, currentProgress, user.id);
+
+      // Update badge progress in database
+      const updates = Object.entries(newProgress).map(([badgeId, progress]) => ({
+        user_id: user.id,
+        badge_id: badgeId,
+        earned: progress.earned,
+        progress: progress.progress
+      }));
+
+      if (updates.length > 0) {
+        const { error: updateError } = await supabase
+          .from('badge_progress')
+          .upsert(updates, { onConflict: 'user_id,badge_id' });
+
+        if (updateError) {
+          console.error('Error updating badge progress:', updateError);
+        }
+      }
+
+      // Return badge information along with ranking success
+      return NextResponse.json({ 
+        success: true, 
+        rankingId,
+        action: existingRanking ? 'updated' : 'created',
+        positionRankingsUpdated: position === 'OVR' || position === 'FLX',
+        newlyEarned: newlyEarned.map(badge => ({
+          id: badge.id,
+          name: badge.name,
+          description: badge.description,
+          icon: badge.icon
+        }))
+      });
+    } catch (badgeError) {
+      console.error('Error checking badges:', badgeError);
+      // Still return success for ranking creation even if badge check fails
+      return NextResponse.json({ 
+        success: true, 
+        rankingId,
+        action: existingRanking ? 'updated' : 'created',
+        positionRankingsUpdated: position === 'OVR' || position === 'FLX'
+      });
+    }
 
   } catch (error) {
     console.error('API Error:', error);

@@ -408,7 +408,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     });
   };
 
-  const saveRankings = async (position: string): Promise<{ success: boolean; action: string; error?: string; positionRankingsUpdated?: boolean }> => {
+  const saveRankings = async (position: string): Promise<{ success: boolean; action: string; error?: string; positionRankingsUpdated?: boolean; newlyEarned?: any[] }> => {
     try {
       const seasonInfo = getCurrentSeasonInfo();
       
@@ -433,13 +433,29 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
         return { success: false, action: 'error', error: data.error || 'Failed to save rankings' };
       }
 
+      // Show badge notifications if any were earned
+      if (data.newlyEarned && data.newlyEarned.length > 0) {
+        // Import the toast function
+        const { toast } = await import('sonner');
+        data.newlyEarned.forEach((badge: any) => {
+          toast.success(`🎉 Earned ${badge.name} badge! ${badge.description}`, {
+            duration: 5000,
+            action: {
+              label: 'View Badges',
+              onClick: () => window.location.href = '/profile'
+            }
+          });
+        });
+      }
+
       // After successful save, the current state is now the "saved" state
       // No need to refetch since the user's current order is already what they want
       
       return { 
         success: true, 
         action: data.action,
-        positionRankingsUpdated: data.positionRankingsUpdated
+        positionRankingsUpdated: data.positionRankingsUpdated,
+        newlyEarned: data.newlyEarned || []
       };
     } catch (error) {
       console.error('Error saving rankings:', error);

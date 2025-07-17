@@ -32,6 +32,7 @@ import {
   LogOut,
   Upload,
   Plus,
+  RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -543,6 +544,31 @@ export default function Profile() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col space-y-2 min-w-[140px]">
+                  <Button 
+                    variant="outline" 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/badges/check', { method: 'POST' });
+                        if (response.ok) {
+                          const data = await response.json();
+                          if (data.newlyEarned && data.newlyEarned.length > 0) {
+                            toast.success(`🎉 Earned ${data.newlyEarned.length} new badge(s)!`);
+                            // Refresh badge progress
+                            window.location.reload();
+                          } else {
+                            toast.info('No new badges earned yet. Keep creating rankings!');
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error checking badges:', error);
+                        toast.error('Failed to check badges');
+                      }
+                    }}
+                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Check Badges
+                  </Button>
                   <Button 
                     variant="outline" 
                     className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
