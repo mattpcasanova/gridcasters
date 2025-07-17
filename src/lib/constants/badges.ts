@@ -268,7 +268,7 @@ export const BADGES: Badge[] = [
     name: 'Perfect Prophet',
     description: 'Reached top 1st percentile on any ranking',
     subtitle: 'Elite of the elite! You achieved the highest forecasting tier.',
-    icon: '/badges/perfect_prophet.png',
+    icon: '/badges/perfect_prophet.png?v=2',
     category: 'milestone',
     tier: 'platinum',
     requirement: 99
@@ -320,7 +320,7 @@ export const BADGES: Badge[] = [
     name: 'Founding Forecaster',
     description: 'GridCasters founding member (first 250 users)',
     subtitle: 'One of the original GridCasters!',
-    icon: '/badges/founding_forecaster.png',
+    icon: '/badges/founding_forecaster.png?v=2',
     category: 'special',
     tier: 'special',
     requirement: 0
@@ -352,21 +352,21 @@ export const getTierColor = (tier: Badge['tier']) => {
 export const getTierBgColor = (tier: Badge['tier']) => {
   switch (tier) {
     case 'bronze':
-      return 'bg-amber-50/50 dark:bg-amber-900/20'
+      return 'bg-amber-50 dark:bg-amber-900/30'
     case 'silver':
-      return 'bg-slate-50/50 dark:bg-slate-800/50'
+      return 'bg-slate-50 dark:bg-slate-800/50'
     case 'gold':
-      return 'bg-yellow-50/50 dark:bg-yellow-900/20'
+      return 'bg-yellow-50 dark:bg-yellow-900/20'
     case 'diamond':
-      return 'bg-blue-50/50 dark:bg-blue-900/20'
+      return 'bg-blue-50 dark:bg-blue-900/20'
     case 'platinum':
-      return 'bg-purple-50/50 dark:bg-purple-900/20'
+      return 'bg-purple-50 dark:bg-purple-900/20'
     case 'verified':
-      return 'bg-green-50/50 dark:bg-green-900/20'
+      return 'bg-green-50 dark:bg-green-900/20'
     case 'special':
       return 'bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20'
     case 'legacy':
-      return 'bg-indigo-50/50 dark:bg-indigo-900/20'
+      return 'bg-indigo-50 dark:bg-indigo-900/20'
   }
 }
 
@@ -385,21 +385,21 @@ export const getBadgeIconBg = (badgeId: string, tier: Badge['tier']) => {
       // Default tier-based colors
       switch (tier) {
         case 'bronze':
-          return 'from-amber-500 to-amber-600'
+          return 'bg-gradient-to-br from-amber-500 to-amber-600'
         case 'silver':
-          return 'from-slate-400 to-slate-500'
+          return 'bg-gradient-to-br from-slate-400 to-slate-500'
         case 'gold':
-          return 'from-yellow-400 to-yellow-500'
+          return 'bg-gradient-to-br from-yellow-400 to-yellow-500'
         case 'diamond':
-          return 'from-blue-400 to-blue-500'
+          return 'bg-gradient-to-br from-blue-400 to-blue-500'
         case 'platinum':
-          return 'from-purple-400 to-purple-500'
+          return 'bg-gradient-to-br from-purple-400 to-purple-500'
         case 'verified':
-          return 'from-green-400 to-green-500'
+          return 'bg-gradient-to-br from-green-400 to-green-500'
         case 'special':
-          return 'from-pink-400 to-pink-500'
+          return 'bg-gradient-to-br from-pink-400 to-pink-500'
         case 'legacy':
-          return 'from-indigo-400 to-indigo-500'
+          return 'bg-gradient-to-br from-indigo-400 to-indigo-500'
       }
   }
 }

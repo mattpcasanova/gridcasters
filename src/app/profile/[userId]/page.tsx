@@ -434,7 +434,7 @@ export default function UserProfile() {
                       <div
                         className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
                           badgeStatus?.earned || true // Always show gradient for displayed badges
-                            ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
+                            ? getBadgeIconBg(badge.id, badge.tier)
                             : "bg-slate-300 dark:bg-slate-600"
                         }`}
                       >
@@ -688,7 +688,7 @@ export default function UserProfile() {
                                 <div
                                   className={`p-3 rounded-lg ${
                                     badgeStatus?.earned
-                                      ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
+                                      ? getBadgeIconBg(badge.id, badge.tier)
                                       : "bg-slate-300 dark:bg-slate-600"
                                   }`}
                                 >
