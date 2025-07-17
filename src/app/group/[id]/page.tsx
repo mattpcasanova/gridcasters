@@ -281,11 +281,9 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                     Created {new Date(groupData.created_at).toLocaleDateString()}
                   </p>
                   {groupData.description && (
-                    <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border">
-                      <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
-                        {groupData.description}
-                      </p>
-                    </div>
+                    <p className="text-slate-700 dark:text-slate-300 mb-4">
+                      {groupData.description}
+                    </p>
                   )}
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -312,12 +310,7 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                       <UserPlus className="w-4 h-4 mr-2" />
                       {groupData.is_private ? 'Request to Join' : 'Join Group'}
                     </GradientButton>
-                  ) : (
-                    <Button variant="outline" disabled>
-                      <UserCheck className="w-4 h-4 mr-2" />
-                      {isHost ? 'Host' : 'Member'}
-                    </Button>
-                  )}
+                  ) : null}
                   <Button variant="outline" onClick={() => setShowShareModal(true)}>
                     <Share className="w-4 h-4 mr-2" />
                     Share Group
