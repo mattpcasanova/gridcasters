@@ -352,21 +352,21 @@ export const getTierColor = (tier: Badge['tier']) => {
 export const getTierBgColor = (tier: Badge['tier']) => {
   switch (tier) {
     case 'bronze':
-      return 'bg-amber-50 dark:bg-amber-900/30'
+      return 'bg-amber-100 dark:bg-amber-900/40'
     case 'silver':
-      return 'bg-slate-50 dark:bg-slate-800/50'
+      return 'bg-slate-100 dark:bg-slate-800/50'
     case 'gold':
-      return 'bg-yellow-50 dark:bg-yellow-900/20'
+      return 'bg-yellow-100 dark:bg-yellow-900/30'
     case 'diamond':
-      return 'bg-blue-50 dark:bg-blue-900/20'
+      return 'bg-blue-100 dark:bg-blue-900/30'
     case 'platinum':
-      return 'bg-purple-50 dark:bg-purple-900/20'
+      return 'bg-purple-100 dark:bg-purple-900/30'
     case 'verified':
-      return 'bg-green-50 dark:bg-green-900/20'
+      return 'bg-green-100 dark:bg-green-900/30'
     case 'special':
       return 'bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20'
     case 'legacy':
-      return 'bg-indigo-50 dark:bg-indigo-900/20'
+      return 'bg-indigo-100 dark:bg-indigo-900/30'
   }
 }
 
