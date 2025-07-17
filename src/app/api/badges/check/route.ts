@@ -122,6 +122,24 @@ async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
     ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
+  // Determine beta tester status (anyone who joined during beta period)
+  // Beta period: Before January 1, 2025 (or whenever you decide to end beta)
+  const betaEndDate = new Date('2025-01-01');
+  const isBetaTester = profile?.created_at ? new Date(profile.created_at) < betaEndDate : false;
+
+  // Determine founding member status (first 250 users)
+  const { count: totalUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+
+  // Get user's join order by checking how many users joined before them
+  const { count: usersJoinedBefore } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .lt('created_at', profile?.created_at || new Date().toISOString());
+
+  const isFoundingMember = (usersJoinedBefore || 0) < 250;
+
   // Get actual percentile data
   const { data: percentileStats } = await supabase.rpc('get_user_percentile_stats', {
     user_uuid: userId
@@ -150,7 +168,7 @@ async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
     groupsCreated: groupsCreated || 0,
     daysSinceJoined,
     isVerified: profile?.is_verified || false,
-    isBetaTester: true, // Mock - would be based on user data
-    isFoundingMember: daysSinceJoined > 365, // Mock - would be based on user data
+    isBetaTester,
+    isFoundingMember,
   };
 } 

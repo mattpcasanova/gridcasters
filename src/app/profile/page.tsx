@@ -39,7 +39,7 @@ import { useSupabase } from "@/lib/hooks/use-supabase"
 import { signOut } from "@/lib/utils/client-auth"
 import { toast } from "sonner"
 import { useRecentActivity } from "@/lib/hooks/use-recent-activity"
-import { BADGES, getTierColor, getTierBgColor, getCategoryLabel, type Badge as BadgeType } from "@/lib/constants/badges"
+import { BADGES, getTierColor, getTierBgColor, getCategoryLabel, getBadgeIconBg, type Badge as BadgeType } from "@/lib/constants/badges"
 import Image from "next/image"
 
 const getPositionColor = (position: string) => {
@@ -52,6 +52,8 @@ const getPositionColor = (position: string) => {
       return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
     case "TE":
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+    case "FLX":
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
     default:
       return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
   }
@@ -67,6 +69,8 @@ const getPositionIconColor = (position: string) => {
       return "text-green-800 dark:text-green-400"
     case "TE":
       return "text-yellow-800 dark:text-yellow-400"
+    case "FLX":
+      return "text-purple-800 dark:text-purple-400"
     default:
       return "text-slate-800 dark:text-slate-400"
   }
@@ -136,19 +140,8 @@ export default function Profile() {
   const [isPrivate, setIsPrivate] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [isSelectingBadges, setIsSelectingBadges] = useState(false)
-  const [earnedBadges, setEarnedBadges] = useState<{[key: string]: { earned: boolean, progress: number }}>({
-    rookie_forecaster: { earned: true, progress: 100 },
-    active_forecaster: { earned: true, progress: 100 },
-    seasoned_forecaster: { earned: true, progress: 100 },
-    elite_forecaster: { earned: false, progress: 80 }, // 80 rankings out of 100 required
-    rising_forecaster: { earned: true, progress: 100 },
-    top_performer: { earned: true, progress: 100 },
-    super_forecaster: { earned: true, progress: 100 },
-    grid_genius: { earned: true, progress: 100 },
-    steady_eddie: { earned: true, progress: 100 },
-    consistency_king: { earned: true, progress: 100 }
-  })
-  const [selectedBadges, setSelectedBadges] = useState<string[]>(['active_forecaster', 'rookie_forecaster', 'grid_genius'])
+  const [earnedBadges, setEarnedBadges] = useState<{[key: string]: { earned: boolean, progress: number }}>({})
+  const [selectedBadges, setSelectedBadges] = useState<string[]>(['beta_tester', 'founding_forecaster', 'rookie_forecaster'])
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [editForm, setEditForm] = useState({
@@ -228,6 +221,41 @@ export default function Profile() {
 
     fetchProfile()
   }, [supabase, router])
+
+  // Fetch badge progress
+  useEffect(() => {
+    const fetchBadgeProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: badgeProgress, error } = await supabase
+          .from('badge_progress')
+          .select('badge_id, earned, progress')
+          .eq('user_id', user.id)
+
+        if (error) {
+          console.error('Error fetching badge progress:', error)
+          return
+        }
+
+        // Convert to the expected format
+        const badgeData: {[key: string]: { earned: boolean, progress: number }} = {}
+        badgeProgress?.forEach((bp: any) => {
+          badgeData[bp.badge_id] = {
+            earned: bp.earned,
+            progress: bp.progress
+          }
+        })
+
+        setEarnedBadges(badgeData)
+      } catch (error) {
+        console.error('Error fetching badge progress:', error)
+      }
+    }
+
+    fetchBadgeProgress()
+  }, [supabase])
 
   // Handle success messages from URL params
   useEffect(() => {
@@ -557,17 +585,15 @@ export default function Profile() {
                   return (
                     <div
                       key={badgeId}
-                      className={`relative flex items-center space-x-3 p-4 rounded-lg ${
-                        badge.tier === 'bronze'
-                          ? 'bg-amber-50/50 dark:bg-amber-900/20'
-                          : badge.tier === 'silver'
-                          ? 'bg-slate-50/50 dark:bg-slate-800/50'
-                          : badge.tier === 'gold'
-                          ? 'bg-yellow-50/50 dark:bg-yellow-900/20'
-                          : 'bg-blue-50/50 dark:bg-blue-900/20'
-                      } transition-all`}
+                      className={`relative flex items-center space-x-3 p-4 rounded-lg ${getTierBgColor(badge.tier)} transition-all`}
                     >
-                      <div className="relative w-12 h-12 flex items-center justify-center">
+                      <div
+                        className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
+                          badge.tier === 'special' || badge.tier === 'verified' || badge.tier === 'platinum'
+                            ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
+                            : "bg-slate-300 dark:bg-slate-600"
+                        }`}
+                      >
                         <Image
                           src={badge.icon}
                           alt={badge.name}
@@ -623,7 +649,7 @@ export default function Profile() {
                     >
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                         <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white font-bold">
+                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold ${getPositionColor(ranking.position)}`}>
                             {ranking.position}
                           </div>
                           <div>
@@ -640,7 +666,9 @@ export default function Profile() {
                           {ranking.accuracy !== null ? (
                             <CircularProgress value={ranking.accuracy} size="sm" />
                           ) : (
-                            <div className="text-sm text-slate-500">Pending</div>
+                            <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                              <span className="text-sm font-medium text-slate-500">--</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -660,30 +688,32 @@ export default function Profile() {
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <Card className={`p-4 ${getTierBgColor('bronze')}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
-                        <div className="flex items-center space-x-2">
-                          <CircularProgress value={87} size="sm" />
+                        <div className="flex items-center justify-center mt-2">
+                          <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                            <span className="text-sm font-medium text-slate-500">--</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </Card>
 
                   <Card className={`p-4 ${getTierBgColor('bronze')}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
-                        <h2 className="text-2xl font-bold">#156</h2>
+                        <h2 className="text-2xl font-bold">Pending</h2>
                       </div>
                     </div>
                   </Card>
 
                   <Card className={`p-4 ${getTierBgColor('bronze')}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
-                        <h2 className="text-2xl font-bold">47</h2>
+                        <h2 className="text-2xl font-bold">5</h2>
                       </div>
                     </div>
                   </Card>
@@ -695,16 +725,19 @@ export default function Profile() {
                     <h3 className="font-semibold text-slate-900 dark:text-white">Accuracy by Position</h3>
                     <div className="space-y-3">
                       {[
-                        { position: 'QB', accuracy: 89.2 },
-                        { position: 'RB', accuracy: 85.7 },
-                        { position: 'WR', accuracy: 82.4 },
-                        { position: 'TE', accuracy: 87.1 }
+                        { position: 'FLX', accuracy: 0 },
+                        { position: 'QB', accuracy: 0 },
+                        { position: 'RB', accuracy: 0 },
+                        { position: 'WR', accuracy: 0 },
+                        { position: 'TE', accuracy: 0 }
                       ].map(({ position, accuracy }) => (
                         <div key={position} className="flex items-center justify-between">
                           <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
                             {position}
                           </span>
-                          <CircularProgress value={accuracy} size="sm" />
+                          <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                            <span className="text-sm font-medium text-slate-500">--</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -715,36 +748,41 @@ export default function Profile() {
                     <h3 className="font-semibold text-slate-900 dark:text-white">Percentile Rankings</h3>
                     <div className="space-y-3">
                       {[
-                        { label: 'Overall', value: 94.8 },
-                        { label: 'Weekly', value: 92.3 },
-                        { label: 'Preseason', value: 88.5 },
-                        { label: 'Consistency', value: 91.2 }
-                      ].map(({ label, value }) => (
-                        <div key={label} className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold">Top {(100 - value).toFixed(1)}%</span>
-                            <CircularProgress value={value} size="sm" />
+                        { position: 'FLX', percentile: 0 },
+                        { position: 'QB', percentile: 0 },
+                        { position: 'RB', percentile: 0 },
+                        { position: 'WR', percentile: 0 },
+                        { position: 'TE', percentile: 0 }
+                      ].map(({ position, percentile }) => (
+                        <div key={position} className="flex items-center justify-between">
+                          <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
+                            {position}
+                          </span>
+                          <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                            <span className="text-sm font-medium text-slate-500">--</span>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Streak Stats */}
+                  {/* All Time Data */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Current Streaks</h3>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">All Time Data</h3>
                     <div className="space-y-3">
                       {[
-                        { label: 'Top 10%', value: 4, max: 5 },
-                        { label: 'Weekly Wins', value: 3, max: 5 },
-                        { label: 'Perfect Picks', value: 2, max: 5 }
-                      ].map(({ label, value, max }) => (
+                        { label: 'Top 10 Percentile', value: 0 },
+                        { label: 'Top 20 Percentile', value: 0 },
+                        { label: 'Top 30 Percentile', value: 0 },
+                        { label: 'Perfect Picks', value: 0 },
+                        { label: '95%+ Accuracy Score', value: 0 },
+                        { label: '90%+ Accuracy Score', value: 0 },
+                        { label: '80%+ Accuracy Score', value: 0 }
+                      ].map(({ label, value }) => (
                         <div key={label} className="flex items-center justify-between">
                           <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
                           <div className="flex items-center space-x-2">
-                            <span className="font-semibold">{value} weeks</span>
-                            <CircularProgress value={value / max * 100} size="sm" />
+                            <span className="font-semibold">{value}</span>
                           </div>
                         </div>
                       ))}
@@ -804,23 +842,7 @@ export default function Profile() {
                                 <div
                                   className={`p-3 rounded-lg ${
                                     badgeStatus?.earned
-                                      ? `bg-gradient-to-br ${
-                                          badge.tier === 'bronze'
-                                            ? 'from-amber-500 to-amber-600'
-                                            : badge.tier === 'silver'
-                                            ? 'from-slate-400 to-slate-500'
-                                            : badge.tier === 'gold'
-                                            ? 'from-yellow-400 to-yellow-500'
-                                            : badge.tier === 'diamond'
-                                            ? 'from-blue-400 to-blue-500'
-                                            : badge.tier === 'platinum'
-                                            ? 'from-purple-400 to-purple-500'
-                                            : badge.tier === 'verified'
-                                            ? 'from-green-400 to-green-500'
-                                            : badge.tier === 'special'
-                                            ? 'from-pink-400 to-pink-500'
-                                            : 'from-indigo-400 to-indigo-500'
-                                        }`
+                                      ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
                                       : "bg-slate-300 dark:bg-slate-600"
                                   }`}
                                 >

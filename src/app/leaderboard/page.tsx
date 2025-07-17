@@ -20,7 +20,7 @@ import { useSupabase } from "@/lib/hooks/use-supabase"
 import { toast } from "sonner"
 
 interface LeaderboardUser {
-  id: number;
+  id: string;
   rank: number;
   user: {
     name: string;
@@ -50,181 +50,8 @@ interface GroupData {
   isPrivate?: boolean;
 }
 
-const mockLeaderboardData: LeaderboardUser[] = [
-  {
-    id: 1,
-    rank: 1,
-    user: {
-      name: "Mike Chen",
-      username: "@mikechen",
-      avatar: "/placeholder-user.jpg",
-      verified: true,
-    },
-    accuracy: 0, // No accuracy before Week 1
-    rankings: 6, // 2 rankings each for Standard, Half PPR, Full PPR (preseason + week 1)
-    followers: 1247,
-    isFollowing: false,
-    weeklyAccuracy: 0, // No weekly accuracy before Week 1
-    weeklyRank: 0, // No weekly rank before Week 1
-    change: 0,
-    weeklyChange: 0,
-  },
-  {
-    id: 2,
-    rank: 2,
-    user: {
-      name: "Sarah Johnson", 
-      username: "@sarahj",
-      avatar: "/placeholder-user.jpg",
-      verified: false,
-    },
-    accuracy: 0,
-    rankings: 9, // 3 rankings each for Standard, Half PPR, Full PPR
-    followers: 892,
-    isFollowing: true,
-    weeklyAccuracy: 0,
-    weeklyRank: 0,
-    change: 0,
-    weeklyChange: 0,
-  },
-  {
-    id: 3,
-    rank: 3,
-    user: {
-      name: "Alex Rodriguez",
-      username: "@alexr",
-      avatar: "/placeholder-user.jpg",
-      verified: false,
-    },
-    accuracy: 0,
-    rankings: 3, // 1 ranking each for Standard, Half PPR, Full PPR
-    followers: 567,
-    isFollowing: false,
-    weeklyAccuracy: 0,
-    weeklyRank: 0,
-    change: 0,
-    weeklyChange: 0,
-  },
-  {
-    id: 4,
-    rank: 4,
-    user: {
-      name: "Emma Wilson",
-      username: "@emmaw",
-      avatar: "/placeholder-user.jpg",
-      verified: true,
-    },
-    accuracy: 0,
-    rankings: 6, // 2 rankings each for Standard, Half PPR, Full PPR
-    followers: 423,
-    isFollowing: true,
-    weeklyAccuracy: 0,
-    weeklyRank: 0,
-    change: 0,
-    weeklyChange: 0,
-  },
-  {
-    id: 5,
-    rank: 5,
-    user: {
-      name: "Matt Casanova",
-      username: "@mattcasanova",
-      avatar: "/placeholder-user.jpg",
-      verified: false,
-    },
-    accuracy: 0,
-    rankings: 18, // 6 rankings each for Standard, Half PPR, Full PPR (preseason + week 1)
-    followers: 0,
-    isFollowing: false,
-    isCurrentUser: true,
-    weeklyAccuracy: 0,
-    weeklyRank: 0,
-    change: 0,
-    weeklyChange: 0,
-  },
-  {
-    id: 6,
-    rank: 8,
-    user: {
-      name: "David Kim",
-      username: "@davidk",
-      avatar: "/placeholder-user.jpg",
-      verified: false,
-    },
-    accuracy: 0,
-    rankings: 3, // 1 ranking each for Standard, Half PPR, Full PPR
-    followers: 156,
-    isFollowing: true,
-    weeklyAccuracy: 0,
-    weeklyRank: 0,
-    change: 0,
-    weeklyChange: 0,
-  },
-  {
-    id: 7,
-    rank: 12,
-    user: {
-      name: "Lisa Park",
-      username: "@lisap",
-      avatar: "/placeholder-user.jpg",
-      verified: false,
-    },
-    accuracy: 0,
-    rankings: 0, // No rankings yet
-    followers: 298,
-    isFollowing: true,
-    weeklyAccuracy: 0,
-    weeklyRank: 0,
-    change: 0,
-    weeklyChange: 0,
-  },
-];
 
-const groupData: GroupData[] = [
-  {
-    id: "1",
-    name: "Fantasy Experts",
-    members: 247,
-    avgAccuracy: 0, // No accuracy before Week 1
-    avatar: "/placeholder-group.jpg",
-    userRank: 15,
-    isJoined: true,
-  },
-  {
-    id: "2",
-    name: "College Friends",
-    members: 12,
-    avgAccuracy: 0,
-    avatar: "/placeholder-group.jpg",
-    userRank: 3,
-    isJoined: true,
-  },
-  {
-    id: "3",
-    name: "NFL Analysts",
-    members: 156,
-    avgAccuracy: 0,
-    avatar: "/placeholder-group.jpg",
-    userRank: 42,
-    isJoined: true,
-  },
-  {
-    id: "4",
-    name: "Monday Night Football",
-    members: 89,
-    avgAccuracy: 0,
-    avatar: "/placeholder-group.jpg",
-    isJoined: false,
-  },
-  {
-    id: "5",
-    name: "Dynasty League Pros",
-    members: 324,
-    avgAccuracy: 0,
-    avatar: "/placeholder-group.jpg",
-    isJoined: false,
-  },
-]
+
 
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState("overall")
@@ -258,11 +85,137 @@ export default function Leaderboard() {
     return totalRankings
   }
 
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([])
   const [groups, setGroups] = useState<GroupData[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const { setRightButtons } = useHeaderButtons()
   const supabase = useSupabase()
+
+  // Fetch real profiles for leaderboard
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          console.log('No authenticated user found')
+          return
+        }
+        setCurrentUserId(user.id)
+
+        // Fetch all profiles
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url, is_verified, created_at')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching profiles:', error)
+          return
+        }
+
+        // Transform profiles to leaderboard format
+        const leaderboardUsers: LeaderboardUser[] = profiles.map((profile, index) => ({
+          id: profile.id,
+          rank: index + 1,
+          user: {
+            name: profile.display_name || profile.username,
+            username: profile.username,
+            avatar: profile.avatar_url || "/placeholder-user.jpg",
+            verified: profile.is_verified || false,
+          },
+          accuracy: 0, // Will be calculated from rankings
+          rankings: 0, // Will be fetched separately
+          followers: 0, // Will be fetched separately
+          isFollowing: false, // Will be checked separately
+          isCurrentUser: profile.id === user.id,
+          weeklyAccuracy: 0,
+          weeklyRank: 0,
+          change: 0,
+          weeklyChange: 0,
+        }))
+
+        // Get follow status for each user
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id)
+
+        const followingIds = new Set(followData?.map(f => f.following_id) || [])
+
+        // Update follow status
+        const updatedUsers = leaderboardUsers.map(user => ({
+          ...user,
+          isFollowing: followingIds.has(user.id)
+        }))
+
+        setLeaderboardData(updatedUsers)
+      } catch (error) {
+        console.error('Error fetching profiles:', error)
+      }
+    }
+
+    fetchProfiles()
+  }, [supabase])
+
+  // Fetch ranking counts, follower counts, and accuracy scores
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (leaderboardData.length === 0) return
+
+      try {
+        // Get ranking counts for each user
+        const { data: rankingCounts, error: rankingError } = await supabase
+          .from('rankings')
+          .select('user_id, id')
+          .eq('is_active', true)
+
+        if (rankingError) {
+          console.error('Error fetching ranking counts:', rankingError)
+          return
+        }
+
+        // Count rankings per user
+        const userRankingCounts = new Map<string, number>()
+        rankingCounts?.forEach(ranking => {
+          const count = userRankingCounts.get(ranking.user_id) || 0
+          userRankingCounts.set(ranking.user_id, count + 1)
+        })
+
+        // Get follower counts for each user
+        const { data: followerCounts, error: followerError } = await supabase
+          .from('follows')
+          .select('following_id')
+
+        if (followerError) {
+          console.error('Error fetching follower counts:', followerError)
+          return
+        }
+
+        // Count followers per user
+        const userFollowerCounts = new Map<string, number>()
+        followerCounts?.forEach(follow => {
+          const count = userFollowerCounts.get(follow.following_id) || 0
+          userFollowerCounts.set(follow.following_id, count + 1)
+        })
+
+        // Update leaderboard data with real stats
+        setLeaderboardData(prevData => 
+          prevData.map(user => ({
+            ...user,
+            rankings: userRankingCounts.get(user.id) || 0,
+            followers: userFollowerCounts.get(user.id) || 0,
+          }))
+        )
+
+      } catch (error) {
+        console.error('Error fetching user stats:', error)
+      }
+    }
+
+    fetchUserStats()
+  }, [leaderboardData.length, supabase])
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
   const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
@@ -398,14 +351,55 @@ export default function Leaderboard() {
     }
   }, [selectedView])
 
-  const toggleFollow = (userId: number) => {
-    setLeaderboardData((data: LeaderboardUser[]) => 
-      data.map((user: LeaderboardUser) => 
-        user.id === userId 
-          ? { ...user, isFollowing: !user.isFollowing }
-          : user
+  const toggleFollow = async (userId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('Please sign in to follow users')
+        return
+      }
+
+      // Find the user to toggle
+      const targetUser = leaderboardData.find(u => u.id === userId)
+      if (!targetUser) return
+
+      const newFollowingState = !targetUser.isFollowing
+
+      if (newFollowingState) {
+        // Follow the user
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId,
+          })
+        if (error) throw error
+      } else {
+        // Unfollow the user
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .match({
+            follower_id: user.id,
+            following_id: userId,
+          })
+        if (error) throw error
+      }
+
+      // Update local state
+      setLeaderboardData((data: LeaderboardUser[]) => 
+        data.map((u: LeaderboardUser) => 
+          u.id === userId 
+            ? { ...u, isFollowing: newFollowingState }
+            : u
+        )
       )
-    )
+
+      toast.success(newFollowingState ? 'Following user' : 'Unfollowed user')
+    } catch (error) {
+      console.error('Error toggling follow:', error)
+      toast.error('Failed to update follow status')
+    }
   }
 
   const toggleGroupJoin = (groupId: string) => {

@@ -318,7 +318,7 @@ export const BADGES: Badge[] = [
   {
     id: 'founding_forecaster',
     name: 'Founding Forecaster',
-    description: 'GridCasters founding member',
+    description: 'GridCasters founding member (first 250 users)',
     subtitle: 'One of the original GridCasters!',
     icon: '/badges/founding_forecaster.png',
     category: 'special',
@@ -367,6 +367,40 @@ export const getTierBgColor = (tier: Badge['tier']) => {
       return 'bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20'
     case 'legacy':
       return 'bg-indigo-50/50 dark:bg-indigo-900/20'
+  }
+}
+
+// Function to get badge icon background gradient
+export const getBadgeIconBg = (badgeId: string, tier: Badge['tier']) => {
+  // Special cases for specific badges
+  switch (badgeId) {
+    case 'beta_tester':
+    case 'founding_forecaster':
+      return 'bg-gradient-to-br from-blue-500 to-green-500'
+    case 'perfect_prophet':
+      return 'bg-gradient-to-br from-purple-500 to-purple-600'
+    case 'expert_analyst':
+      return 'bg-gradient-to-br from-green-500 to-green-600'
+    default:
+      // Default tier-based colors
+      switch (tier) {
+        case 'bronze':
+          return 'from-amber-500 to-amber-600'
+        case 'silver':
+          return 'from-slate-400 to-slate-500'
+        case 'gold':
+          return 'from-yellow-400 to-yellow-500'
+        case 'diamond':
+          return 'from-blue-400 to-blue-500'
+        case 'platinum':
+          return 'from-purple-400 to-purple-500'
+        case 'verified':
+          return 'from-green-400 to-green-500'
+        case 'special':
+          return 'from-pink-400 to-pink-500'
+        case 'legacy':
+          return 'from-indigo-400 to-indigo-500'
+      }
   }
 }
 
