@@ -72,17 +72,19 @@ export async function POST(request: NextRequest) {
 }
 
 async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
-  // Get total rankings
+  // Get total rankings (excluding aggregate rankings)
   const { count: totalRankings } = await supabase
     .from('rankings')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .not('position', 'like', 'AGG_%');
 
-  // Get rankings by position
+  // Get rankings by position (excluding aggregate rankings)
   const { data: rankingsByPosition } = await supabase
     .from('rankings')
     .select('position')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .not('position', 'like', 'AGG_%');
 
   const positionCounts = { QB: 0, RB: 0, WR: 0, TE: 0 };
   rankingsByPosition?.forEach((r: any) => {
