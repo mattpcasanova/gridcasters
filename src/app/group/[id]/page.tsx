@@ -277,11 +277,15 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400 mb-2">
+                  <p className="text-slate-600 dark:text-slate-400 mb-3">
                     Created {new Date(groupData.created_at).toLocaleDateString()}
                   </p>
                   {groupData.description && (
-                    <p className="text-slate-700 dark:text-slate-300 mb-4">{groupData.description}</p>
+                    <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+                      <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+                        {groupData.description}
+                      </p>
+                    </div>
                   )}
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -333,9 +337,11 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                 <CardDescription>All members of {groupData.name}</CardDescription>
               </div>
               {isHost && (
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Group Settings
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/group/${params.id}/settings`}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Group Settings
+                  </Link>
                 </Button>
               )}
             </div>
