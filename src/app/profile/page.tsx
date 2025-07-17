@@ -45,17 +45,17 @@ import Image from "next/image"
 const getPositionColor = (position: string) => {
   switch (position) {
     case "QB":
-      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+      return "bg-red-500 text-white"
     case "WR":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+      return "bg-blue-500 text-white"
     case "RB":
-      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+      return "bg-green-500 text-white"
     case "TE":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+      return "bg-yellow-500 text-white"
     case "FLX":
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+      return "bg-purple-500 text-white"
     default:
-      return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
+      return "bg-slate-500 text-white"
   }
 }
 
@@ -247,6 +247,11 @@ export default function Profile() {
             progress: bp.progress
           }
         })
+
+        // Debug: Log badge progress data
+        console.log('Badge progress data:', badgeProgress)
+        console.log('Processed badge data:', badgeData)
+        console.log('Beta Tester status:', badgeData.beta_tester)
 
         setEarnedBadges(badgeData)
       } catch (error) {
@@ -582,6 +587,7 @@ export default function Profile() {
                 {selectedBadges.map((badgeId) => {
                   const badge = BADGES.find((b) => b.id === badgeId)
                   if (!badge) return null
+                  const badgeStatus = earnedBadges[badgeId]
                   return (
                     <div
                       key={badgeId}
@@ -589,7 +595,7 @@ export default function Profile() {
                     >
                       <div
                         className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
-                          badge.tier === 'special' || badge.tier === 'verified' || badge.tier === 'platinum'
+                          badgeStatus?.earned
                             ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
                             : "bg-slate-300 dark:bg-slate-600"
                         }`}

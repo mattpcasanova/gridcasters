@@ -425,6 +425,7 @@ export default function UserProfile() {
                 {userData.featuredBadges.map((featuredBadge) => {
                   const badge = BADGES.find((b) => b.id === featuredBadge.id)
                   if (!badge) return null
+                  const badgeStatus = userData.earnedBadges[badge.id]
                   return (
                     <div
                       key={badge.id}
@@ -432,7 +433,7 @@ export default function UserProfile() {
                     >
                       <div
                         className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
-                          badge.tier === 'special' || badge.tier === 'verified' || badge.tier === 'platinum'
+                          badgeStatus?.earned
                             ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
                             : "bg-slate-300 dark:bg-slate-600"
                         }`}
