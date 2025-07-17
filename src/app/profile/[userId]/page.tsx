@@ -433,7 +433,7 @@ export default function UserProfile() {
                     >
                       <div
                         className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
-                          badgeStatus?.earned
+                          badgeStatus?.earned || userData.featuredBadges.some(fb => fb.id === badge.id)
                             ? `bg-gradient-to-br ${getBadgeIconBg(badge.id, badge.tier)}`
                             : "bg-slate-300 dark:bg-slate-600"
                         }`}
