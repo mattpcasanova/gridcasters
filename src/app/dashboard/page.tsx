@@ -17,7 +17,7 @@ import { useSupabase } from "@/lib/hooks/use-supabase"
 import { useRouter } from "next/navigation"
 import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
 import { useRecentActivity } from "@/lib/hooks/use-recent-activity"
-import { getCurrentSeasonInfo } from "@/lib/utils/season"
+import { getCurrentSeasonInfo, isWeekComplete, getMostRecentCompletedWeek } from "@/lib/utils/season"
 import { CircularProgress } from "@/components/ui/circular-progress"
 
 const getPositionColor = (position: string) => {
@@ -62,6 +62,13 @@ type UserStats = {
   followers: number
   following: number
   leagueRank: string
+  previousWeekAccuracy: number | null
+}
+
+type UserGroup = {
+  id: string
+  name: string
+  isPrivate: boolean
 }
 
 export default function Dashboard() {
@@ -73,8 +80,10 @@ export default function Dashboard() {
     totalRankings: 0,
     followers: 0,
     following: 0,
-    leagueRank: '--'
+    leagueRank: '--',
+    previousWeekAccuracy: null
   })
+  const [userGroups, setUserGroups] = useState<UserGroup[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
   const { 
@@ -90,6 +99,11 @@ export default function Dashboard() {
   const seasonInfo = getCurrentSeasonInfo()
   const currentWeek = seasonInfo.currentWeek || 1
   const isPreSeason = seasonInfo.isPreSeason
+  
+  // Calculate if we should show previous week accuracy
+  const mostRecentCompletedWeek = getMostRecentCompletedWeek()
+  const shouldShowPreviousWeekAccuracy = mostRecentCompletedWeek !== null
+  const previousWeek = mostRecentCompletedWeek || 1
   
   // Fetch user profile data and stats
   useEffect(() => {
@@ -117,8 +131,8 @@ export default function Dashboard() {
         setProfile(profileData)
 
         // Fetch user stats
-        const [rankingsResult, followersResult, followingResult] = await Promise.all([
-          // Get total rankings (excluding aggregate)
+        const [rankingsResult, followersResult, followingResult, groupsResult, previousWeekAccuracyResult] = await Promise.all([
+          // Get total rankings (excluding aggregate) - Active rankings include concluded and current week
           supabase
             .from('rankings')
             .select('id', { count: 'exact' })
@@ -135,14 +149,60 @@ export default function Dashboard() {
           supabase
             .from('follows')
             .select('id', { count: 'exact' })
-            .eq('follower_id', user.id)
+            .eq('follower_id', user.id),
+          
+          // Get user's groups - simplified query to avoid RLS conflicts
+          supabase
+            .from('group_members')
+            .select('group_id')
+            .eq('user_id', user.id)
+            .eq('status', 'approved'),
+          
+          // Get previous week accuracy if we're past week 1
+          shouldShowPreviousWeekAccuracy ? 
+            supabase
+              .from('rankings')
+              .select('accuracy_score')
+              .eq('user_id', user.id)
+              .eq('type', 'weekly')
+              .eq('week', previousWeek)
+              .not('accuracy_score', 'is', null)
+              .order('accuracy_score', { ascending: false })
+              .limit(1)
+              .single() :
+            Promise.resolve({ data: null, error: null })
         ])
 
+        // Calculate average previous week accuracy
+        let previousWeekAccuracy: number | null = null
+        if (previousWeekAccuracyResult.data && previousWeekAccuracyResult.data.accuracy_score) {
+          previousWeekAccuracy = previousWeekAccuracyResult.data.accuracy_score
+        }
+
+        // Transform groups data - fetch group details separately to avoid RLS conflicts
+        const groupIds = groupsResult.data?.map((member: any) => member.group_id) || []
+        let groups: UserGroup[] = []
+        
+        if (groupIds.length > 0) {
+          const { data: groupDetails } = await supabase
+            .from('groups')
+            .select('id, name, is_private')
+            .in('id', groupIds)
+          
+          groups = groupDetails?.map((group: any) => ({
+            id: group.id,
+            name: group.name,
+            isPrivate: group.is_private
+          })) || []
+        }
+
+        setUserGroups(groups)
         setUserStats({
           totalRankings: rankingsResult.count || 0,
           followers: followersResult.count || 0,
           following: followingResult.count || 0,
-          leagueRank: '--' // Will be calculated based on selected view
+          leagueRank: '--', // Will be calculated based on selected view
+          previousWeekAccuracy
         })
 
       } catch (error) {
@@ -154,7 +214,7 @@ export default function Dashboard() {
     }
 
     fetchProfileAndStats()
-  }, [supabase, router])
+  }, [supabase, router, shouldShowPreviousWeekAccuracy, previousWeek])
   
   useEffect(() => {
     // Show success message if user was redirected after email verification
@@ -176,6 +236,24 @@ export default function Dashboard() {
       return names[0]
     }
     return profile.username
+  }
+
+  // Get leaderboard options including user's groups
+  const getLeaderboardOptions = () => {
+    const options = [
+      { value: 'global', label: 'Global Rankings' },
+      { value: 'friends', label: 'Friends Only' }
+    ]
+    
+    // Add user's groups
+    userGroups.forEach(group => {
+      options.push({
+        value: `group_${group.id}`,
+        label: `${group.name}${group.isPrivate ? ' (Private)' : ''}`
+      })
+    })
+    
+    return options
   }
 
   const rightButtons = (
@@ -252,21 +330,21 @@ export default function Dashboard() {
     )
   }
 
-      return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="container mx-auto px-4 py-8">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              Welcome back, {profile ? getFirstName(profile) : "User"}!
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400">
-              {isPreSeason 
-                ? "Get ready for Week 1! Create your rankings now."
-                : `Here's how your rankings are performing in Week ${currentWeek}.`
-              }
-            </p>
-          </div>
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome back, {profile ? getFirstName(profile) : "User"}!
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            {isPreSeason 
+              ? "Get ready for Week 1! Create your rankings now."
+              : `Here's how your rankings are performing in Week ${currentWeek}.`
+            }
+          </p>
+        </div>
 
         {/* Leaderboard Selection */}
         <div className="mb-6">
@@ -279,10 +357,11 @@ export default function Dashboard() {
                     <SelectValue placeholder="Select leaderboard" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="global">Global Rankings</SelectItem>
-                    <SelectItem value="friends">Friends Only</SelectItem>
-                    <SelectItem value="group1">Fantasy Experts Group</SelectItem>
-                    <SelectItem value="group2">College Friends</SelectItem>
+                    {getLeaderboardOptions().map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -292,33 +371,86 @@ export default function Dashboard() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="Previous Week Accuracy"
-            value={isPreSeason ? "Pending" : "-"}
-            icon={BarChart3}
-            subtitle={isPreSeason ? "Awaiting Week 1" : `Week ${Math.max(1, currentWeek - 1)} Score`}
-          />
+          {/* Previous Week Accuracy */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-bold">Previous Week Accuracy</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isPreSeason ? (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-slate-400">Pending</div>
+                  <p className="text-xs text-slate-500 mt-1">Awaiting Week 1</p>
+                </div>
+              ) : shouldShowPreviousWeekAccuracy ? (
+                userStats.previousWeekAccuracy !== null ? (
+                  <div className="flex items-center justify-center">
+                    <CircularProgress 
+                      value={userStats.previousWeekAccuracy} 
+                      size="lg"
+                      showText={true}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-slate-400">--</div>
+                    <p className="text-xs text-slate-500 mt-1">No rankings for Week {previousWeek}</p>
+                  </div>
+                )
+              ) : (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-slate-400">--</div>
+                  <p className="text-xs text-slate-500 mt-1">Week 1 in progress</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          <StatCard
-            title="League Rank"
-            value={isPreSeason ? "#--" : `#${getUserRank(selectedView)}`}
-            icon={Trophy}
-            subtitle={`in ${getViewLabel(selectedView)}`}
-          />
+          {/* League Rank */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-bold">League Rank</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isPreSeason ? (
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-slate-400">#--</div>
+                  <p className="text-xs text-slate-500 mt-1">Season hasn't started</p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-2xl font-bold">#{getUserRank(selectedView)}</div>
+                  <p className="text-xs text-slate-500 mt-1">in {getViewLabel(selectedView)}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          <StatCard
-            title={`Week ${currentWeek} Rankings`}
-            value={userStats.totalRankings.toString()}
-            icon={Target}
-            subtitle="Your rankings"
-          />
+          {/* Active Rankings */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-bold">Active Rankings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{userStats.totalRankings}</div>
+                <p className="text-xs text-slate-500 mt-1">Your rankings</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          <StatCard
-            title="Followers"
-            value={userStats.followers.toString()}
-            icon={Users}
-            subtitle="People following you"
-          />
+          {/* Followers */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-bold">Followers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{userStats.followers}</div>
+                <p className="text-xs text-slate-500 mt-1">People following you</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -461,7 +593,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div className="text-sm text-slate-600 dark:text-slate-400">
-                          Active
+                          {user.accuracy > 0 ? `${user.accuracy}%` : 'Active'}
                         </div>
                       </Link>
                     ))

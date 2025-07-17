@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSupabase } from './use-supabase';
+import { getCurrentSeasonInfo, isWeekComplete } from '@/lib/utils/season';
 
 export interface RecentRanking {
   id: string;
@@ -44,8 +45,20 @@ export function useRecentActivity() {
         return;
       }
 
+      const seasonInfo = getCurrentSeasonInfo();
+      const currentWeek = seasonInfo.currentWeek || 1;
+
       const formattedRankings = rankings?.map((ranking: any) => {
-        const isCurrentWeek = ranking.type === 'weekly' && ranking.week === 8; // This should be dynamic based on current week
+        // Determine if this ranking is active or completed
+        let isActive = false;
+        
+        if (ranking.type === 'preseason') {
+          // Preseason rankings are always active until regular season starts
+          isActive = seasonInfo.isPreSeason;
+        } else if (ranking.type === 'weekly') {
+          // Weekly rankings are active if the week hasn't completed yet
+          isActive = !isWeekComplete(ranking.week);
+        }
         
         // Use updated_at if available, otherwise fall back to created_at
         const dateToUse = ranking.updated_at || ranking.created_at;
@@ -53,11 +66,11 @@ export function useRecentActivity() {
         return {
           id: ranking.id,
           name: ranking.title, // Use the actual title from database which includes scoring format
-          accuracy: (isCurrentWeek || ranking.type === 'preseason') ? null : Math.floor(Math.random() * 20) + 80, // Mock accuracy for active weeks and preseason
-          trend: Math.random() > 0.5 ? 'up' : 'down',
+          accuracy: isActive ? null : ranking.accuracy_score, // Use real accuracy score if available
+          trend: 'same', // We'll implement trend calculation later
           date: formatRelativeTime(dateToUse),
           position: ranking.position,
-          status: (isCurrentWeek || ranking.type === 'preseason') ? 'active' : 'completed',
+          status: isActive ? 'active' : 'completed',
           week: ranking.type === 'preseason' ? 'preseason' : `week${ranking.week}`,
           type: ranking.type
         } as RecentRanking;

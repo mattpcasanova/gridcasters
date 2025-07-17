@@ -11,11 +11,13 @@ import { SearchInput } from "@/components/ui/search-input"
 import { StatCard } from "@/components/ui/stat-card"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { CircularProgress } from "@/components/ui/circular-progress"
-import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown } from "lucide-react"
+import { Trophy, Medal, Award, TrendingUp, Users, Target, Plus, UserCheck, UserPlus, Star, Calendar, Crown, Lock } from "lucide-react"
 import Link from "next/link"
 import { useHeaderButtons } from "@/components/layout/root-layout-client"
 import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
-import { getCurrentSeasonInfo } from "@/lib/utils/season"
+import { getCurrentSeasonInfo, isWeekComplete } from "@/lib/utils/season"
+import { useSupabase } from "@/lib/hooks/use-supabase"
+import { toast } from "sonner"
 
 interface LeaderboardUser {
   id: number;
@@ -38,13 +40,14 @@ interface LeaderboardUser {
 }
 
 interface GroupData {
-  id: number;
+  id: string;
   name: string;
   members: number;
   avgAccuracy: number;
   avatar: string;
   userRank?: number;
   isJoined?: boolean;
+  isPrivate?: boolean;
 }
 
 const mockLeaderboardData: LeaderboardUser[] = [
@@ -179,7 +182,7 @@ const mockLeaderboardData: LeaderboardUser[] = [
 
 const groupData: GroupData[] = [
   {
-    id: 1,
+    id: "1",
     name: "Fantasy Experts",
     members: 247,
     avgAccuracy: 0, // No accuracy before Week 1
@@ -188,7 +191,7 @@ const groupData: GroupData[] = [
     isJoined: true,
   },
   {
-    id: 2,
+    id: "2",
     name: "College Friends",
     members: 12,
     avgAccuracy: 0,
@@ -197,7 +200,7 @@ const groupData: GroupData[] = [
     isJoined: true,
   },
   {
-    id: 3,
+    id: "3",
     name: "NFL Analysts",
     members: 156,
     avgAccuracy: 0,
@@ -206,7 +209,7 @@ const groupData: GroupData[] = [
     isJoined: true,
   },
   {
-    id: 4,
+    id: "4",
     name: "Monday Night Football",
     members: 89,
     avgAccuracy: 0,
@@ -214,7 +217,7 @@ const groupData: GroupData[] = [
     isJoined: false,
   },
   {
-    id: 5,
+    id: "5",
     name: "Dynasty League Pros",
     members: 324,
     avgAccuracy: 0,
@@ -229,6 +232,15 @@ export default function Leaderboard() {
   const [pprType, setPprType] = useState("combined")
   const [selectedWeek, setSelectedWeek] = useState("Week 1")
   const { selectedView, setSelectedView, getViewLabel, getUserRank } = useLeaderboard()
+  
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tabParam = urlParams.get('tab')
+    if (tabParam && ['overall', 'weekly', 'friends', 'groups'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [])
   
   // Get current season info and default to current week
   const seasonInfo = getCurrentSeasonInfo()
@@ -247,11 +259,114 @@ export default function Leaderboard() {
   }
 
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(mockLeaderboardData)
-  const [groups, setGroups] = useState<GroupData[]>(groupData)
+  const [groups, setGroups] = useState<GroupData[]>([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const { setRightButtons } = useHeaderButtons()
+  const supabase = useSupabase()
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
   const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
+
+  // Fetch user's groups from database
+  useEffect(() => {
+    const fetchUserGroups = async () => {
+      try {
+        setIsLoadingGroups(true)
+        console.log('Fetching user groups...')
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          console.log('No user found')
+          return
+        }
+        console.log('User found:', user.id)
+
+        // Fetch groups where user is a member
+        const { data: groupMembers, error: membersError } = await supabase
+          .from('group_members')
+          .select(`
+            group_id,
+            groups (
+              id,
+              name,
+              description,
+              avatar_url,
+              is_private,
+              host_id
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'approved')
+
+        console.log('Group members query result:', { groupMembers, membersError })
+
+        if (membersError) {
+          console.error('Error fetching group members:', membersError)
+          return
+        }
+
+        // Transform the data to match GroupData interface
+        const userGroups: GroupData[] = (groupMembers || []).map((member: any) => ({
+          id: member.group_id, // Use UUID directly
+          name: member.groups.name,
+          members: 0, // Will be updated below
+          avgAccuracy: 0, // Will be calculated later
+          avatar: member.groups.avatar_url || "/logo.png",
+          userRank: undefined, // Will be calculated later
+          isJoined: true,
+          isPrivate: member.groups.is_private
+        }))
+
+        console.log('Transformed user groups:', userGroups)
+
+        // Get member counts for each group
+        for (const group of userGroups) {
+          const { count } = await supabase
+            .from('group_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', group.id)
+            .eq('status', 'approved')
+          
+          group.members = count || 0
+          console.log(`Group ${group.name} has ${group.members} members`)
+        }
+
+        // Debug: Check if there are any groups at all
+        const { data: allGroups, error: allGroupsError } = await supabase
+          .from('groups')
+          .select('*')
+        
+        console.log('All groups in database:', allGroups)
+        console.log('All groups error:', allGroupsError)
+
+        // Debug: Check if there are any group members at all
+        const { data: allMembers, error: allMembersError } = await supabase
+          .from('group_members')
+          .select('*')
+        
+        console.log('All group members in database:', allMembers)
+        console.log('All members error:', allMembersError)
+
+        console.log('Final groups to set:', userGroups)
+        setGroups(userGroups)
+      } catch (error) {
+        console.error('Error fetching user groups:', error)
+        toast.error('Failed to load groups')
+      } finally {
+        setIsLoadingGroups(false)
+      }
+    }
+
+    fetchUserGroups()
+  }, [supabase])
+
+  // Debug groups state changes
+  useEffect(() => {
+    console.log('Groups state changed:', groups)
+    console.log('Groups length:', groups.length)
+    console.log('isLoadingGroups:', isLoadingGroups)
+  }, [groups, isLoadingGroups])
 
   // Set header buttons when component mounts
   useEffect(() => {
@@ -273,12 +388,13 @@ export default function Leaderboard() {
       case 'friends':
         setActiveTab('friends');
         break;
-      case 'group1':
-      case 'group2':
-        setActiveTab('groups');
-        break;
       default:
-        setActiveTab('overall');
+        if (selectedView.startsWith('group_')) {
+          setActiveTab('groups');
+        } else {
+          setActiveTab('overall');
+        }
+        break;
     }
   }, [selectedView])
 
@@ -292,7 +408,7 @@ export default function Leaderboard() {
     )
   }
 
-  const toggleGroupJoin = (groupId: number) => {
+  const toggleGroupJoin = (groupId: string) => {
     setGroups((data: GroupData[]) => 
       data.map((group: GroupData) => 
         group.id === groupId 
@@ -312,6 +428,7 @@ export default function Leaderboard() {
   // Generate available weeks (only current and past weeks)
   const getAvailableWeeks = () => {
     const weeks = []
+    // Include all weeks from 1 to current week
     for (let i = 1; i <= currentWeek; i++) {
       weeks.push(`Week ${i}`)
     }
@@ -319,8 +436,11 @@ export default function Leaderboard() {
   }
 
   const renderUserRow = (entry: LeaderboardUser, showWeeklyRank = false) => {
-    const rank = showWeeklyRank ? (entry.weeklyRank || 0) : entry.rank
-    const accuracy = showWeeklyRank ? (entry.weeklyAccuracy || 0) : entry.accuracy
+    // Determine if we should show actual rankings or placeholders
+    const shouldShowPlaceholders = isPreSeason || !isWeekComplete(currentWeek);
+    
+    const rank = shouldShowPlaceholders ? 0 : (showWeeklyRank ? (entry.weeklyRank || 0) : entry.rank)
+    const accuracy = shouldShowPlaceholders ? 0 : (showWeeklyRank ? (entry.weeklyAccuracy || 0) : entry.accuracy)
     
     // Determine background gradient based on rank
     let backgroundClass = "hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -474,8 +594,8 @@ export default function Leaderboard() {
               <p className="text-slate-600 dark:text-slate-400">Outrank the Competition</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Select value={selectedView} onValueChange={(value: 'global' | 'friends' | 'group1' | 'group2') => {
-                setSelectedView(value)
+              <Select value={selectedView} onValueChange={(value: string) => {
+                setSelectedView(value as any)
               }}>
                 <SelectTrigger className="w-48 bg-white dark:bg-slate-800 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 shadow-sm">
                   <SelectValue placeholder="Select leaderboard" />
@@ -483,8 +603,7 @@ export default function Leaderboard() {
                 <SelectContent>
                   <SelectItem value="global">Global Rankings</SelectItem>
                   <SelectItem value="friends">Friends Only</SelectItem>
-                  <SelectItem value="group1">Fantasy Experts Group</SelectItem>
-                  <SelectItem value="group2">College Friends</SelectItem>
+                  {/* Dynamic group options will be added by the context */}
                 </SelectContent>
               </Select>
             </div>
@@ -507,9 +626,9 @@ export default function Leaderboard() {
           />
           <StatCard
             title="Your Accuracy"
-            value={isPreSeason ? "--" : "Pending"}
+            value={isPreSeason ? "Pending" : "--"}
             icon={TrendingUp}
-            subtitle={isPreSeason ? "No scores yet" : "Awaiting Week 1"}
+            subtitle={isPreSeason ? "Awaiting Week 1" : "Week 1 in progress"}
           />
         </div>
 
@@ -690,10 +809,10 @@ export default function Leaderboard() {
                     <CardTitle>Group Leaderboards</CardTitle>
                     <CardDescription>Rankings within your groups</CardDescription>
                   </div>
-                  <Link href="/find-friends">
+                  <Link href="/create-group">
                     <Button variant="outline" size="sm">
-                      <Users className="w-4 h-4 mr-2" />
-                      Find Groups
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Group
                     </Button>
                   </Link>
                 </div>
@@ -708,16 +827,36 @@ export default function Leaderboard() {
                   />
                 </div>
                 
-                <div className="space-y-4">
-                  {groups
-                    .filter((group: GroupData) =>
-                      group.name.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((group: GroupData) => (
-                    <Link
-                      key={group.id}
-                      href={`/group/${group.id}`}
-                    >
+                {isLoadingGroups ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-slate-600 dark:text-slate-400">Loading groups...</p>
+                  </div>
+                ) : groups.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Groups Yet</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                      Create or join groups to see group leaderboards
+                    </p>
+                    <Link href="/create-group">
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Group
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {groups
+                      .filter((group: GroupData) =>
+                        group.name.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((group: GroupData) => (
+                        <Link
+                          key={group.id}
+                          href={`/group/${group.id}`}
+                        >
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer">
                       
                       <div className="flex items-center space-x-4">
@@ -734,6 +873,12 @@ export default function Leaderboard() {
                             {group.isJoined && (
                               <Badge variant="outline" className="text-xs">
                                 Member
+                              </Badge>
+                            )}
+                            {group.isPrivate && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Lock className="w-3 h-3 mr-1" />
+                                Private
                               </Badge>
                             )}
                           </div>
@@ -788,7 +933,8 @@ export default function Leaderboard() {
                       </div>
                     </Link>
                   ))}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

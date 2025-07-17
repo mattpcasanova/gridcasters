@@ -1,0 +1,2 @@
+-- This migration is redundant - the trigger and function are already fixed in 20241211_fix_auth_config_and_group_policies.sql
+-- Keeping this file for migration history but it does nothing 

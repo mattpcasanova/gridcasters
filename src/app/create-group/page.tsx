@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,16 +9,24 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { GradientButton } from "@/components/ui/gradient-button"
-import { ArrowLeft, Upload, Users, X, UserPlus, Image as ImageIcon } from "lucide-react"
+import { ArrowLeft, Upload, Users, X, UserPlus, Image as ImageIcon, Lock, Globe } from "lucide-react"
 import Link from "next/link"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { toast } from "sonner"
+import { UserSearch } from "@/components/forms/user-search"
+
 
 interface InviteMember {
-  email: string
-  role: 'member' | 'admin'
+  id: string
+  username: string
+  display_name: string | null
+  avatar_url: string | null
+  email?: string
 }
+
+const DEFAULT_GROUP_AVATAR = "https://phqchtsxgrciqvhuevsr.supabase.co/storage/v1/object/public/group-avatars//gridcasters-logo.png"
 
 export default function CreateGroup() {
   const [name, setName] = useState("")
@@ -26,12 +34,35 @@ export default function CreateGroup() {
   const [isPrivate, setIsPrivate] = useState(false)
   const [loading, setLoading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>("")
+  const [imagePreview, setImagePreview] = useState<string>(DEFAULT_GROUP_AVATAR)
   const [isDragging, setIsDragging] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
   const [invites, setInvites] = useState<InviteMember[]>([])
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [descriptionError, setDescriptionError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = useSupabase()
+
+  // Validate name on change
+  useEffect(() => {
+    if (!name || name.trim().length === 0) {
+      setNameError('Group name is required')
+    } else if (name.trim().length < 3) {
+      setNameError('Group name must be at least 3 characters long')
+    } else if (name.trim().length > 50) {
+      setNameError('Group name must be less than 50 characters')
+    } else {
+      setNameError(null)
+    }
+  }, [name])
+
+  // Validate description on change
+  useEffect(() => {
+    if (description && description.trim().length > 500) {
+      setDescriptionError('Description must be less than 500 characters')
+    } else {
+      setDescriptionError(null)
+    }
+  }, [description])
 
   const handleImageChange = useCallback((file: File) => {
     // Validate file type
@@ -80,22 +111,41 @@ export default function CreateGroup() {
     }
   }
 
-  const handleAddInvite = () => {
-    if (!inviteEmail) return
-    if (invites.some(invite => invite.email === inviteEmail)) {
-      toast.error('This email has already been invited')
+  const handleUserSelect = (user: InviteMember) => {
+    if (invites.some(invite => invite.id === user.id)) {
+      toast.error('This user has already been invited')
       return
     }
-    setInvites([...invites, { email: inviteEmail, role: 'member' }])
-    setInviteEmail("")
+    setInvites([...invites, user])
   }
 
-  const handleRemoveInvite = (email: string) => {
-    setInvites(invites.filter(invite => invite.email !== email))
+  const handleRemoveInvite = (userId: string) => {
+    setInvites(invites.filter(invite => invite.id !== userId))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    if (!name || name.trim().length === 0) {
+      toast.error('Group name is required')
+      return
+    }
+    
+    if (name.trim().length < 3) {
+      toast.error('Group name must be at least 3 characters long')
+      return
+    }
+    
+    if (name.trim().length > 50) {
+      toast.error('Group name must be less than 50 characters')
+      return
+    }
+    
+    if (description && description.trim().length > 500) {
+      toast.error('Description must be less than 500 characters')
+      return
+    }
     
     try {
       setLoading(true)
@@ -111,7 +161,7 @@ export default function CreateGroup() {
         return
       }
 
-      let avatarUrl = null
+      let avatarUrl = DEFAULT_GROUP_AVATAR
       if (imageFile) {
         try {
           // Create unique filename
@@ -141,17 +191,26 @@ export default function CreateGroup() {
           console.log('Image uploaded successfully:', avatarUrl)
         } catch (uploadError) {
           console.error('Image upload failed:', uploadError)
-          toast.error('Failed to upload image. Please try again.')
-          return
+          toast.error('Failed to upload image. Using default logo.')
+          avatarUrl = DEFAULT_GROUP_AVATAR
         }
       }
 
       // Create group
+      console.log('Creating group with data:', {
+        name: name.trim(),
+        description: description.trim() || null,
+        is_private: isPrivate,
+        host_id: user.id,
+        avatar_url: avatarUrl,
+      })
+
+      // Create group and add host as member in a transaction
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .insert({
-          name,
-          description,
+          name: name.trim(),
+          description: description.trim() || null,
           is_private: isPrivate,
           host_id: user.id,
           avatar_url: avatarUrl,
@@ -161,29 +220,103 @@ export default function CreateGroup() {
 
       if (groupError) {
         console.error('Group creation error:', groupError)
-        throw groupError
+        console.error('Error details:', {
+          code: groupError.code,
+          message: groupError.message,
+          details: groupError.details,
+          hint: groupError.hint
+        })
+        
+        if (groupError.code === '23505') { // Unique constraint violation
+          toast.error('A group with this name already exists. Please choose a different name.')
+        } else if (groupError.code === '42P01') { // Table doesn't exist
+          toast.error('Database schema not ready. Please run the migration first.')
+        } else {
+          toast.error(`Failed to create group: ${groupError.message}`)
+        }
+        return
       }
 
       if (!group) {
         throw new Error('No group data returned after creation')
       }
 
-      // Send invites
-      if (invites.length > 0) {
-        // First, look up users by email to get their user IDs from auth.users
-        const emailList = invites.map(invite => invite.email)
-        
-        // We need to use a different approach since we can't directly query auth.users
-        // For now, we'll create a simple invite system that stores the email
-        // and the user can accept the invite when they log in
-        
-        // Create a temporary invites table or use a different approach
-        // For now, let's skip the invite functionality and just create the group
-        console.log('Invite functionality not yet implemented - group created without invites')
-        toast.success('Group created successfully! Invite functionality coming soon.')
+      // Add the host as a member of the group
+      console.log('Adding host as group member:', { groupId: group.id, userId: user.id })
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: group.id,
+          user_id: user.id,
+          role: 'host',
+          status: 'approved',
+          joined_at: new Date().toISOString()
+        })
+
+      if (memberError) {
+        console.error('Error adding host as member:', memberError)
+        // Don't fail the entire operation, but log the error
+        // The user can still access the group as the host
+      } else {
+        console.log('Successfully added host as group member')
       }
 
-      toast.success('Group created successfully')
+      // Send invites
+      if (invites.length > 0) {
+        try {
+          console.log('Creating invites for group:', group.id)
+          
+          // Get user emails for invites
+          const invitePromises = invites.map(async (invite) => {
+            console.log('Processing invite for user:', invite.id)
+            
+            const { data: userData, error: userError } = await supabase
+              .from('profiles')
+              .select('id, username')
+              .eq('id', invite.id)
+              .single()
+
+            if (userError) {
+              console.error('Error fetching user data:', userError)
+              return
+            }
+
+            if (userData) {
+              console.log('Creating invite for user:', userData.username)
+              
+              // Create invite record
+              const { error: inviteError } = await supabase
+                .from('group_invites')
+                .insert({
+                  group_id: group.id,
+                  inviter_id: user.id,
+                  invitee_username: userData.username,
+                  status: 'pending'
+                })
+
+              if (inviteError) {
+                console.error('Error creating invite:', inviteError)
+                console.error('Invite error details:', {
+                  code: inviteError.code,
+                  message: inviteError.message,
+                  details: inviteError.details
+                })
+              } else {
+                console.log('Invite created successfully for:', userData.username)
+              }
+            }
+          })
+
+          await Promise.all(invitePromises)
+          toast.success(`Group created successfully! ${invites.length} invite(s) sent.`)
+        } catch (inviteError) {
+          console.error('Error sending invites:', inviteError)
+          toast.success('Group created successfully! Some invites may not have been sent.')
+        }
+      } else {
+        toast.success('Group created successfully!')
+      }
+
       router.push(`/group/${group.id}`)
     } catch (error) {
       console.error('Error creating group:', error)
@@ -193,6 +326,8 @@ export default function CreateGroup() {
     }
   }
 
+  const isFormValid = name.trim().length > 0 && !nameError && !descriptionError
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="container mx-auto px-4 py-8">
@@ -201,7 +336,7 @@ export default function CreateGroup() {
             {/* Back Button */}
             <div>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/find-groups" className="flex items-center space-x-2">
+                <Link href="/leaderboard?tab=groups" className="flex items-center space-x-2">
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Groups</span>
                 </Link>
@@ -227,34 +362,30 @@ export default function CreateGroup() {
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                   >
-                    {imagePreview ? (
-                      <div className="relative group">
-                        <Avatar className="w-32 h-32">
-                          <AvatarImage src={imagePreview} />
-                          <AvatarFallback>
-                            <Users className="w-12 h-12" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
-                          <Label htmlFor="image" className="cursor-pointer">
-                            <Upload className="w-6 h-6 text-white" />
-                          </Label>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <ImageIcon className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                    <div className="relative group">
+                      <Avatar className="w-32 h-32">
+                        <AvatarImage src={imagePreview} />
+                        <AvatarFallback>
+                          <Users className="w-12 h-12" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full">
                         <Label htmlFor="image" className="cursor-pointer">
-                          <div className="flex flex-col items-center">
-                            <Button type="button" variant="outline" size="sm" className="mb-2">
-                              <Upload className="w-4 h-4 mr-2" />
-                              Choose Image
-                            </Button>
-                            <p className="text-sm text-slate-500">or drag and drop</p>
-                          </div>
+                          <Upload className="w-6 h-6 text-white" />
                         </Label>
                       </div>
-                    )}
+                    </div>
+                    <div className="text-center mt-4">
+                      <Label htmlFor="image" className="cursor-pointer">
+                        <div className="flex flex-col items-center">
+                          <Button type="button" variant="outline" size="sm" className="mb-2">
+                            <Upload className="w-4 h-4 mr-2" />
+                            Change Image
+                          </Button>
+                          <p className="text-sm text-slate-500">or drag and drop</p>
+                        </div>
+                      </Label>
+                    </div>
                     <input
                       id="image"
                       type="file"
@@ -268,25 +399,31 @@ export default function CreateGroup() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Group Name</Label>
+                    <Label htmlFor="name">Group Name *</Label>
                     <Input
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter group name"
-                      required
+                      className={nameError ? "border-red-500" : ""}
                     />
+                    {nameError && (
+                      <p className="text-sm text-red-500">{nameError}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">Description (Optional)</Label>
                     <Textarea
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Describe your group's purpose and goals"
-                      required
+                      className={descriptionError ? "border-red-500" : ""}
                     />
+                    {descriptionError && (
+                      <p className="text-sm text-red-500">{descriptionError}</p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -305,35 +442,40 @@ export default function CreateGroup() {
 
                   {/* Invite Members */}
                   <div className="space-y-4">
-                    <Label>Invite Members</Label>
-                    <div className="flex space-x-2">
-                      <Input
-                        type="email"
-                        placeholder="Enter email address"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddInvite}
-                      >
-                        <UserPlus className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Label>Invite Members (Optional)</Label>
+                    <UserSearch
+                      onUserSelect={handleUserSelect}
+                      placeholder="Search by username or email..."
+                    />
                     {invites.length > 0 && (
                       <div className="space-y-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {invites.length} member(s) to invite:
+                        </p>
                         {invites.map((invite) => (
                           <div
-                            key={invite.email}
-                            className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 rounded"
+                            key={invite.id}
+                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
                           >
-                            <span className="text-sm">{invite.email}</span>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage src={invite.avatar_url || undefined} />
+                                <AvatarFallback>
+                                  {invite.display_name?.charAt(0) || invite.username.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {invite.display_name || invite.username}
+                                </p>
+                                <p className="text-xs text-slate-500">@{invite.username}</p>
+                              </div>
+                            </div>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleRemoveInvite(invite.email)}
+                              onClick={() => handleRemoveInvite(invite.id)}
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -346,7 +488,7 @@ export default function CreateGroup() {
                   <GradientButton
                     type="submit"
                     className="w-full"
-                    disabled={loading}
+                    disabled={loading || !isFormValid}
                   >
                     {loading ? "Creating..." : "Create Group"}
                   </GradientButton>

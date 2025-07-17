@@ -10,6 +10,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at timestamp default now()
 );
 
+-- Create follows table if it doesn't exist (needed for profile viewing policy)
+CREATE TABLE IF NOT EXISTS public.follows (
+  id uuid primary key default gen_random_uuid(),
+  follower_id uuid references public.profiles(id) on delete cascade,
+  following_id uuid references public.profiles(id) on delete cascade,
+  created_at timestamp default now(),
+  UNIQUE(follower_id, following_id)
+);
+
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -42,13 +51,4 @@ WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" 
 ON public.profiles FOR INSERT 
 TO authenticated 
-WITH CHECK (auth.uid() = id);
-
--- Create follows table if it doesn't exist (needed for profile viewing policy)
-CREATE TABLE IF NOT EXISTS public.follows (
-  id uuid primary key default gen_random_uuid(),
-  follower_id uuid references public.profiles(id) on delete cascade,
-  following_id uuid references public.profiles(id) on delete cascade,
-  created_at timestamp default now(),
-  UNIQUE(follower_id, following_id)
-); 
+WITH CHECK (auth.uid() = id); 

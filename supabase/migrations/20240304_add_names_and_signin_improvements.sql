@@ -51,10 +51,5 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Disable email confirmations for development
 -- This allows users to sign up and immediately use the app
-UPDATE auth.config 
-SET enable_confirmations = false
-WHERE NOT EXISTS (
-  SELECT 1 FROM auth.config WHERE enable_confirmations = false
-);
-
--- If the above doesn't work due to table structure, we'll handle it in the dashboard 
+-- Note: auth.config table may not exist in all Supabase setups
+-- Email confirmation settings can be managed through the Supabase dashboard 

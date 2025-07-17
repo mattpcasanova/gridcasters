@@ -194,7 +194,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
                       src={profile?.avatar_url || "/placeholder-user.jpg"} 
                       className="w-full h-full object-cover"
                     />
-                    <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                  <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
                   </div>
                 </Avatar>
               </Link>

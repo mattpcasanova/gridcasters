@@ -1,265 +1,297 @@
 'use client';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useSupabase } from '@/lib/hooks/use-supabase';
+import { getCurrentSeasonInfo, isWeekComplete, getMostRecentCompletedWeek } from '@/lib/utils/season';
 
-type LeaderboardView = 'global' | 'friends' | 'group1' | 'group2';
+type LeaderboardView = 'global' | 'friends' | `group_${string}`;
+
+interface LeaderboardUser {
+  id: string;
+  name: string;
+  username: string;
+  accuracy: number;
+  rank: number;
+  avatar: string;
+  followers: number;
+  isCurrentUser?: boolean;
+}
 
 interface LeaderboardContextType {
   selectedView: LeaderboardView;
   setSelectedView: (view: LeaderboardView) => void;
   getViewLabel: (view: LeaderboardView) => string;
-  getLeaderboardData: (view: LeaderboardView) => any[];
+  getLeaderboardData: (view: LeaderboardView) => LeaderboardUser[];
   getUserRank: (view: LeaderboardView) => string;
 }
 
 const LeaderboardContext = createContext<LeaderboardContextType | undefined>(undefined);
 
-// Mock data for different leaderboard views
-const globalData = [
-  {
-    id: "sarah-k",
-    name: "Sarah K.",
-    username: "sarahk",
-    accuracy: 0, // No accuracy before Week 1
-    rank: 1,
-    avatar: "/placeholder-user.jpg",
-    followers: 1247
-  },
-  {
-    id: "mike-r",
-    name: "Mike R.",
-    username: "miker",
-    accuracy: 0,
-    rank: 2,
-    avatar: "/placeholder-user.jpg",
-    followers: 892
-  },
-  {
-    id: "alex-m",
-    name: "Alex M.",
-    username: "alexm",
-    accuracy: 0,
-    rank: 3,
-    avatar: "/placeholder-user.jpg",
-    followers: 567
-  },
-  {
-    id: "emma-w",
-    name: "Emma W.",
-    username: "emmaw",
-    accuracy: 0,
-    rank: 4,
-    avatar: "/placeholder-user.jpg",
-    followers: 423
-  },
-  {
-    id: "current-user",
-    name: "You",
-    username: "you",
-    accuracy: 0,
-    rank: 5,
-    isCurrentUser: true,
-    avatar: "/placeholder-user.jpg",
-    followers: 0
-  }
-];
-
-const friendsData = [
-  {
-    id: "current-user",
-    name: "You",
-    username: "you",
-    accuracy: 0,
-    rank: 1,
-    isCurrentUser: true,
-    avatar: "/placeholder-user.jpg",
-    followers: 0
-  },
-  {
-    id: "alex-m",
-    name: "Alex M.",
-    username: "alexm",
-    accuracy: 0,
-    rank: 2,
-    avatar: "/placeholder-user.jpg",
-    followers: 567
-  },
-  {
-    id: "emma-w",
-    name: "Emma W.",
-    username: "emmaw",
-    accuracy: 0,
-    rank: 3,
-    avatar: "/placeholder-user.jpg",
-    followers: 423
-  },
-  {
-    id: "david-k",
-    name: "David K.",
-    username: "davidk",
-    accuracy: 0,
-    rank: 4,
-    avatar: "/placeholder-user.jpg",
-    followers: 156
-  },
-  {
-    id: "lisa-p",
-    name: "Lisa P.",
-    username: "lisap",
-    accuracy: 0,
-    rank: 5,
-    avatar: "/placeholder-user.jpg",
-    followers: 298
-  }
-];
-
-const group1Data = [
-  {
-    id: "expert-1",
-    name: "Fantasy Pro",
-    username: "fantasypro",
-    accuracy: 0,
-    rank: 1,
-    avatar: "/placeholder-user.jpg",
-    followers: 2435
-  },
-  {
-    id: "expert-2",
-    name: "Draft King",
-    username: "draftking",
-    accuracy: 0,
-    rank: 2,
-    avatar: "/placeholder-user.jpg",
-    followers: 1892
-  },
-  {
-    id: "expert-3",
-    name: "Sleeper Elite",
-    username: "sleeper",
-    accuracy: 0,
-    rank: 3,
-    avatar: "/placeholder-user.jpg",
-    followers: 1567
-  },
-  {
-    id: "expert-4",
-    name: "Waiver Wire",
-    username: "waiverwire",
-    accuracy: 0,
-    rank: 4,
-    avatar: "/placeholder-user.jpg",
-    followers: 1234
-  },
-  {
-    id: "current-user",
-    name: "You",
-    username: "you",
-    accuracy: 0,
-    rank: 15,
-    isCurrentUser: true,
-    avatar: "/placeholder-user.jpg",
-    followers: 0
-  }
-];
-
-const group2Data = [
-  {
-    id: "college-1",
-    name: "Tommy",
-    username: "tommy",
-    accuracy: 0,
-    rank: 1,
-    avatar: "/placeholder-user.jpg",
-    followers: 45
-  },
-  {
-    id: "college-2",
-    name: "Jake",
-    username: "jake",
-    accuracy: 0,
-    rank: 2,
-    avatar: "/placeholder-user.jpg",
-    followers: 67
-  },
-  {
-    id: "current-user",
-    name: "You",
-    username: "you",
-    accuracy: 0,
-    rank: 3,
-    isCurrentUser: true,
-    avatar: "/placeholder-user.jpg",
-    followers: 0
-  },
-  {
-    id: "college-3",
-    name: "Brad",
-    username: "brad",
-    accuracy: 0,
-    rank: 4,
-    avatar: "/placeholder-user.jpg",
-    followers: 23
-  },
-  {
-    id: "college-4",
-    name: "Steve",
-    username: "steve",
-    accuracy: 0,
-    rank: 5,
-    avatar: "/placeholder-user.jpg",
-    followers: 12
-  }
-];
-
 export function LeaderboardProvider({ children }: { children: ReactNode }) {
   const [selectedView, setSelectedView] = useState<LeaderboardView>('global');
+  const [leaderboardData, setLeaderboardData] = useState<Record<LeaderboardView, LeaderboardUser[]>>({
+    global: [],
+    friends: [],
+  });
+  const [userGroups, setUserGroups] = useState<Array<{ id: string; name: string }>>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string; username: string } | null>(null);
+  const supabase = useSupabase();
+  const seasonInfo = getCurrentSeasonInfo();
+  const currentWeek = seasonInfo.currentWeek || 1;
+  const isPreSeason = seasonInfo.isPreSeason;
+  const mostRecentCompletedWeek = getMostRecentCompletedWeek();
+  const weekForAccuracy = mostRecentCompletedWeek || currentWeek;
+
+  // Fetch current user and their groups
+  useEffect(() => {
+    const fetchUserAndGroups = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        setCurrentUser({ id: user.id, username: user.email?.split('@')[0] || 'user' });
+
+        // Fetch user's groups
+        const { data: groupsData } = await supabase
+          .from('group_members')
+          .select(`
+            groups (
+              id,
+              name
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'approved');
+
+        const groups = groupsData?.map((member: any) => ({
+          id: member.groups.id,
+          name: member.groups.name
+        })) || [];
+
+        setUserGroups(groups);
+
+        // Initialize leaderboard data for groups
+        const groupData: Record<string, LeaderboardUser[]> = {};
+        groups.forEach(group => {
+          groupData[`group_${group.id}`] = [];
+        });
+
+        setLeaderboardData(prev => ({
+          ...prev,
+          ...groupData
+        }));
+
+      } catch (error) {
+        console.error('Error fetching user and groups:', error);
+      }
+    };
+
+    fetchUserAndGroups();
+  }, [supabase]);
+
+  // Fetch leaderboard data based on selected view
+  useEffect(() => {
+    const fetchLeaderboardData = async () => {
+      if (!currentUser) return;
+
+      try {
+        let data: LeaderboardUser[] = [];
+
+        if (selectedView === 'global') {
+          // Fetch global leaderboard - top users by accuracy
+          const { data: globalData } = await supabase
+            .from('rankings')
+            .select(`
+              user_id,
+              accuracy_score,
+              profiles!inner (
+                username,
+                display_name,
+                avatar_url
+              )
+            `)
+            .not('accuracy_score', 'is', null)
+            .eq('type', 'weekly')
+            .eq('week', isPreSeason ? 1 : weekForAccuracy)
+            .order('accuracy_score', { ascending: false })
+            .limit(10);
+
+          if (globalData) {
+            data = globalData.map((ranking: any, index) => ({
+              id: ranking.user_id,
+              name: ranking.profiles.display_name || ranking.profiles.username,
+              username: ranking.profiles.username,
+              accuracy: ranking.accuracy_score || 0,
+              rank: index + 1,
+              avatar: ranking.profiles.avatar_url || '/placeholder-user.jpg',
+              followers: 0, // Would need separate query for followers
+              isCurrentUser: ranking.user_id === currentUser.id
+            }));
+          }
+        } else if (selectedView === 'friends') {
+          // Fetch friends leaderboard - users the current user is following
+          const { data: friendsData } = await supabase
+            .from('follows')
+            .select(`
+              following_id,
+              profiles!following_id (
+                username,
+                display_name,
+                avatar_url
+              )
+            `)
+            .eq('follower_id', currentUser.id);
+
+          if (friendsData && friendsData.length > 0) {
+            const friendIds = friendsData.map(f => f.following_id);
+            
+            // Get rankings for friends
+            const { data: friendRankings } = await supabase
+              .from('rankings')
+              .select(`
+                user_id,
+                accuracy_score,
+                profiles!inner (
+                  username,
+                  display_name,
+                  avatar_url
+                )
+              `)
+              .in('user_id', friendIds)
+              .not('accuracy_score', 'is', null)
+              .eq('type', 'weekly')
+              .eq('week', isPreSeason ? 1 : weekForAccuracy)
+              .order('accuracy_score', { ascending: false });
+
+            if (friendRankings) {
+              data = friendRankings.map((ranking: any, index) => ({
+                id: ranking.user_id,
+                name: ranking.profiles.display_name || ranking.profiles.username,
+                username: ranking.profiles.username,
+                accuracy: ranking.accuracy_score || 0,
+                rank: index + 1,
+                avatar: ranking.profiles.avatar_url || '/placeholder-user.jpg',
+                followers: 0,
+                isCurrentUser: ranking.user_id === currentUser.id
+              }));
+            }
+          }
+        } else if (selectedView.startsWith('group_')) {
+          // Fetch group leaderboard
+          const groupId = selectedView.replace('group_', '');
+          
+          const { data: groupMembers } = await supabase
+            .from('group_members')
+            .select(`
+              user_id,
+              profiles!inner (
+                username,
+                display_name,
+                avatar_url
+              )
+            `)
+            .eq('group_id', groupId)
+            .eq('status', 'approved');
+
+          if (groupMembers && groupMembers.length > 0) {
+            const memberIds = groupMembers.map(m => m.user_id);
+            
+            // Get rankings for group members
+            const { data: memberRankings } = await supabase
+              .from('rankings')
+              .select(`
+                user_id,
+                accuracy_score,
+                profiles!inner (
+                  username,
+                  display_name,
+                  avatar_url
+                )
+              `)
+              .in('user_id', memberIds)
+              .not('accuracy_score', 'is', null)
+              .eq('type', 'weekly')
+              .eq('week', isPreSeason ? 1 : weekForAccuracy)
+              .order('accuracy_score', { ascending: false });
+
+            if (memberRankings) {
+              data = memberRankings.map((ranking: any, index) => ({
+                id: ranking.user_id,
+                name: ranking.profiles.display_name || ranking.profiles.username,
+                username: ranking.profiles.username,
+                accuracy: ranking.accuracy_score || 0,
+                rank: index + 1,
+                avatar: ranking.profiles.avatar_url || '/placeholder-user.jpg',
+                followers: 0,
+                isCurrentUser: ranking.user_id === currentUser.id
+              }));
+            }
+          }
+        }
+
+        // If no real data available (preseason or no rankings), show placeholder
+        if (data.length === 0) {
+          data = [
+            {
+              id: currentUser.id,
+              name: 'You',
+              username: currentUser.username,
+              accuracy: 0,
+              rank: 1,
+              avatar: '/placeholder-user.jpg',
+              followers: 0,
+              isCurrentUser: true
+            }
+          ];
+        }
+
+        setLeaderboardData(prev => ({
+          ...prev,
+          [selectedView]: data
+        }));
+
+      } catch (error) {
+        console.error('Error fetching leaderboard data:', error);
+      }
+    };
+
+    fetchLeaderboardData();
+  }, [selectedView, currentUser, supabase, weekForAccuracy, isPreSeason]);
 
   const getViewLabel = (view: LeaderboardView): string => {
-    switch (view) {
-      case 'global':
-        return 'Global Rankings';
-      case 'friends':
-        return 'Friends Only';
-      case 'group1':
-        return 'Fantasy Experts Group';
-      case 'group2':
-        return 'College Friends';
-      default:
-        return 'Global Rankings';
+    if (view === 'global') return 'Global Rankings';
+    if (view === 'friends') return 'Friends Only';
+    if (view.startsWith('group_')) {
+      const groupId = view.replace('group_', '');
+      const group = userGroups.find(g => g.id === groupId);
+      return group ? group.name : 'Group';
     }
+    return 'Unknown View';
   };
 
-  const getLeaderboardData = (view: LeaderboardView) => {
-    switch (view) {
-      case 'global':
-        return globalData;
-      case 'friends':
-        return friendsData;
-      case 'group1':
-        return group1Data;
-      case 'group2':
-        return group2Data;
-      default:
-        return globalData;
-    }
+  const getLeaderboardData = (view: LeaderboardView): LeaderboardUser[] => {
+    return leaderboardData[view] || [];
   };
 
   const getUserRank = (view: LeaderboardView): string => {
+    if (!currentUser) return '--';
+    
     const data = getLeaderboardData(view);
-    const currentUser = data.find(user => user.isCurrentUser);
-    // Return -- for pre-season when there are no accuracy scores
-    return currentUser?.rank ? currentUser.rank.toString() : '--';
+    const userEntry = data.find(user => user.isCurrentUser);
+    
+    if (isPreSeason) return '--';
+    if (!userEntry) return '--';
+    
+    return userEntry.rank.toString();
   };
 
   return (
-    <LeaderboardContext.Provider
-      value={{
-        selectedView,
-        setSelectedView,
-        getViewLabel,
-        getLeaderboardData,
-        getUserRank
-      }}
-    >
+    <LeaderboardContext.Provider value={{
+      selectedView,
+      setSelectedView,
+      getViewLabel,
+      getLeaderboardData,
+      getUserRank
+    }}>
       {children}
     </LeaderboardContext.Provider>
   );

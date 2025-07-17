@@ -73,13 +73,13 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/demo">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-500 text-lg px-8 bg-transparent shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Watch Demo
-              </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-500 text-lg px-8 bg-transparent shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Watch Demo
+                  </Button>
             </Link>
           </div>
         </div>

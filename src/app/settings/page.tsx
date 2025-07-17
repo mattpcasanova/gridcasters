@@ -94,7 +94,7 @@ export default function Settings() {
         toast.error('Failed to load profile')
       } finally {
         setIsLoading(false)
-      }
+  }
     }
 
     fetchProfile()
@@ -121,7 +121,7 @@ export default function Settings() {
     } catch (error) {
       console.error('Error saving profile:', error)
       toast.error('Failed to save changes')
-    }
+  }
   }
 
 
@@ -166,7 +166,7 @@ export default function Settings() {
       if (error) throw error
       
       toast.success('Password updated successfully')
-      setPasswords({ current: "", new: "", confirm: "" })
+    setPasswords({ current: "", new: "", confirm: "" })
     } catch (error) {
       console.error('Error updating password:', error)
       toast.error('Failed to update password')
@@ -344,7 +344,7 @@ export default function Settings() {
                           {profileData.firstName?.[0]}{profileData.lastName?.[0]}
                         </AvatarFallback>
                       </div>
-                    </Avatar>
+                  </Avatar>
                     <div className="absolute inset-0 rounded-full shadow-lg pointer-events-none"></div>
                   </div>
                   <div>
@@ -386,62 +386,62 @@ export default function Settings() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          value={profileData.firstName}
-                          onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={profileData.lastName}
-                          onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
-                        />
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={profileData.firstName}
+                      onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={profileData.lastName}
+                      onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        value={profileData.username}
-                        onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    value={profileData.username}
+                    onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={profileData.email}
-                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                         disabled
-                      />
-                    </div>
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        value={profileData.bio}
-                        onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                        placeholder="Tell us about yourself..."
-                        className="min-h-[100px]"
-                      />
-                      <p className="text-sm text-slate-500">{profileData.bio.length}/500 characters</p>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                    placeholder="Tell us about yourself..."
+                    className="min-h-[100px]"
+                  />
+                  <p className="text-sm text-slate-500">{profileData.bio.length}/500 characters</p>
+                </div>
 
-                    <div className="pt-4 border-t">
-                      <GradientButton onClick={handleProfileSave} icon={Save}>
-                        Save Changes
-                      </GradientButton>
-                    </div>
+                <div className="pt-4 border-t">
+                  <GradientButton onClick={handleProfileSave} icon={Save}>
+                    Save Changes
+                  </GradientButton>
+                </div>
                   </>
                 )}
               </CardContent>
