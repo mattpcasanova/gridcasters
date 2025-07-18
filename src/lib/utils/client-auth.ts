@@ -53,19 +53,23 @@ export async function signIn(
     if (!emailOrUsername.includes('@')) {
       console.log('Looking up email for username:', emailOrUsername);
       
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', emailOrUsername)
-        .single();
-      
-      if (profileError || !profileData) {
-        throw new Error('Username not found');
+      // Call our API endpoint to look up the email by username
+      const response = await fetch('/api/auth/username-lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: emailOrUsername }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Username not found');
       }
-      
-      // Since we can't use admin functions from client, let's try a different approach
-      // We'll just show an error asking them to use email
-      throw new Error('Please use your email address to sign in');
+
+      const { email: userEmail } = await response.json();
+      email = userEmail;
+      console.log('Found email for username:', userEmail);
     }
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

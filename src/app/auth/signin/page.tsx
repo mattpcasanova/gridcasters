@@ -105,8 +105,10 @@ export default function SignIn() {
         setErrors({ general: 'Invalid email or password' })
       } else if (errorMessage.toLowerCase().includes('email not confirmed')) {
         setErrors({ general: 'Please check your email and click the verification link to activate your account.' })
+      } else if (errorMessage.toLowerCase().includes('username not found')) {
+        setErrors({ emailOrUsername: 'Username not found. Please check your username or try using your email address.' })
       } else if (errorMessage.toLowerCase().includes('email')) {
-        setErrors({ email: errorMessage })
+        setErrors({ emailOrUsername: errorMessage })
       } else if (errorMessage.toLowerCase().includes('password')) {
         setErrors({ password: errorMessage })
       } else {
@@ -163,7 +165,7 @@ export default function SignIn() {
               "mt-1",
               errors.emailOrUsername && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
             )}
-            placeholder="Enter your email or username"
+            placeholder="Enter your email address or username"
             value={formData.emailOrUsername}
             onChange={(e) => {
               setFormData(prev => ({ ...prev, emailOrUsername: e.target.value }))
@@ -174,6 +176,9 @@ export default function SignIn() {
           {errors.emailOrUsername && (
             <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.emailOrUsername}</p>
           )}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            You can sign in with either your email address or your username
+          </p>
         </div>
 
         <div className="space-y-2">
