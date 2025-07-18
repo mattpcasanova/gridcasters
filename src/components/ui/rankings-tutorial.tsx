@@ -63,7 +63,7 @@ const tutorialSteps = [
           Higher accuracy scores mean your rankings were more accurate compared to other users and projection systems.
         </p>
         <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
-          Each position has specific cutoffs for scoring: <strong className="text-purple-600 dark:text-purple-400">QB (12 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">RB (24 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">WR (36 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">TE (12 spots)</strong>. You can rank more players for your own reference, but only the cutoff positions count for leaderboard scoring and are visible to others.
+          Each position has specific cutoffs for scoring: <strong className="text-purple-600 dark:text-purple-400">QB (12 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">RB (36 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">WR (36 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">TE (12 spots)</strong>. You can rank more players for your own reference, but only the cutoff positions count for leaderboard scoring and are visible to others.
         </p>
         <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
           <p className="text-sm text-purple-800 dark:text-purple-200 font-medium">
