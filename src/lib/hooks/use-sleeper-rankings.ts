@@ -17,7 +17,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
   const { favorites, isFavorite, toggleFavorite: toggleFavoriteDB, loading: favoritesLoading } = useFavorites();
 
   // Helper function to load reference ranking
-  const loadReferenceRanking = async (referenceId: string, allPlayers: any, projections: any, matchups: any = {}) => {
+  const loadReferenceRanking = async (referenceId: string, allPlayers: any, projections: any) => {
     try {
       const response = await fetch('/api/rankings/reference', {
         method: 'POST',
@@ -60,11 +60,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
           age: allPlayers[player.id]?.age,
           college: allPlayers[player.id]?.college,
           yearsExp: allPlayers[player.id]?.years_exp,
-          matchup: matchups && matchups[player.team] ? {
-            opponent: matchups[player.team].opponent,
-            isHome: matchups[player.team].isHome,
-            week: matchups[player.team].week
-          } : undefined
+
         }));
 
         setPlayers(transformedPlayers);
@@ -82,8 +78,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     projections: any, 
     seasonInfo: any, 
     weekToLoad: number | null, 
-    typeToLoad: 'preseason' | 'weekly',
-    matchups: any = {}
+    typeToLoad: 'preseason' | 'weekly'
   ) => {
     // For future weeks, try to find the most recent saved ranking to use as default
     if (typeToLoad === 'weekly' && weekToLoad && seasonInfo.isRegularSeason && weekToLoad > (seasonInfo.currentWeek || 0)) {
@@ -151,7 +146,6 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
       projections,
       new Set(favorites.map(f => f.player_id)),
       positionFilter,
-      matchups,
       scoringFormat
     );
     console.log(`Hook Debug - After transformSleeperData: ${transformedPlayers.length} players`);
@@ -183,15 +177,12 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
 
         // Get projections based on ranking type
         let projections = {};
-        let matchups = {};
         
         if (typeToLoad === 'weekly' && weekToLoad) {
           try {
             projections = await sleeperAPI.getProjections(weekToLoad);
-            // Get matchups for weekly rankings
-            matchups = await sleeperAPI.getMatchups(weekToLoad);
           } catch (err) {
-            console.log('Failed to fetch projections/matchups, using empty object');
+            console.log('Failed to fetch projections, using empty object');
           }
         } else if (typeToLoad === 'preseason') {
           try {
@@ -259,7 +250,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
 
         // Handle reference ranking if specified
         if (selectedReference && selectedReference !== 'default') {
-          const referenceLoaded = await loadReferenceRanking(selectedReference, allPlayers, projections, matchups);
+          const referenceLoaded = await loadReferenceRanking(selectedReference, allPlayers, projections);
           if (referenceLoaded) {
             setError(null);
             setLoading(false);
@@ -269,7 +260,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
 
         // For preseason rankings, always use fresh data to ensure we get the latest projections
         if (typeToLoad === 'preseason') {
-          await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+          await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
         } else {
           // Check if user has a saved ranking for this position/week/season  
           try {
@@ -306,7 +297,6 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                   projections,
                   new Set(favorites.map(f => f.player_id)),
                   positionFilter,
-                  matchups,
                   scoringFormat
                 );
                 console.log(`Hook Debug - After transformSleeperData: ${fullPlayerList.length} players`);
@@ -324,16 +314,16 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 setPlayers(mergedPlayers);
               } else {
                 // No saved ranking - try to load previous ranking as default for future weeks
-                await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+                await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
               }
             } else {
               // API error or no saved ranking - try to load previous ranking as default
-              await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+              await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
             }
           } catch (fetchError) {
             // Error fetching saved rankings (e.g., not authenticated) - use default Sleeper data
             console.log('Could not fetch saved rankings, using default data:', fetchError);
-            await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad, matchups);
+            await loadDefaultOrPreviousRanking(allPlayers, projections, seasonInfo, weekToLoad, typeToLoad);
           }
         }
 

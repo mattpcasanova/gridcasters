@@ -117,6 +117,99 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
   }
 }
 
+// Helper function to update FLX ranking based on OVR ranking
+async function updateFLXRankingFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string, scoringFormat?: string) {
+  // Filter OVR players to only include RB, WR, TE (FLX eligible positions)
+  const flxPlayers = ovrPlayers.filter(player => ['RB', 'WR', 'TE'].includes(player.position));
+  
+  // Sort FLX players by their rank in the OVR ranking
+  const sortedFLXPlayers = flxPlayers.sort((a, b) => a.rank - b.rank);
+  
+  // Check if a FLX ranking already exists
+  let flxQuery = supabase
+    .from('rankings')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('position', 'FLX')
+    .eq('season', season)
+    .eq('type', type);
+
+  // Handle week parameter - use is() for null values, eq() for integers
+  if (week === null) {
+    flxQuery = flxQuery.is('week', null);
+  } else {
+    flxQuery = flxQuery.eq('week', week);
+  }
+
+  const { data: existingFLXRanking, error: fetchError } = await flxQuery.single();
+
+  let flxRankingId: string;
+
+  if (existingFLXRanking) {
+    // Update existing FLX ranking
+    flxRankingId = existingFLXRanking.id;
+    
+    const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+    
+    await supabase
+      .from('rankings')
+      .update({
+        title: type === 'preseason' ? `Pre-Season FLX ${scoringText} Rankings` : `Week ${week} FLX ${scoringText} Rankings`,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', flxRankingId);
+
+    // Delete existing player rankings for FLX
+    await supabase
+      .from('player_rankings')
+      .delete()
+      .eq('ranking_id', flxRankingId);
+  } else {
+    // Create new FLX ranking
+    const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+    
+    const { data: newFLXRanking, error: createError } = await supabase
+      .from('rankings')
+      .insert({
+        user_id: userId,
+        title: type === 'preseason' ? `Pre-Season FLX ${scoringText} Rankings` : `Week ${week} FLX ${scoringText} Rankings`,
+        position: 'FLX',
+        type,
+        week,
+        season,
+        is_active: true
+      })
+      .select('id')
+      .single();
+
+    if (createError) {
+      console.error(`Error creating FLX ranking:`, createError);
+      return;
+    }
+
+    flxRankingId = newFLXRanking.id;
+  }
+
+  // Insert player rankings for FLX with new ranks (1, 2, 3, etc.)
+  const flxPlayerRankings = sortedFLXPlayers.map((player, index) => ({
+    ranking_id: flxRankingId,
+    player_id: player.id,
+    player_name: player.name,
+    team: player.team,
+    position: 'FLX', // Use FLX as the ranking position
+    rank_position: index + 1, // Re-rank starting from 1 for FLX
+    is_starred: player.isStarred || false
+  }));
+
+  const { error: insertError } = await supabase
+    .from('player_rankings')
+    .insert(flxPlayerRankings);
+
+  if (insertError) {
+    console.error(`Error inserting FLX player rankings:`, insertError);
+  }
+}
+
 // Helper function to update individual position rankings based on FLX ranking
 async function updatePositionRankingsFromFLX(supabase: any, userId: string, flxPlayers: any[], week: number | null, season: number, type: string, scoringFormat?: string) {
   // Group players by position from the FLX ranking (RB, WR, TE only)
@@ -500,9 +593,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save player rankings', details: insertError.message }, { status: 500 });
     }
 
-    // If this is an OVR ranking, update individual position rankings to maintain consistency
+    // If this is an OVR ranking, update individual position rankings and FLX ranking to maintain consistency
     if (position === 'OVR') {
       await updatePositionRankingsFromOVR(supabase, user.id, players, weekValue, season, type, scoringFormat);
+      await updateFLXRankingFromOVR(supabase, user.id, players, weekValue, season, type, scoringFormat);
     }
 
     // If this is a FLX ranking, update individual position rankings (RB, WR, TE) to maintain consistency

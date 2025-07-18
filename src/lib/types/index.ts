@@ -42,11 +42,7 @@ export interface RankingPlayer {
   age?: number;
   college?: string;
   yearsExp?: number;
-  matchup?: {
-    opponent: string;
-    isHome: boolean;
-    week: number;
-  };
+
 }
 
 export interface NFLState {

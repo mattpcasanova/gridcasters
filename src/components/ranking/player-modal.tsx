@@ -56,11 +56,6 @@ export function PlayerModal({ player, isOpen, onClose, onStar }: PlayerModalProp
                     }}
                   />
                   <span className="font-medium text-gray-700">{player.team}</span>
-                  {player.matchup && (
-                    <span className="text-blue-600 font-medium">
-                      {player.matchup.isHome ? 'vs' : '@'} {player.matchup.opponent}
-                    </span>
-                  )}
                 </div>
                 {player.injuryStatus && (
                   <span className={`px-2 py-1 rounded-full text-sm font-medium ${getInjuryStatusColor(player.injuryStatus)}`}>
@@ -137,11 +132,7 @@ export function PlayerModal({ player, isOpen, onClose, onStar }: PlayerModalProp
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">{weekType} Outlook</h3>
                   <p className="text-blue-800 text-sm">
-                    {player.matchup 
-                      ? `${player.matchup.isHome ? 'Home vs' : 'Away @'} ${player.matchup.opponent} - `
-                      : ''
-                    }
-                    Projected to be a strong performer based on matchup and recent form.
+                    Projected to be a strong performer based on recent form.
                   </p>
                 </div>
               );

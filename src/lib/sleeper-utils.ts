@@ -16,7 +16,6 @@ export const transformSleeperData = (
   projections: PlayerProjections,
   starredPlayers: Set<string>,
   positionFilter: string = 'OVR',
-  matchups?: Record<string, any>,
   scoringFormat: string = 'half_ppr'
 ): RankingPlayer[] => {
   const playerArray = Object.values(players);
@@ -89,11 +88,7 @@ export const transformSleeperData = (
         age: player.age,
         college: player.college,
         yearsExp: player.years_exp,
-        matchup: matchups && matchups[player.team] ? {
-          opponent: matchups[player.team].opponent,
-          isHome: matchups[player.team].isHome,
-          week: matchups[player.team].week
-        } : undefined
+
       };
     })
     // Sort by projected points (descending)

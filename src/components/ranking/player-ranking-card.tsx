@@ -125,11 +125,6 @@ export function PlayerRankingCard({
             }}
           />
           <span className="font-medium">{player.team}</span>
-          {player.matchup && (
-            <span className="text-blue-600 font-medium">
-              {player.matchup.isHome ? 'vs' : '@'} {player.matchup.opponent}
-            </span>
-          )}
           {player.age && (
             <span className="text-gray-400">• {player.age}y</span>
           )}

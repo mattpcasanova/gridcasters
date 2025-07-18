@@ -374,6 +374,12 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
                     <Share className="w-4 h-4 mr-2" />
                     Share Ranking
                   </Button>
+                  <Link href="/rankings">
+                    <Button variant="outline">
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Rankings
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>

@@ -17,9 +17,7 @@ import {
   TrendingUp,
   TrendingDown,
   Save,
-  Share,
   ChevronDown,
-  X,
   Calendar,
   Users,
   BarChart3,
@@ -57,7 +55,7 @@ export default function Rankings() {
   const [searchTerm, setSearchTerm] = useState("")
   const [myGuysFilter, setMyGuysFilter] = useState("All")
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
-  const [showShareModal, setShowShareModal] = useState(false)
+
   
   // Check if user has preseason rankings and initialize week
   useEffect(() => {
@@ -186,9 +184,7 @@ export default function Rankings() {
     }
   }
 
-  const handleShareRankings = () => {
-    setShowShareModal(true)
-  }
+
 
   // Filter players by search term
   const filteredPlayers = players.filter(player =>
@@ -444,10 +440,6 @@ export default function Rankings() {
               <GradientButton onClick={handleSaveRankings} icon={Save}>
                 Save
               </GradientButton>
-              <Button variant="outline" onClick={handleShareRankings}>
-                <Share className="w-4 h-4 mr-2" />
-                Share
-              </Button>
             </div>
           </div>
 
@@ -516,56 +508,7 @@ export default function Rankings() {
         />
       )}
 
-      {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Share Rankings</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowShareModal(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-semibold">
-                  {rankingType === 'preseason' ? 'Pre-Season' : `Week ${selectedWeek}`} {selectedPosition} Rankings
-                </p>
-                <p className="text-sm text-gray-600">by @username</p>
-              </div>
-              <div className="flex items-center space-x-2 p-2 bg-gray-100 rounded">
-                <input
-                  type="text"
-                  value={`https://gridcasters.com/rankings/${rankingType === 'preseason' ? 'preseason' : `week${selectedWeek}`}-${selectedPosition.toLowerCase()}`}
-                  readOnly
-                  className="flex-1 bg-transparent text-sm"
-                />
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    navigator.clipboard.writeText(
-                      `https://gridcasters.com/rankings/${rankingType === 'preseason' ? 'preseason' : `week${selectedWeek}`}-${selectedPosition.toLowerCase()}`
-                    )
-                  }
-                >
-                  Copy
-                </Button>
-              </div>
-              <div className="flex space-x-2">
-                <Button className="flex-1" variant="outline">
-                  Twitter
-                </Button>
-                <Button className="flex-1" variant="outline">
-                  Facebook
-                </Button>
-                <Button className="flex-1" variant="outline">
-                  Reddit
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   )
 } 
