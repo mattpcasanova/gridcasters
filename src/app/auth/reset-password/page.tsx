@@ -122,6 +122,30 @@ export default function ResetPassword() {
             Back to sign in
           </Link>
         </div>
+
+        {/* Footer Links */}
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 space-x-4 mt-8">
+          <Link 
+            href="/privacy" 
+            className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+          >
+            Privacy
+          </Link>
+          <span>•</span>
+          <Link 
+            href="/terms" 
+            className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+          >
+            Terms
+          </Link>
+          <span>•</span>
+          <Link 
+            href="/support" 
+            className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+          >
+            Support
+          </Link>
+        </div>
       </form>
     </div>
   )

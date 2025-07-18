@@ -452,7 +452,14 @@ export default function SignUp() {
           href="/privacy" 
           className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
         >
-          Privacy & Terms
+          Privacy
+        </Link>
+        <span>•</span>
+        <Link 
+          href="/terms" 
+          className="hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+        >
+          Terms
         </Link>
         <span>•</span>
         <Link 
