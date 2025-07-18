@@ -189,16 +189,46 @@ export default function UserProfile() {
           }
         })
 
-        // Determine featured badges (earned badges to show prominently)
+        // Fetch user's selected badges
+        const { data: selectedBadgesData, error: selectedError } = await supabase
+          .from('user_badge_selections')
+          .select('badge_id')
+          .eq('user_id', profile.id)
+          .order('display_order', { ascending: true })
+
+        if (selectedError) {
+          console.error('Error fetching selected badges:', selectedError)
+        }
+
+        // Determine featured badges (user's selected badges or fallback to earned badges)
         const featuredBadges = []
-        if (earnedBadges.beta_tester?.earned) {
-          featuredBadges.push({ id: 'beta_tester', name: "Beta Tester", description: "Early GridCasters beta participant" })
-        }
-        if (earnedBadges.founding_forecaster?.earned) {
-          featuredBadges.push({ id: 'founding_forecaster', name: "Founding Forecaster", description: "GridCasters founding member" })
-        }
-        if (earnedBadges.rookie_forecaster?.earned) {
-          featuredBadges.push({ id: 'rookie_forecaster', name: "Rookie Forecaster", description: "Created your first ranking" })
+        const selectedBadgeIds = selectedBadgesData?.map((item: any) => item.badge_id) || []
+        
+        if (selectedBadgeIds.length > 0) {
+          // Use user's selected badges
+          selectedBadgeIds.forEach(badgeId => {
+            if (earnedBadges[badgeId]?.earned) {
+              const badge = BADGES.find(b => b.id === badgeId)
+              if (badge) {
+                featuredBadges.push({ 
+                  id: badgeId, 
+                  name: badge.name, 
+                  description: badge.description 
+                })
+              }
+            }
+          })
+        } else {
+          // Fallback to default badges if user hasn't selected any
+          if (earnedBadges.founding_forecaster?.earned) {
+            featuredBadges.push({ id: 'founding_forecaster', name: "Founding Forecaster", description: "GridCasters founding member" })
+          }
+          if (earnedBadges.rookie_forecaster?.earned) {
+            featuredBadges.push({ id: 'rookie_forecaster', name: "Rookie Forecaster", description: "Created your first ranking" })
+          }
+          if (earnedBadges.active_forecaster?.earned) {
+            featuredBadges.push({ id: 'active_forecaster', name: "Active Forecaster", description: "Created 20 rankings" })
+          }
         }
 
         // Create user data object
@@ -432,7 +462,7 @@ export default function UserProfile() {
                       className={`relative flex items-center space-x-3 p-4 rounded-lg ${getTierBgColor(badge.tier)} transition-all`}
                     >
                       <div
-                        className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
+                        className={`relative w-20 h-20 flex items-center justify-center rounded-lg shadow-sm transition-all duration-200 hover:scale-105 ${
                           badgeStatus?.earned || true // Always show gradient for displayed badges
                             ? getBadgeIconBg(badge.id, badge.tier)
                             : "bg-slate-300 dark:bg-slate-600"
@@ -441,9 +471,9 @@ export default function UserProfile() {
                         <Image
                           src={badge.icon}
                           alt={badge.name}
-                          width={48}
-                          height={48}
-                          className="w-full h-full object-contain"
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-contain p-1"
                           quality={100}
                         />
                       </div>
@@ -686,19 +716,19 @@ export default function UserProfile() {
                             >
                               <div className="flex items-start space-x-3">
                                 <div
-                                  className={`p-3 rounded-lg ${
+                                  className={`rounded-lg shadow-sm transition-all duration-200 hover:scale-105 ${
                                     badgeStatus?.earned
                                       ? getBadgeIconBg(badge.id, badge.tier)
                                       : "bg-slate-300 dark:bg-slate-600"
                                   }`}
                                 >
-                                  <div className="relative w-12 h-12 flex items-center justify-center">
+                                  <div className="relative w-20 h-20 flex items-center justify-center">
                                     <Image
                                       src={badge.icon}
                                       alt={badge.name}
-                                      width={48}
-                                      height={48}
-                                      className="w-full h-full object-contain"
+                                      width={80}
+                                      height={80}
+                                      className="w-full h-full object-contain p-1"
                                       quality={100}
                                     />
                                   </div>

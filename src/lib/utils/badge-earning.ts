@@ -66,40 +66,48 @@ export const checkBadgeEarning = (
         earned = currentStats.totalRankings >= 100;
         break;
 
-      // Performance Badges (simplified - would need actual percentile data)
+      // Performance Badges - These require actual percentile data which isn't available yet
       case 'rising_forecaster':
-        progress = currentStats.topPercentileRankings >= 1 ? 100 : 0;
-        earned = currentStats.topPercentileRankings >= 1;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'top_performer':
-        progress = currentStats.topPercentileRankings >= 3 ? 100 : 0;
-        earned = currentStats.topPercentileRankings >= 3;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'super_forecaster':
-        progress = currentStats.topPercentileRankings >= 5 ? 100 : 0;
-        earned = currentStats.topPercentileRankings >= 5;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'grid_genius':
-        progress = currentStats.topPercentileRankings >= 10 ? 100 : 0;
-        earned = currentStats.topPercentileRankings >= 10;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
 
-      // Consistency Badges
+      // Consistency Badges - These require actual percentile data which isn't available yet
       case 'steady_eddie':
-        progress = Math.min(100, (currentStats.consecutiveTopPercentile / 3) * 100);
-        earned = currentStats.consecutiveTopPercentile >= 3;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'consistency_king':
-        progress = Math.min(100, (currentStats.consecutiveTopPercentile / 5) * 100);
-        earned = currentStats.consecutiveTopPercentile >= 5;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'reliability_master':
-        progress = Math.min(100, (currentStats.consecutiveTopPercentile / 10) * 100);
-        earned = currentStats.consecutiveTopPercentile >= 10;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'forecasting_machine':
-        progress = Math.min(100, (currentStats.consecutiveTopPercentile / 20) * 100);
-        earned = currentStats.consecutiveTopPercentile >= 20;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
 
       // Social Badges
@@ -120,22 +128,26 @@ export const checkBadgeEarning = (
         earned = currentStats.followers >= 500;
         break;
 
-      // Position Badges
+      // Position Badges - These require top 10th percentile performance, not just ranking creation
       case 'qb_whisperer':
-        progress = Math.min(100, (currentStats.rankingsByPosition.QB / 3) * 100);
-        earned = currentStats.rankingsByPosition.QB >= 3;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'rb_oracle':
-        progress = Math.min(100, (currentStats.rankingsByPosition.RB / 3) * 100);
-        earned = currentStats.rankingsByPosition.RB >= 3;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'wr_savant':
-        progress = Math.min(100, (currentStats.rankingsByPosition.WR / 3) * 100);
-        earned = currentStats.rankingsByPosition.WR >= 3;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
       case 'te_expert':
-        progress = Math.min(100, (currentStats.rankingsByPosition.TE / 3) * 100);
-        earned = currentStats.rankingsByPosition.TE >= 3;
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
 
       // Special Badges
@@ -150,6 +162,45 @@ export const checkBadgeEarning = (
       case 'founding_forecaster':
         progress = currentStats.isFoundingMember ? 100 : 0;
         earned = currentStats.isFoundingMember;
+        break;
+
+      // Seasonal Badges - These require actual percentile data which isn't available yet
+      case 'week_1_prophet':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
+        break;
+      case 'playoff_predictor':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
+        break;
+      case 'season_sage':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
+        break;
+
+      // Milestone Badges - These require actual percentile data which isn't available yet
+      case 'perfect_prophet':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
+        break;
+      case 'triple_threat':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
+        break;
+      case 'position_master':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
+        break;
+      case 'gridcasters_veteran':
+        // TODO: Implement actual percentile checking when percentiles are available
+        progress = 0;
+        earned = false;
         break;
 
       // Default case for badges not yet implemented

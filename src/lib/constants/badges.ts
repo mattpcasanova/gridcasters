@@ -305,16 +305,7 @@ export const BADGES: Badge[] = [
     tier: 'verified',
     requirement: 0
   },
-  {
-    id: 'beta_tester',
-    name: 'Beta Tester',
-    description: 'Early GridCasters beta participant',
-    subtitle: 'Helped shape GridCasters from the beginning!',
-    icon: '/badges/beta_tester.png',
-    category: 'special',
-    tier: 'special',
-    requirement: 0
-  },
+
   {
     id: 'founding_forecaster',
     name: 'Founding Forecaster',
@@ -374,7 +365,6 @@ export const getTierBgColor = (tier: Badge['tier']) => {
 export const getBadgeIconBg = (badgeId: string, tier: Badge['tier']) => {
   // Special cases for specific badges
   switch (badgeId) {
-    case 'beta_tester':
     case 'founding_forecaster':
       return 'bg-gradient-to-br from-blue-500 to-green-500'
     case 'perfect_prophet':
@@ -385,13 +375,13 @@ export const getBadgeIconBg = (badgeId: string, tier: Badge['tier']) => {
       // Default tier-based colors
       switch (tier) {
         case 'bronze':
-          return 'bg-gradient-to-br from-amber-500 to-amber-600'
+          return 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-200 border border-orange-300'
         case 'silver':
-          return 'bg-gradient-to-br from-slate-400 to-slate-500'
+          return 'bg-gradient-to-br from-slate-400 to-slate-600 shadow-lg shadow-slate-200 border border-slate-300'
         case 'gold':
-          return 'bg-gradient-to-br from-yellow-400 to-yellow-500'
+          return 'bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-lg shadow-yellow-200 border border-yellow-300'
         case 'diamond':
-          return 'bg-gradient-to-br from-blue-400 to-blue-500'
+          return 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-200 border border-blue-300'
         case 'platinum':
           return 'bg-gradient-to-br from-purple-400 to-purple-500'
         case 'verified':

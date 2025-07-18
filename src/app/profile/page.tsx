@@ -142,7 +142,7 @@ export default function Profile() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [isSelectingBadges, setIsSelectingBadges] = useState(false)
   const [earnedBadges, setEarnedBadges] = useState<{[key: string]: { earned: boolean, progress: number }}>({})
-  const [selectedBadges, setSelectedBadges] = useState<string[]>(['beta_tester', 'founding_forecaster', 'rookie_forecaster'])
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [editForm, setEditForm] = useState({
@@ -223,13 +223,14 @@ export default function Profile() {
     fetchProfile()
   }, [supabase, router])
 
-  // Fetch badge progress
+  // Fetch badge progress and selected badges
   useEffect(() => {
-    const fetchBadgeProgress = async () => {
+    const fetchBadgeData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
+        // Fetch badge progress
         const { data: badgeProgress, error } = await supabase
           .from('badge_progress')
           .select('badge_id, earned, progress')
@@ -249,18 +250,33 @@ export default function Profile() {
           }
         })
 
-        // Debug: Log badge progress data
+        setEarnedBadges(badgeData)
+
+        // Fetch selected badges
+        const { data: selectedBadgesData, error: selectedError } = await supabase
+          .from('user_badge_selections')
+          .select('badge_id')
+          .eq('user_id', user.id)
+          .order('display_order', { ascending: true })
+
+        if (selectedError) {
+          console.error('Error fetching selected badges:', selectedError)
+          return
+        }
+
+        const selectedBadgeIds = selectedBadgesData?.map((item: any) => item.badge_id) || []
+        setSelectedBadges(selectedBadgeIds)
+
+        // Debug: Log badge data
         console.log('Badge progress data:', badgeProgress)
         console.log('Processed badge data:', badgeData)
-        console.log('Beta Tester status:', badgeData.beta_tester)
-
-        setEarnedBadges(badgeData)
+        console.log('Selected badges:', selectedBadgeIds)
       } catch (error) {
-        console.error('Error fetching badge progress:', error)
+        console.error('Error fetching badge data:', error)
       }
     }
 
-    fetchBadgeProgress()
+    fetchBadgeData()
   }, [supabase])
 
   // Handle success messages from URL params
@@ -356,18 +372,41 @@ export default function Profile() {
     }
   }
 
-  const toggleBadgeSelection = (badgeId: string) => {
+  const toggleBadgeSelection = async (badgeId: string) => {
     if (!earnedBadges[badgeId]?.earned) return
     
-    setSelectedBadges(prev => {
-      if (prev.includes(badgeId)) {
-        return prev.filter(id => id !== badgeId)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const newSelectedBadges = selectedBadges.includes(badgeId)
+      ? selectedBadges.filter(id => id !== badgeId)
+      : selectedBadges.length < 3
+      ? [...selectedBadges, badgeId]
+      : selectedBadges
+
+    setSelectedBadges(newSelectedBadges)
+
+    // Save to database
+    try {
+      const { error } = await supabase.rpc('upsert_user_badge_selections', {
+        user_uuid: user.id,
+        badge_ids: newSelectedBadges
+      })
+
+      if (error) {
+        console.error('Error saving badge selections:', error)
+        toast.error('Failed to save badge selection')
+        // Revert the state if save failed
+        setSelectedBadges(selectedBadges)
+      } else {
+        toast.success(newSelectedBadges.length > selectedBadges.length ? 'Badge added to profile' : 'Badge removed from profile')
       }
-      if (prev.length < 3) {
-        return [...prev, badgeId]
-      }
-      return prev
-    })
+    } catch (error) {
+      console.error('Error saving badge selections:', error)
+      toast.error('Failed to save badge selection')
+      // Revert the state if save failed
+      setSelectedBadges(selectedBadges)
+    }
   }
 
   const getInitials = (profile: UserProfile) => {
@@ -620,7 +659,7 @@ export default function Profile() {
                       className={`relative flex items-center space-x-3 p-4 rounded-lg ${getTierBgColor(badge.tier)} transition-all`}
                     >
                       <div
-                        className={`relative w-12 h-12 flex items-center justify-center p-3 rounded-lg ${
+                        className={`relative w-20 h-20 flex items-center justify-center rounded-lg shadow-sm transition-all duration-200 hover:scale-105 ${
                           badgeStatus?.earned || selectedBadges.includes(badgeId)
                             ? getBadgeIconBg(badge.id, badge.tier)
                             : "bg-slate-300 dark:bg-slate-600"
@@ -629,9 +668,9 @@ export default function Profile() {
                         <Image
                           src={badge.icon}
                           alt={badge.name}
-                          width={48}
-                          height={48}
-                          className="w-full h-full object-contain"
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-contain p-1"
                           quality={100}
                         />
                       </div>
@@ -872,19 +911,19 @@ export default function Profile() {
                             >
                               <div className="flex items-start space-x-3">
                                 <div
-                                  className={`p-3 rounded-lg ${
+                                  className={`rounded-lg shadow-sm transition-all duration-200 hover:scale-105 ${
                                     badgeStatus?.earned
                                       ? getBadgeIconBg(badge.id, badge.tier)
                                       : "bg-slate-300 dark:bg-slate-600"
                                   }`}
                                 >
-                                  <div className="relative w-12 h-12 flex items-center justify-center">
+                                  <div className="relative w-20 h-20 flex items-center justify-center">
                                     <Image
                                       src={badge.icon}
                                       alt={badge.name}
-                                      width={48}
-                                      height={48}
-                                      className="w-full h-full object-contain"
+                                      width={80}
+                                      height={80}
+                                      className="w-full h-full object-contain p-1"
                                       quality={100}
                                     />
                                   </div>
