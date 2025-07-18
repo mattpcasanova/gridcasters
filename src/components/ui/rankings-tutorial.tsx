@@ -135,7 +135,7 @@ const tutorialSteps = [
 
 export function RankingsTutorial({ isOpen, onClose }: RankingsTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [dontShowAgain, setDontShowAgain] = useState(true);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const supabase = useSupabase();
 
