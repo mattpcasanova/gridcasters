@@ -36,10 +36,12 @@ import { useSleeperRankings } from "@/lib/hooks/use-sleeper-rankings"
 import { PlayerRankingCard } from "@/components/ranking/player-ranking-card"
 import { PlayerModal } from "@/components/ranking/player-modal"
 import { RankingCutoffSeparator } from "@/components/ranking/ranking-cutoff-separator"
+import { RankingsTutorial } from "@/components/ui/rankings-tutorial"
 import { RankingPlayer } from "@/lib/types"
 import { getAvailableWeeks, getCurrentSeasonInfo, getDefaultWeek } from "@/lib/utils/season"
 import { getPositionLimits } from "@/lib/constants/position-limits"
 import { getPositionColor } from "@/lib/sleeper-utils"
+import { useSupabase } from "@/lib/hooks/use-supabase"
 
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
@@ -55,6 +57,9 @@ export default function Rankings() {
   const [searchTerm, setSearchTerm] = useState("")
   const [myGuysFilter, setMyGuysFilter] = useState("All")
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [tutorialChecked, setTutorialChecked] = useState(false)
+  const supabase = useSupabase()
 
   
   // Check if user has preseason rankings and initialize week
@@ -108,6 +113,32 @@ export default function Rankings() {
     
     initializeWeekSelection();
   }, []); // Only run once on mount
+
+  // Check if user has dismissed the tutorial
+  useEffect(() => {
+    const checkTutorialStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('tutorial_dismissed')
+            .eq('id', user.id)
+            .single();
+          
+          // Show tutorial if user hasn't dismissed it
+          if (profile && !profile.tutorial_dismissed) {
+            setShowTutorial(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking tutorial status:', error);
+        // If there's an error, don't show the tutorial to avoid blocking the user
+      }
+    };
+    
+    checkTutorialStatus();
+  }, [supabase]);
 
   // Save scoring format to localStorage when it changes
   useEffect(() => {
@@ -508,6 +539,11 @@ export default function Rankings() {
         />
       )}
 
+      {/* Tutorial Modal */}
+      <RankingsTutorial
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+      />
 
     </div>
   )
