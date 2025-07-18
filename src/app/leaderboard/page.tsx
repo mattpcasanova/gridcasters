@@ -87,15 +87,17 @@ export default function Leaderboard() {
   }
 
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([])
+  const [searchResults, setSearchResults] = useState<LeaderboardUser[]>([])
   const [groups, setGroups] = useState<GroupData[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
   const { setRightButtons } = useHeaderButtons()
   const supabase = useSupabase()
 
-  // Fetch real profiles for leaderboard
+  // Fetch top 10 users for leaderboard
   useEffect(() => {
-    const fetchProfiles = async () => {
+    const fetchTopUsers = async () => {
       try {
         // Get current user first
         const { data: { user } } = await supabase.auth.getUser()
@@ -105,39 +107,55 @@ export default function Leaderboard() {
         }
         setCurrentUserId(user.id)
 
-        // Fetch all profiles
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url, is_verified, created_at')
-          .order('created_at', { ascending: false })
+        // Fetch top 10 users by accuracy score (or by creation date if no accuracy yet)
+        const { data: topUsers, error } = await supabase
+          .from('rankings')
+          .select(`
+            user_id,
+            accuracy_score,
+            profiles!inner (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              is_verified,
+              created_at
+            )
+          `)
+          .not('accuracy_score', 'is', null)
+          .order('accuracy_score', { ascending: false })
+          .limit(10)
 
         if (error) {
-          console.error('Error fetching profiles:', error)
+          console.error('Error fetching top users:', error)
           return
         }
 
-        // Transform profiles to leaderboard format
-        const leaderboardUsers: LeaderboardUser[] = profiles.map((profile, index) => ({
-          id: profile.id,
-          rank: index + 1,
-          user: {
-            name: profile.display_name || profile.username,
-            username: profile.username,
-            avatar: profile.avatar_url || "/placeholder-user.jpg",
-            verified: profile.is_verified || false,
-          },
-          accuracy: 0, // Will be calculated from rankings
-          rankings: 0, // Will be fetched separately
-          followers: 0, // Will be fetched separately
-          isFollowing: false, // Will be checked separately
-          isCurrentUser: profile.id === user.id,
-          weeklyAccuracy: 0,
-          weeklyRank: 0,
-          change: 0,
-          weeklyChange: 0,
-        }))
+        // Transform to leaderboard format
+        const leaderboardUsers: LeaderboardUser[] = topUsers.map((ranking, index) => {
+          const profile = ranking.profiles as any; // Type assertion for now
+          return {
+            id: ranking.user_id,
+            rank: index + 1,
+            user: {
+              name: profile.display_name || profile.username,
+              username: profile.username,
+              avatar: profile.avatar_url || "/placeholder-user.jpg",
+              verified: profile.is_verified || false,
+            },
+            accuracy: ranking.accuracy_score || 0,
+            rankings: 0, // Will be fetched separately
+            followers: 0, // Will be fetched separately
+            isFollowing: false, // Will be checked separately
+            isCurrentUser: ranking.user_id === user.id,
+            weeklyAccuracy: 0,
+            weeklyRank: 0,
+            change: 0,
+            weeklyChange: 0,
+          };
+        })
 
-        // Get follow status for each user
+        // Get follow status for top users
         const { data: followData } = await supabase
           .from('follows')
           .select('following_id')
@@ -153,11 +171,11 @@ export default function Leaderboard() {
 
         setLeaderboardData(updatedUsers)
       } catch (error) {
-        console.error('Error fetching profiles:', error)
+        console.error('Error fetching top users:', error)
       }
     }
 
-    fetchProfiles()
+    fetchTopUsers()
   }, [supabase])
 
   // Fetch ranking counts, follower counts, and accuracy scores
@@ -220,6 +238,89 @@ export default function Leaderboard() {
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
   const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
+
+  // Search function to fetch users by name or username
+  const searchUsers = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setSearchResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Search profiles by name or username
+      const { data: searchData, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          display_name,
+          avatar_url,
+          is_verified,
+          created_at
+        `)
+        .or(`display_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
+        .limit(20)
+
+      if (error) {
+        console.error('Error searching users:', error)
+        return
+      }
+
+      // Get follow status for search results
+      const { data: followData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id)
+
+      const followingIds = new Set(followData?.map(f => f.following_id) || [])
+
+      // Transform search results
+      const searchUsers: LeaderboardUser[] = searchData.map((profile) => ({
+        id: profile.id,
+        rank: 0, // Will be calculated if needed
+        user: {
+          name: profile.display_name || profile.username,
+          username: profile.username,
+          avatar: profile.avatar_url || "/placeholder-user.jpg",
+          verified: profile.is_verified || false,
+        },
+        accuracy: 0, // Will be fetched separately if needed
+        rankings: 0,
+        followers: 0,
+        isFollowing: followingIds.has(profile.id),
+        isCurrentUser: profile.id === user.id,
+        weeklyAccuracy: 0,
+        weeklyRank: 0,
+        change: 0,
+        weeklyChange: 0,
+      }))
+
+      setSearchResults(searchUsers)
+    } catch (error) {
+      console.error('Error searching users:', error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // Trigger search when search term changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.length >= 2) {
+        searchUsers(searchTerm)
+      } else {
+        setSearchResults([])
+        setIsSearching(false)
+      }
+    }, 300) // Debounce search
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm])
 
   // Fetch user's groups from database
   useEffect(() => {
@@ -413,10 +514,8 @@ export default function Leaderboard() {
     )
   }
 
-  const filteredData = leaderboardData.filter((user: LeaderboardUser) =>
-    user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Use search results if searching, otherwise use top 10 leaderboard data
+  const filteredData = searchTerm.length >= 2 ? searchResults : leaderboardData
 
   const weeklyData = [...leaderboardData].sort((a, b) => (a.weeklyRank || 999) - (b.weeklyRank || 999))
 
@@ -672,10 +771,21 @@ export default function Leaderboard() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-md"
                   />
+                  {isSearching && (
+                    <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                      Searching...
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
-                  {filteredData.map((entry: LeaderboardUser) => renderUserRow(entry))}
+                  {searchTerm.length >= 2 && searchResults.length === 0 && !isSearching ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-500 dark:text-slate-400">No users found matching "{searchTerm}"</p>
+                    </div>
+                  ) : (
+                    filteredData.map((entry: LeaderboardUser) => renderUserRow(entry))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -726,15 +836,22 @@ export default function Leaderboard() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-md"
                   />
+                  {isSearching && (
+                    <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                      Searching...
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
-                  {weeklyData
-                    .filter((user: LeaderboardUser) =>
-                      user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      user.user.username.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((entry: LeaderboardUser) => renderUserRow(entry, true))}
+                  {searchTerm.length >= 2 && searchResults.length === 0 && !isSearching ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-500 dark:text-slate-400">No users found matching "{searchTerm}"</p>
+                    </div>
+                  ) : (
+                    (searchTerm.length >= 2 ? searchResults : weeklyData)
+                      .map((entry: LeaderboardUser) => renderUserRow(entry, true))
+                  )}
                 </div>
               </CardContent>
             </Card>
