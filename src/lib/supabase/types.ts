@@ -18,8 +18,9 @@ export interface Database {
           avatar_url: string | null
           is_private: boolean
           is_verified: boolean
-          tutorial_dismissed: boolean
-          created_at: string
+                  tutorial_dismissed: boolean
+        birth_date: string | null
+        created_at: string
         }
         Insert: {
           id: string
@@ -30,6 +31,7 @@ export interface Database {
           is_private?: boolean
           is_verified?: boolean
           tutorial_dismissed?: boolean
+          birth_date?: string | null
           created_at?: string
         }
         Update: {
@@ -41,6 +43,7 @@ export interface Database {
           is_private?: boolean
           is_verified?: boolean
           tutorial_dismissed?: boolean
+          birth_date?: string | null
           created_at?: string
         }
       }

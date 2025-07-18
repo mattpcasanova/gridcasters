@@ -92,7 +92,7 @@ export default function SignIn() {
     setErrors({})
 
     try {
-      await signIn(supabase, formData)
+      await signIn(supabase, { ...formData, rememberMe })
       
       const redirectTo = searchParams.get('redirect') || '/dashboard'
       toast.success('Welcome back!')

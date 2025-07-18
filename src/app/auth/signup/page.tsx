@@ -23,11 +23,17 @@ export default function SignUp() {
     email: '',
     password: '',
     username: '',
+    firstName: '',
+    lastName: '',
+    birthDate: '',
   })
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     username?: string;
+    firstName?: string;
+    lastName?: string;
+    birthDate?: string;
     general?: string;
   }>({})
 
@@ -59,6 +65,40 @@ export default function SignUp() {
       newErrors.username = 'Username can only contain letters, numbers, and underscores';
     }
     
+    // First name validation
+    if (!formData.firstName) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    }
+    
+    // Last name validation
+    if (!formData.lastName) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
+    }
+    
+    // Birth date validation
+    if (!formData.birthDate) {
+      newErrors.birthDate = 'Birth date is required';
+    } else {
+      const birthDate = new Date(formData.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      if (age < 13) {
+        newErrors.birthDate = 'You must be at least 13 years old to create an account';
+      } else if (age > 120) {
+        newErrors.birthDate = 'Please enter a valid birth date';
+      }
+    }
+    
     // Terms agreement
     if (!agreeToTerms) {
       newErrors.general = 'You must agree to the Terms of Service and Privacy Policy';
@@ -88,7 +128,10 @@ export default function SignUp() {
       const result = await signUp(supabase, {
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
-        username: formData.username.toLowerCase().trim()
+        username: formData.username.toLowerCase().trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        birthDate: formData.birthDate
       });
       
       // Check if email confirmation is needed
@@ -223,6 +266,99 @@ export default function SignUp() {
           {errors.username && (
             <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.username}</p>
           )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label 
+              htmlFor="firstName" 
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              First Name
+            </Label>
+            <Input
+              id="firstName"
+              name="firstName"
+              type="text"
+              autoComplete="given-name"
+              required
+              className={cn(
+                "mt-1",
+                errors.firstName && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
+              )}
+              placeholder="Enter your first name"
+              value={formData.firstName}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, firstName: e.target.value }))
+                if (errors.firstName) setErrors(prev => ({ ...prev, firstName: undefined }))
+              }}
+              disabled={isLoading}
+            />
+            {errors.firstName && (
+              <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.firstName}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label 
+              htmlFor="lastName" 
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Last Name
+            </Label>
+            <Input
+              id="lastName"
+              name="lastName"
+              type="text"
+              autoComplete="family-name"
+              required
+              className={cn(
+                "mt-1",
+                errors.lastName && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
+              )}
+              placeholder="Enter your last name"
+              value={formData.lastName}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, lastName: e.target.value }))
+                if (errors.lastName) setErrors(prev => ({ ...prev, lastName: undefined }))
+              }}
+              disabled={isLoading}
+            />
+            {errors.lastName && (
+              <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.lastName}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label 
+            htmlFor="birthDate" 
+            className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+          >
+            Birth Date
+          </Label>
+          <Input
+            id="birthDate"
+            name="birthDate"
+            type="date"
+            required
+            className={cn(
+              "mt-1",
+              errors.birthDate && "border-red-500 dark:border-red-400 focus-visible:ring-red-500"
+            )}
+            value={formData.birthDate}
+            onChange={(e) => {
+              setFormData(prev => ({ ...prev, birthDate: e.target.value }))
+              if (errors.birthDate) setErrors(prev => ({ ...prev, birthDate: undefined }))
+            }}
+            disabled={isLoading}
+          />
+          {errors.birthDate && (
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">{errors.birthDate}</p>
+          )}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            You must be at least 13 years old to create an account
+          </p>
         </div>
 
         <div className="space-y-2">

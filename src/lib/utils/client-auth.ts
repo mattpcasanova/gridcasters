@@ -12,6 +12,9 @@ export type SignUpData = {
   email: string;
   password: string;
   username: string;
+  firstName: string;
+  lastName: string;
+  birthDate: string;
 };
 
 export type SignUpResult = {
@@ -40,7 +43,7 @@ async function waitForRateLimit() {
 
 export async function signIn(
   supabase: SupabaseClient<Database>,
-  { emailOrUsername, password }: { emailOrUsername: string; password: string }
+  { emailOrUsername, password, rememberMe }: { emailOrUsername: string; password: string; rememberMe?: boolean }
 ) {
   console.log('Starting sign in for:', emailOrUsername);
 
@@ -77,6 +80,14 @@ export async function signIn(
       password,
     });
 
+    // Set session persistence based on remember me
+    if (rememberMe) {
+      await supabase.auth.setSession({
+        access_token: authData.session?.access_token || '',
+        refresh_token: authData.session?.refresh_token || '',
+      });
+    }
+
     if (authError) {
       console.error('Sign in failed:', authError.message);
       
@@ -102,7 +113,7 @@ export async function signIn(
 
 export async function signUp(
   supabase: SupabaseClient<Database>,
-  { email, password, username }: SignUpData
+  { email, password, username, firstName, lastName, birthDate }: SignUpData
 ): Promise<SignUpResult> {
   console.log('Starting sign up for:', email);
 
@@ -116,7 +127,10 @@ export async function signUp(
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         data: {
           username: username,
-          display_name: username
+          display_name: username,
+          first_name: firstName,
+          last_name: lastName,
+          birth_date: birthDate
         }
       }
     });
