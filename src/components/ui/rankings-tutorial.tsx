@@ -62,6 +62,9 @@ const tutorialSteps = [
         <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
           Higher accuracy scores mean your rankings were more accurate compared to other users and projection systems.
         </p>
+        <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
+          Each position has specific cutoffs for scoring: <strong className="text-purple-600 dark:text-purple-400">QB (12 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">RB (24 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">WR (36 spots)</strong>, <strong className="text-purple-600 dark:text-purple-400">TE (12 spots)</strong>. You can rank more players for your own reference, but only the cutoff positions count for leaderboard scoring and are visible to others.
+        </p>
         <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
           <p className="text-sm text-purple-800 dark:text-purple-200 font-medium">
             <strong>Need more details?</strong> Click the help icon in the top right corner for comprehensive information about scoring and percentiles.
@@ -98,7 +101,7 @@ const tutorialSteps = [
           Create consensus rankings by combining your rankings with those of trusted users you follow. This helps you make better decisions by leveraging the wisdom of the crowd.
         </p>
         <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
-          Aggregate rankings average the rankings from multiple sources, giving you a more balanced perspective on player values.
+          Aggregate rankings average the rankings from multiple sources, giving you a more balanced perspective on player values. You can include between <strong className="text-indigo-600 dark:text-indigo-400">2 and 6 rankings</strong> in your aggregate.
         </p>
         <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800">
           <p className="text-sm text-indigo-800 dark:text-indigo-200 font-medium">
@@ -184,13 +187,27 @@ export function RankingsTutorial({ isOpen, onClose }: RankingsTutorialProps) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl border-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
-        <CardHeader className="relative pb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-b">
+        <CardHeader className={`relative pb-6 border-b ${
+          currentStep === 0 ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20' :
+          currentStep === 1 ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20' :
+          currentStep === 2 ? 'bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20' :
+          currentStep === 3 ? 'bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20' :
+          currentStep === 4 ? 'bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20' :
+          'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20'
+        }`}>
           <div className="flex items-center gap-4">
             <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-800/80 shadow-sm">
               {currentTutorialStep.icon}
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <CardTitle className={`text-2xl font-bold bg-clip-text text-transparent ${
+                currentStep === 0 ? 'bg-gradient-to-r from-blue-600 to-indigo-600' :
+                currentStep === 1 ? 'bg-gradient-to-r from-green-600 to-emerald-600' :
+                currentStep === 2 ? 'bg-gradient-to-r from-purple-600 to-violet-600' :
+                currentStep === 3 ? 'bg-gradient-to-r from-orange-600 to-amber-600' :
+                currentStep === 4 ? 'bg-gradient-to-r from-indigo-600 to-blue-600' :
+                'bg-gradient-to-r from-emerald-600 to-teal-600'
+              }`}>
                 {currentTutorialStep.title}
               </CardTitle>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
