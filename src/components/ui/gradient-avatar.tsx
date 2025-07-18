@@ -1,6 +1,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/avatars';
 
 interface GradientAvatarProps {
   src?: string | null;
@@ -45,7 +46,7 @@ export function GradientAvatar({
               alt={alt}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = "/placeholder-user.jpg";
+                target.src = DEFAULT_AVATAR_URL;
               }}
             />
             <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-800">

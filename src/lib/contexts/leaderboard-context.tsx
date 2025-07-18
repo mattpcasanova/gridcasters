@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useSupabase } from '@/lib/hooks/use-supabase';
 import { getCurrentSeasonInfo, isWeekComplete, getMostRecentCompletedWeek } from '@/lib/utils/season';
+import { DEFAULT_AVATAR_URL } from '@/lib/constants/avatars';
 
 type LeaderboardView = 'global' | 'friends' | `group_${string}`;
 
@@ -123,7 +124,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
               username: ranking.profiles.username,
               accuracy: ranking.accuracy_score || 0,
               rank: index + 1,
-              avatar: ranking.profiles.avatar_url || '/placeholder-user.jpg',
+              avatar: ranking.profiles.avatar_url || DEFAULT_AVATAR_URL,
               followers: 0, // Would need separate query for followers
               isCurrentUser: ranking.user_id === currentUser.id
             }));
@@ -170,7 +171,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
                 username: ranking.profiles.username,
                 accuracy: ranking.accuracy_score || 0,
                 rank: index + 1,
-                avatar: ranking.profiles.avatar_url || '/placeholder-user.jpg',
+                avatar: ranking.profiles.avatar_url || DEFAULT_AVATAR_URL,
                 followers: 0,
                 isCurrentUser: ranking.user_id === currentUser.id
               }));
@@ -221,7 +222,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
                 username: ranking.profiles.username,
                 accuracy: ranking.accuracy_score || 0,
                 rank: index + 1,
-                avatar: ranking.profiles.avatar_url || '/placeholder-user.jpg',
+                avatar: ranking.profiles.avatar_url || DEFAULT_AVATAR_URL,
                 followers: 0,
                 isCurrentUser: ranking.user_id === currentUser.id
               }));
@@ -238,7 +239,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
               username: currentUser.username,
               accuracy: 0,
               rank: 1,
-              avatar: '/placeholder-user.jpg',
+              avatar: DEFAULT_AVATAR_URL,
               followers: 0,
               isCurrentUser: true
             }

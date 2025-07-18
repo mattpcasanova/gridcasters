@@ -1,0 +1,1 @@
+export const DEFAULT_AVATAR_URL = "https://phqchtsxgrciqvhuevsr.supabase.co/storage/v1/object/public/profile-avatars/gridcasters-logo.png" 

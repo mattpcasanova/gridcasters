@@ -15,6 +15,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { toast } from "sonner"
+import { DEFAULT_AVATAR_URL } from "@/lib/constants/avatars"
 
 interface User {
   id: string;
@@ -94,7 +95,7 @@ export default function FindUsers() {
           followers: userFollowerCounts.get(profile.id) || 0,
           following: followingIds.has(profile.id),
           verified: profile.is_verified || false,
-          avatar: profile.avatar_url || "/placeholder-user.jpg",
+          avatar: profile.avatar_url || DEFAULT_AVATAR_URL,
         }))
 
         setUsers(transformedUsers)

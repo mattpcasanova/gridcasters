@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation"
 import Image from "next/image"
 import { NoSSR } from "@/components/ui/no-ssr"
 import { useSupabase } from "@/lib/hooks/use-supabase"
+import { DEFAULT_AVATAR_URL } from "@/lib/constants/avatars"
 
 interface NavigationHeaderProps {
   rightButtons?: React.ReactNode
@@ -191,7 +192,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
                 <Avatar className="cursor-pointer w-12 h-12 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px]">
                   <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
                     <AvatarImage 
-                      src={profile?.avatar_url || "/placeholder-user.jpg"} 
+                      src={profile?.avatar_url || DEFAULT_AVATAR_URL} 
                       className="w-full h-full object-cover"
                     />
                   <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>

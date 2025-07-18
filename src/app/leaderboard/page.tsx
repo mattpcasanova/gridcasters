@@ -19,6 +19,7 @@ import { useLeaderboard } from "@/lib/contexts/leaderboard-context"
 import { getCurrentSeasonInfo, isWeekComplete } from "@/lib/utils/season"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { toast } from "sonner"
+import { DEFAULT_AVATAR_URL } from "@/lib/constants/avatars"
 
 interface LeaderboardUser {
   id: string;
@@ -144,15 +145,15 @@ export default function Leaderboard() {
           .slice(0, 10)
           .map((ranking, index) => {
             const profile = ranking.profiles as any; // Type assertion for now
-            return {
-              id: ranking.user_id,
-              rank: index + 1,
-              user: {
-                name: profile.display_name || profile.username,
-                username: profile.username,
-                avatar: profile.avatar_url || "/placeholder-user.jpg",
-                verified: profile.is_verified || false,
-              },
+                      return {
+            id: ranking.user_id,
+            rank: index + 1,
+            user: {
+              name: profile.display_name || profile.username,
+              username: profile.username,
+              avatar: profile.avatar_url || DEFAULT_AVATAR_URL,
+              verified: profile.is_verified || false,
+            },
               accuracy: ranking.accuracy_score || 0,
               rankings: 0, // Will be fetched separately
               followers: 0, // Will be fetched separately
@@ -307,7 +308,7 @@ export default function Leaderboard() {
           user: {
             name: profile.display_name || profile.username,
             username: profile.username,
-            avatar: profile.avatar_url || "/placeholder-user.jpg",
+            avatar: profile.avatar_url || DEFAULT_AVATAR_URL,
             verified: profile.is_verified || false,
           },
           accuracy: 0, // Will be fetched separately if needed
@@ -393,7 +394,7 @@ export default function Leaderboard() {
           user: {
             name: ownProfile.display_name || ownProfile.username,
             username: ownProfile.username,
-            avatar: ownProfile.avatar_url || "/placeholder-user.jpg",
+            avatar: ownProfile.avatar_url || DEFAULT_AVATAR_URL,
             verified: ownProfile.is_verified || false,
           },
           accuracy: 0, // Will be fetched separately
@@ -420,7 +421,7 @@ export default function Leaderboard() {
             user: {
               name: profile.display_name || profile.username,
               username: profile.username,
-              avatar: profile.avatar_url || "/placeholder-user.jpg",
+              avatar: profile.avatar_url || DEFAULT_AVATAR_URL,
               verified: profile.is_verified || false,
             },
             accuracy: 0, // Will be fetched separately
