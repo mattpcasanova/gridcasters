@@ -1,212 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GradientAvatar } from "@/components/ui/gradient-avatar"
+import { GradientLoading } from "@/components/ui/gradient-loading"
+import { AccuracyCircle } from "@/components/ui/accuracy-circle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { SearchInput } from "@/components/ui/search-input"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { CircularProgress } from "@/components/ui/circular-progress"
-import { X, Plus, BarChart3, TrendingUp, Save, Share, ArrowLeft, Users, Trophy, Filter } from "lucide-react"
+import { X, Plus, BarChart3, TrendingUp, Save, ArrowLeft, Users, Trophy, Filter, Loader2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
 import { useSleeperRankings } from "@/lib/hooks/use-sleeper-rankings"
-import { getPositionColor } from "@/lib/sleeper-utils"
+import { getPositionColor, getPlayerAvatarURL, getTeamLogoURL } from "@/lib/sleeper-utils"
+import { getCurrentSeasonInfo, getAvailableWeeks } from "@/lib/utils/season"
+import { useSupabase } from "@/lib/hooks/use-supabase"
+import { PlayerRankingCard } from '@/components/ranking/player-ranking-card';
+import { getPositionLimits } from '@/lib/constants/position-limits';
+import { globalCache, CACHE_KEYS, generateCacheKey } from '@/lib/utils/cache';
 
-const availableRankings = [
-  {
-    id: "user1-week8-qb",
-    name: "Mike Chen's Week 8 QB",
-    type: "user",
-    user: "Mike Chen",
-    verified: true,
-    accuracy: 94.2,
-    week: "Week 8",
-    position: "QB",
-    leagueType: "Half PPR",
-  },
-  {
-    id: "user2-week8-qb",
-    name: "Sarah Johnson's Week 8 QB",
-    type: "user",
-    user: "Sarah Johnson",
-    verified: false,
-    accuracy: 91.8,
-    week: "Week 8",
-    position: "QB",
-    leagueType: "Full PPR",
-  },
-  {
-    id: "espn-week8-qb",
-    name: "ESPN Week 8 QB Rankings",
-    type: "expert",
-    user: "ESPN",
-    verified: true,
-    accuracy: 88.5,
-    week: "Week 8",
-    position: "QB",
-    leagueType: "Half PPR",
-  },
-  {
-    id: "fantasypros-week8-qb",
-    name: "FantasyPros Week 8 QB",
-    type: "expert",
-    user: "FantasyPros",
-    verified: true,
-    accuracy: 89.2,
-    week: "Week 8",
-    position: "QB",
-    leagueType: "Standard",
-  },
-  {
-    id: "user3-week8-qb",
-    name: "Alex Rodriguez's Week 8 QB",
-    type: "user",
-    user: "Alex Rodriguez",
-    verified: false,
-    accuracy: 85.1,
-    week: "Week 8",
-    position: "QB",
-    leagueType: "Half PPR",
-  },
-  {
-    id: "user1-week7-qb",
-    name: "Mike Chen's Week 7 QB",
-    type: "user",
-    user: "Mike Chen",
-    verified: true,
-    accuracy: 96.1,
-    week: "Week 7",
-    position: "QB",
-    leagueType: "Full PPR",
-  },
-]
+interface AvailableRanking {
+  id: string;
+  name: string;
+  type: "user" | "projection";
+  user: string;
+  verified: boolean;
+  accuracy: number;
+  week: string;
+  position: string;
+  leagueType: string;
+  userId?: string;
+  avatarUrl?: string | null;
+}
 
-const mockCommunityPlayers = [
-  {
-    id: "1",
-    name: "Josh Allen",
-    team: "BUF",
-    position: "QB",
-    averageRank: 1.2,
-    totalRankings: 847,
-    accuracy: 89.2,
-    trend: "up",
-    projectedPoints: 24.8,
-    rankings: [{ source: "Community Average", rank: 1.2 }],
-  },
-  {
-    id: "2",
-    name: "Lamar Jackson",
-    team: "BAL",
-    position: "QB",
-    averageRank: 2.0,
-    totalRankings: 923,
-    accuracy: 91.7,
-    trend: "up",
-    projectedPoints: 23.2,
-    rankings: [{ source: "Community Average", rank: 2.0 }],
-  },
-  {
-    id: "3",
-    name: "Jalen Hurts",
-    team: "PHI",
-    position: "QB",
-    averageRank: 2.7,
-    totalRankings: 756,
-    accuracy: 87.4,
-    trend: "down",
-    projectedPoints: 22.1,
-    rankings: [{ source: "Community Average", rank: 2.7 }],
-  },
-  {
-    id: "4",
-    name: "Patrick Mahomes",
-    team: "KC",
-    position: "QB",
-    averageRank: 4.0,
-    totalRankings: 634,
-    accuracy: 85.9,
-    trend: "neutral",
-    projectedPoints: 21.9,
-    rankings: [{ source: "Community Average", rank: 4.0 }],
-  },
-]
-
-const mockAggregatedPlayers = [
-  {
-    id: "1",
-    name: "Josh Allen",
-    team: "BUF",
-    position: "QB",
-    averageRank: 1.2,
-    totalRankings: 3,
-    accuracy: 89.2,
-    trend: "up",
-    projectedPoints: 24.8,
-    rankings: [
-      { source: "Mike Chen", rank: 1 },
-      { source: "ESPN", rank: 2 },
-      { source: "FantasyPros", rank: 1 },
-    ],
-  },
-  {
-    id: "2",
-    name: "Lamar Jackson",
-    team: "BAL",
-    position: "QB",
-    averageRank: 2.0,
-    totalRankings: 3,
-    accuracy: 91.7,
-    trend: "up",
-    projectedPoints: 23.2,
-    rankings: [
-      { source: "Mike Chen", rank: 2 },
-      { source: "ESPN", rank: 1 },
-      { source: "FantasyPros", rank: 3 },
-    ],
-  },
-  {
-    id: "3",
-    name: "Jalen Hurts",
-    team: "PHI",
-    position: "QB",
-    averageRank: 2.7,
-    totalRankings: 3,
-    accuracy: 87.4,
-    trend: "down",
-    projectedPoints: 22.1,
-    rankings: [
-      { source: "Mike Chen", rank: 3 },
-      { source: "ESPN", rank: 3 },
-      { source: "FantasyPros", rank: 2 },
-    ],
-  },
-  {
-    id: "4",
-    name: "Patrick Mahomes",
-    team: "KC",
-    position: "QB",
-    averageRank: 4.0,
-    totalRankings: 3,
-    accuracy: 85.9,
-    trend: "neutral",
-    projectedPoints: 21.9,
-    rankings: [
-      { source: "Mike Chen", rank: 4 },
-      { source: "ESPN", rank: 4 },
-      { source: "FantasyPros", rank: 4 },
-    ],
-  },
-]
-
-
+interface CommunityPlayer {
+  id: string;
+  name: string;
+  team: string;
+  position: string;
+  averageRank: number;
+  totalRankings: number;
+  trend: "up" | "down" | "neutral";
+  projectedPoints: number;
+  rankings: Array<{ source: string; rank: number }>;
+}
 
 const getLeagueTypeColor = (leagueType: string) => {
   switch (leagueType) {
@@ -224,13 +69,20 @@ const getLeagueTypeColor = (leagueType: string) => {
 export default function AggregateRankings() {
   const [selectedRankings, setSelectedRankings] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedWeek, setSelectedWeek] = useState("Week 8")
-  const [selectedPosition, setSelectedPosition] = useState("QB")
-  const [selectedLeagueType, setSelectedLeagueType] = useState("Half PPR")
+  const [selectedWeek, setSelectedWeek] = useState<string>("")
+  const [selectedPosition, setSelectedPosition] = useState("OVR")
   const [showResults, setShowResults] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
   const [aggregateName, setAggregateName] = useState("")
+  const [availableRankings, setAvailableRankings] = useState<AvailableRanking[]>([])
+  const [loadingRankings, setLoadingRankings] = useState(true)
+  const [loadingAggregate, setLoadingAggregate] = useState(false)
+  
+  // Scoring format state
+  const [scoringFormat, setScoringFormat] = useState('half_ppr');
+
+  const supabase = useSupabase()
   
   // Use Sleeper API for real player data
   const { 
@@ -240,7 +92,185 @@ export default function AggregateRankings() {
     currentWeek 
   } = useSleeperRankings(selectedPosition)
 
+  // Initialize week selection based on current season
+  useEffect(() => {
+    const seasonInfo = getCurrentSeasonInfo()
+    const availableWeeks = getAvailableWeeks()
+    const currentWeek = availableWeeks.find(w => w.isCurrent)
+    setSelectedWeek(currentWeek?.value || "1")
+  }, [])
+
+  // Fetch available rankings (user's own rankings + followed users' rankings)
+  useEffect(() => {
+    const fetchAvailableRankings = async () => {
+      try {
+        setLoadingRankings(true)
+        
+        // Check cache first
+        const cacheKey = generateCacheKey(CACHE_KEYS.AGGREGATE_RANKINGS, {
+          week: selectedWeek,
+          position: selectedPosition,
+          scoringFormat
+        });
+        
+        const cachedData = globalCache.get<AvailableRanking[]>(cacheKey);
+        if (cachedData) {
+          setAvailableRankings(cachedData);
+          setLoadingRankings(false);
+          return;
+        }
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Get user's own rankings
+        const { data: ownRankings } = await supabase
+          .from('rankings')
+          .select(`
+            id,
+            title,
+            position,
+            type,
+            week,
+            season,
+            accuracy_score,
+            user_id,
+            profiles!inner (
+              username,
+              display_name,
+              is_verified,
+              avatar_url
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('season', getCurrentSeasonInfo().season)
+          .not('position', 'like', 'AGG_%')
+          .order('created_at', { ascending: false })
+
+        // Get followed users' rankings
+        const { data: followedUsers } = await supabase
+          .from('follows')
+          .select(`
+            following_id,
+            profiles!following_id (
+              username,
+              display_name,
+              is_verified
+            )
+          `)
+          .eq('follower_id', user.id)
+
+        const followedUserIds = followedUsers?.map(f => f.following_id) || []
+
+        const { data: followedRankings } = await supabase
+          .from('rankings')
+          .select(`
+            id,
+            title,
+            position,
+            type,
+            week,
+            season,
+            accuracy_score,
+            user_id,
+            profiles!inner (
+              username,
+              display_name,
+              is_verified,
+              avatar_url
+            )
+          `)
+          .in('user_id', followedUserIds)
+          .eq('season', getCurrentSeasonInfo().season)
+          .not('position', 'like', 'AGG_%')
+          .order('created_at', { ascending: false })
+
+        // Transform rankings to AvailableRanking format
+        const transformedRankings: AvailableRanking[] = []
+
+        // Add user's own rankings (only one per position/week combination)
+        const userRankingsMap = new Map<string, any>()
+        ownRankings?.forEach(ranking => {
+          const key = `${ranking.position}-${ranking.type}-${ranking.week}`
+          if (!userRankingsMap.has(key)) {
+            userRankingsMap.set(key, ranking)
+          }
+        })
+
+        userRankingsMap.forEach(ranking => {
+          const profile = Array.isArray(ranking.profiles) ? ranking.profiles[0] : ranking.profiles
+          transformedRankings.push({
+            id: ranking.id,
+            name: ranking.title,
+            type: "user" as const,
+            user: profile?.display_name || profile?.username || "Unknown User",
+            verified: profile?.is_verified || false,
+            accuracy: ranking.accuracy_score || 0,
+            week: ranking.type === 'preseason' ? 'Preseason' : `Week ${ranking.week}`,
+            position: ranking.position,
+            leagueType: getScoringFormatDisplay(scoringFormat),
+            userId: ranking.user_id,
+            avatarUrl: profile?.avatar_url
+          })
+        })
+
+        // Add followed users' rankings (only one per user per position/week combination)
+        const followedRankingsMap = new Map<string, any>()
+        followedRankings?.forEach(ranking => {
+          const key = `${ranking.user_id}-${ranking.position}-${ranking.type}-${ranking.week}`
+          if (!followedRankingsMap.has(key)) {
+            followedRankingsMap.set(key, ranking)
+          }
+        })
+
+        followedRankingsMap.forEach(ranking => {
+          const profile = Array.isArray(ranking.profiles) ? ranking.profiles[0] : ranking.profiles
+          transformedRankings.push({
+            id: ranking.id,
+            name: ranking.title,
+            type: "user" as const,
+            user: profile?.display_name || profile?.username || "Unknown User",
+            verified: profile?.is_verified || false,
+            accuracy: ranking.accuracy_score || 0,
+            week: ranking.type === 'preseason' ? 'Preseason' : `Week ${ranking.week}`,
+            position: ranking.position,
+            leagueType: getScoringFormatDisplay(scoringFormat),
+            userId: ranking.user_id,
+            avatarUrl: profile?.avatar_url
+          })
+        })
+
+        console.log('Available rankings:', transformedRankings);
+        setAvailableRankings(transformedRankings)
+        
+        // Cache the results
+        globalCache.set(cacheKey, transformedRankings, 2 * 60 * 1000); // 2 minutes cache
+      } catch (error) {
+        console.error('Error fetching available rankings:', error)
+        toast.error('Failed to load available rankings')
+      } finally {
+        setLoadingRankings(false)
+      }
+    }
+
+    if (selectedWeek && selectedPosition) {
+      fetchAvailableRankings()
+    }
+  }, [supabase, selectedWeek, selectedPosition, scoringFormat])
+
+  // Helper function to get scoring format display name
+  const getScoringFormatDisplay = (format: string) => {
+    switch (format) {
+      case 'std': return 'Standard'
+      case 'half_ppr': return 'Half PPR'
+      case 'ppr': return 'Full PPR'
+      default: return 'Half PPR'
+    }
+  }
+
   const toggleRanking = (rankingId: string) => {
+    console.log('Toggling ranking:', rankingId);
     if (selectedRankings.includes(rankingId)) {
       setSelectedRankings(selectedRankings.filter((id) => id !== rankingId))
     } else if (selectedRankings.length < 6) {
@@ -266,12 +296,12 @@ export default function AggregateRankings() {
           },
           body: JSON.stringify({
             name: aggregateName,
-            players: mockAggregatedPlayers,
+            players: aggregatePlayers,
             position: selectedPosition,
-            week: selectedWeek.replace('Week ', ''),
+            week: selectedWeek === 'preseason' ? null : selectedWeek,
             season: new Date().getFullYear(),
-            type: 'weekly',
-            scoringFormat: 'half_ppr'
+            type: selectedWeek === 'preseason' ? 'preseason' : 'weekly',
+            scoringFormat: scoringFormat
           }),
         });
 
@@ -294,29 +324,109 @@ export default function AggregateRankings() {
   }
 
   const filteredRankings = availableRankings.filter((ranking) => {
-    const matchesSearch = ranking.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesWeek = ranking.week === selectedWeek
+    const matchesSearch = ranking.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         ranking.user.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesWeek = ranking.week === (selectedWeek === 'preseason' ? 'Preseason' : `Week ${selectedWeek}`)
     const matchesPosition = ranking.position === selectedPosition
-    const matchesLeagueType = ranking.leagueType === selectedLeagueType
-    return matchesSearch && matchesWeek && matchesPosition && matchesLeagueType
+    return matchesSearch && matchesWeek && matchesPosition
   })
 
-  // Show community rankings by default, aggregated rankings when selections are made
-  const currentPlayers = selectedRankings.length > 0 ? mockAggregatedPlayers : players.slice(0, 10).map(player => ({
-    id: player.id,
-    name: player.name,
-    team: player.team,
-    position: player.position,
-    averageRank: player.rank,
-    totalRankings: Math.floor(Math.random() * 500) + 200, // Mock data for now
-    accuracy: Math.floor(Math.random() * 15) + 85, // Mock accuracy
-    trend: Math.random() > 0.5 ? "up" : "down" as "up" | "down" | "neutral",
-    projectedPoints: player.projectedPoints,
-    rankings: [{ source: "Community Average", rank: player.rank }],
-  }))
+  // Deduplicate available rankings by userId and ranking type
+  const dedupedRankings = Array.from(
+    new Map(filteredRankings.map(r => [`${r.userId}-${r.position}-${r.type}-${r.week}`, r])).values()
+  );
 
+  // Aggregate logic
+  const [aggregatePlayers, setAggregatePlayers] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchAggregatePlayers() {
+      if (selectedRankings.length === 0) {
+        setAggregatePlayers([]);
+        return;
+      }
+
+      console.log('Selected rankings for aggregation:', selectedRankings);
+      setLoadingAggregate(true);
+      
+      try {
+        // Fetch all player rankings for selected users for the selected week/position/scoringFormat
+        const playerRankingsByUser = await Promise.all(selectedRankings.map(async (rankingId) => {
+          try {
+            // Fetch player rankings for this rankingId
+            const res = await fetch(`/api/rankings/${rankingId}/players?scoringFormat=${scoringFormat}`);
+            if (!res.ok) {
+              const errorText = await res.text();
+              console.error(`Failed to fetch ranking ${rankingId}:`, res.status, errorText);
+              throw new Error(`Failed to fetch ranking ${rankingId}: ${res.status} ${errorText}`);
+            }
+            const data = await res.json();
+            console.log(`Ranking ${rankingId} data:`, data);
+            return data.players || []; // [{player_id, rank_position, ...}]
+          } catch (error) {
+            console.error(`Error fetching ranking ${rankingId}:`, error);
+            throw error;
+          }
+        }));
+
+        // Aggregate: for each player, average their rank across all selected users
+        const playerMap = new Map<string, number[]>();
+        playerRankingsByUser.forEach((players, index) => {
+          console.log(`Ranking ${index + 1} has ${players.length} players:`, players);
+          players.forEach((p: { player_id: string, rank_position: number }) => {
+            if (!playerMap.has(p.player_id)) playerMap.set(p.player_id, []);
+            playerMap.get(p.player_id)!.push(p.rank_position);
+          });
+        });
+
+        const averaged = Array.from(playerMap.entries()).map(([playerId, ranks]) => ({
+          playerId,
+          avgRank: ranks.reduce((a, b) => a + b, 0) / ranks.length,
+          count: ranks.length
+        }));
+
+        // Sort by avgRank, lowest to highest
+        averaged.sort((a, b) => a.avgRank - b.avgRank);
+
+        // Join with player info from loaded Sleeper API data
+        console.log('Available players from Sleeper API:', players.length);
+        const playerInfoMap = new Map(players.map((p: any) => [p.id, p]));
+        const { rankingLimit } = getPositionLimits(selectedPosition);
+        
+        const aggregateWithInfo = averaged
+          .map((agg, idx) => {
+            const info = playerInfoMap.get(agg.playerId);
+            if (!info) {
+              console.log(`No player info found for playerId: ${agg.playerId}`);
+              return null;
+            }
+            return {
+              ...agg,
+              ...info,
+              rank: idx + 1,
+            };
+          })
+          .filter(Boolean)
+          .slice(0, rankingLimit);
+
+        console.log('Final aggregate players:', aggregateWithInfo.length);
+
+        setAggregatePlayers(aggregateWithInfo);
+              } catch (error) {
+          console.error('Error generating aggregate:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          toast.error(`Failed to generate aggregate rankings: ${errorMessage}`);
+        } finally {
+          setLoadingAggregate(false);
+        }
+    }
+
+    fetchAggregatePlayers();
+  }, [selectedRankings, selectedPosition, scoringFormat, players]);
+
+  // PlayerModal component
   const PlayerModal = ({ playerId }: { playerId: string }) => {
-    const player = currentPlayers.find((p) => p.id === playerId)
+    const player = aggregatePlayers.find((p) => p.playerId === playerId)
     if (!player) return null
 
     return (
@@ -331,21 +441,16 @@ export default function AggregateRankings() {
 
           <div className="space-y-4">
             {/* Player Header */}
-            <div className="flex items-center space-x-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage
-                  src={`/placeholder.svg?height=64&width=64&text=${player.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}`}
-                />
-                <AvatarFallback>
-                  {player.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
+                        <div className="flex items-center space-x-4">
+              <GradientAvatar
+                src={getPlayerAvatarURL(player.playerId)}
+                alt={player.name}
+                fallback={player.name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")}
+                size="xl"
+              />
               <div>
                 <h4 className="text-xl font-bold">{player.name}</h4>
                 <div className="flex items-center space-x-2">
@@ -362,34 +467,16 @@ export default function AggregateRankings() {
                 <p className="text-sm text-slate-600 dark:text-slate-400">Projected Points</p>
               </div>
               <div className="text-center p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                <p className="text-2xl font-bold">#{player.averageRank.toFixed(1)}</p>
+                <p className="text-2xl font-bold">#{player.avgRank.toFixed(1)}</p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">Average Rank</p>
               </div>
               <div className="text-center p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                <p className="text-2xl font-bold">{player.totalRankings}</p>
+                <p className="text-2xl font-bold">{player.count}</p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">Rankings</p>
               </div>
               <div className="text-center p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                <p className="text-2xl font-bold">{player.accuracy}%</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Accuracy</p>
-              </div>
-            </div>
-
-            {/* Rankings Breakdown */}
-            <div>
-              <h5 className="font-semibold mb-3">Ranking Sources</h5>
-              <div className="space-y-2">
-                {player.rankings.map((ranking, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded-lg"
-                  >
-                    <span className="font-medium">{ranking.source}</span>
-                    <Badge variant="outline">
-                      #{typeof ranking.rank === "number" ? ranking.rank : (ranking.rank as number).toFixed(1)}
-                    </Badge>
-                  </div>
-                ))}
+                <p className="text-2xl font-bold">{player.rank}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Final Rank</p>
               </div>
             </div>
           </div>
@@ -489,24 +576,14 @@ export default function AggregateRankings() {
             Combine multiple rankings from friends, experts, and platforms to create a consensus ranking
           </p>
 
-          {/* League Type Selector */}
-          <div className="flex justify-center mt-6">
-            <div className="flex items-center space-x-1 p-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-              {["Standard", "Half PPR", "Full PPR"].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedLeagueType(type)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    selectedLeagueType === type
-                      ? "bg-blue-500 text-white"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Scoring format tabs */}
+          <Tabs value={scoringFormat} onValueChange={setScoringFormat} className="w-full mt-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="std">Standard</TabsTrigger>
+              <TabsTrigger value="half_ppr">Half PPR</TabsTrigger>
+              <TabsTrigger value="ppr">Full PPR</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -527,9 +604,30 @@ export default function AggregateRankings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Week 8">Week 8</SelectItem>
-                      <SelectItem value="Week 7">Week 7</SelectItem>
-                      <SelectItem value="Week 6">Week 6</SelectItem>
+                      {getAvailableWeeks().map((week) => (
+                        <SelectItem 
+                          key={week.value} 
+                          value={week.value}
+                          className={`
+                            ${week.isCurrent ? 'bg-blue-50 text-blue-700 font-semibold' : ''}
+                            ${week.isFuture ? 'text-gray-500' : ''}
+                          `}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>{week.label}</span>
+                            {week.isCurrent && (
+                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-2">
+                                Current
+                              </span>
+                            )}
+                            {week.isFuture && (
+                              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full ml-2">
+                                Future
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -541,6 +639,7 @@ export default function AggregateRankings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="OVR">Overall</SelectItem>
                       <SelectItem value="QB">QB</SelectItem>
                       <SelectItem value="RB">RB</SelectItem>
                       <SelectItem value="WR">WR</SelectItem>
@@ -558,7 +657,7 @@ export default function AggregateRankings() {
               <CardHeader>
                 <CardTitle>Selected Rankings</CardTitle>
                 <CardDescription>
-                  {selectedRankings.length} of {filteredRankings.length} rankings selected (min: 2, max: 6)
+                  {selectedRankings.length} of {dedupedRankings.length} rankings selected (min: 2, max: 6)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -624,65 +723,70 @@ export default function AggregateRankings() {
                 <CardHeader>
                   <CardTitle>Available Rankings</CardTitle>
                   <CardDescription>
-                    Select rankings to include in your aggregate. Choose from friends, experts, and platforms.
+                    Select rankings to include in your aggregate. Choose from your rankings and followed users.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {filteredRankings.map((ranking) => (
-                      <div
-                        key={ranking.id}
-                        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-all ${
-                          selectedRankings.includes(ranking.id)
-                            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                            : "hover:bg-slate-50 dark:hover:bg-slate-800"
-                        }`}
-                        onClick={() => toggleRanking(ranking.id)}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <Checkbox checked={selectedRankings.includes(ranking.id)} />
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src="/placeholder-user.jpg" />
-                              <AvatarFallback className="text-xs">
-                                {ranking.user
+                  {loadingRankings ? (
+                    <div className="flex items-center justify-center py-12">
+                      <GradientLoading text="Loading rankings..." size="md" />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {dedupedRankings.map((ranking) => (
+                        <div
+                          key={ranking.id}
+                          className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-all ${
+                            selectedRankings.includes(ranking.id)
+                              ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                          }`}
+                          onClick={() => toggleRanking(ranking.id)}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <Checkbox checked={selectedRankings.includes(ranking.id)} />
+                            <div className="flex items-center space-x-3">
+                              <GradientAvatar
+                                src={ranking.avatarUrl}
+                                alt={ranking.user}
+                                fallback={ranking.user
                                   .split(" ")
-                                  .map((n) => n[0])
+                                  .map((n: string) => n[0])
                                   .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <p className="font-medium">{ranking.user}</p>
-                                {ranking.verified && (
-                                  <Image
-                                    src="/logo.png"
-                                    alt="GridCasters Logo"
-                                    width={16}
-                                    height={16}
-                                    className="w-4 h-4"
-                                  />
-                                )}
-                                <Badge variant={ranking.type === "expert" ? "default" : "outline"} className="text-xs">
-                                  {ranking.type === "expert" ? "Expert" : "User"}
-                                </Badge>
-                                <Badge className={`text-xs ${getLeagueTypeColor(ranking.leagueType)}`}>
-                                  {ranking.leagueType}
-                                </Badge>
+                                size="md"
+                              />
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <p className="font-medium">{ranking.user}</p>
+                                  {ranking.verified && (
+                                    <Image
+                                      src="/logo.png"
+                                      alt="GridCasters Logo"
+                                      width={16}
+                                      height={16}
+                                      className="w-4 h-4"
+                                    />
+                                  )}
+                                  <Badge variant={ranking.type === "projection" ? "default" : "outline"} className="text-xs">
+                                    {ranking.type === "projection" ? "Projection" : "User"}
+                                  </Badge>
+                                  <Badge className={`text-xs ${getLeagueTypeColor(ranking.leagueType)}`}>
+                                    {ranking.leagueType}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                  {ranking.week} {ranking.position} Rankings
+                                </p>
                               </div>
-                              <p className="text-sm text-slate-600 dark:text-slate-400">
-                                {ranking.week} {ranking.position} Rankings
-                              </p>
                             </div>
                           </div>
+                          <div className="text-right">
+                            <AccuracyCircle accuracy={ranking.accuracy} size="sm" />
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">{ranking.accuracy}%</p>
-                          <p className="text-xs text-slate-500">accuracy</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -690,14 +794,10 @@ export default function AggregateRankings() {
                 <CardHeader>
                   <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <span>
-                      {selectedRankings.length > 0 ? "Aggregated" : "Community"} {selectedWeek} {selectedPosition}{" "}
+                      Aggregated {selectedWeek === 'preseason' ? 'Preseason' : `Week ${selectedWeek}`} {selectedPosition}{" "}
                       Rankings
                     </span>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Button variant="outline" size="sm">
-                        <Share className="w-4 h-4 mr-2" />
-                        Share
-                      </Button>
                       <GradientButton size="sm" onClick={() => setShowSaveModal(true)}>
                         <Save className="w-4 h-4 mr-2" />
                         Save Aggregate Ranking
@@ -705,66 +805,39 @@ export default function AggregateRankings() {
                     </div>
                   </CardTitle>
                   <CardDescription>
-                    {selectedRankings.length > 0
-                      ? `Consensus ranking based on ${selectedRankings.length} selected sources`
-                      : "Community consensus ranking from all users"}{" "}
-                    • {selectedLeagueType} scoring
+                    Consensus ranking based on {selectedRankings.length} selected sources • {getScoringFormatDisplay(scoringFormat)} scoring
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {currentPlayers.map((player, index) => (
-                      <div
-                        key={player.id}
-                        className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => setShowPlayerModal(player.id)}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-sm">
-                            {index + 1}
-                          </div>
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage
-                              src={`/placeholder.svg?height=40&width=40&text=${player.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}`}
-                            />
-                            <AvatarFallback>
-                              {player.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-semibold">{player.name}</p>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="outline" className="text-xs">
-                                {player.team}
-                              </Badge>
-                              <Badge className={`text-xs ${getPositionColor(player.position)}`}>
-                                {player.position}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <p className="font-semibold">Avg: {player.averageRank.toFixed(1)}</p>
-                            <div className="flex items-center space-x-1 text-xs text-slate-500">
-                              <span>{player.totalRankings} sources</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <CircularProgress value={player.accuracy} size={40} />
-                          </div>
-                          <TrendingUp className="w-4 h-4 text-green-500" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {loadingAggregate ? (
+                    <div className="flex items-center justify-center py-12">
+                      <GradientLoading text="Generating aggregate rankings..." size="md" />
+                    </div>
+                  ) : aggregatePlayers.length > 0 ? (
+                    <div className="space-y-3">
+                      {aggregatePlayers.map((agg: any) => (
+                        <PlayerRankingCard
+                          key={agg.playerId}
+                          player={{
+                            id: agg.playerId,
+                            name: agg.name,
+                            team: agg.team,
+                            position: agg.position,
+                            projectedPoints: agg.projectedPoints,
+                            avatarUrl: agg.avatarUrl,
+                            teamLogoUrl: agg.teamLogoUrl,
+                            isStarred: false,
+                            rank: agg.rank,
+                          }}
+                          onStar={() => {}}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-slate-500">
+                      No aggregate rankings available
+                    </div>
+                  )}
 
                   <div className="mt-6 pt-4 border-t">
                     <Button
@@ -780,72 +853,65 @@ export default function AggregateRankings() {
               </Card>
             )}
 
-            {/* Show current rankings being displayed */}
-            {selectedRankings.length === 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Community Rankings</CardTitle>
-                  <CardDescription>
-                    Showing community consensus rankings. Select specific rankings above to create a custom aggregate.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+            {/* Show aggregate rankings box - always visible */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <span>Aggregate Rankings</span>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <GradientButton 
+                      size="sm" 
+                      onClick={() => setShowSaveModal(true)} 
+                      disabled={selectedRankings.length < 2}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Aggregate Ranking
+                    </GradientButton>
+                  </div>
+                </CardTitle>
+                <CardDescription>
+                  {selectedRankings.length >= 2 
+                    ? `Consensus ranking based on ${selectedRankings.length} selected sources`
+                    : "Select specific rankings above to create a custom aggregate."
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedRankings.length < 2 ? (
+                  <div className="text-center py-12 text-slate-500">
+                    Select at least 2 rankings to generate aggregate rankings
+                  </div>
+                ) : loadingAggregate ? (
+                  <div className="flex items-center justify-center py-12">
+                    <GradientLoading text="Generating aggregate rankings..." size="md" />
+                  </div>
+                ) : aggregatePlayers.length > 0 ? (
                   <div className="space-y-3">
-                    {currentPlayers.map((player, index) => (
-                      <div
-                        key={player.id}
-                        className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => setShowPlayerModal(player.id)}
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-sm">
-                            {index + 1}
-                          </div>
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage
-                              src={`/placeholder.svg?height=40&width=40&text=${player.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}`}
-                            />
-                            <AvatarFallback>
-                              {player.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-semibold">{player.name}</p>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="outline" className="text-xs">
-                                {player.team}
-                              </Badge>
-                              <Badge className={`text-xs ${getPositionColor(player.position)}`}>
-                                {player.position}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <p className="font-semibold">Avg: {player.averageRank.toFixed(1)}</p>
-                            <div className="flex items-center space-x-1 text-xs text-slate-500">
-                              <span>{player.totalRankings} rankings</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <CircularProgress value={player.accuracy} size={40} />
-                          </div>
-                          <TrendingUp className="w-4 h-4 text-green-500" />
-                        </div>
-                      </div>
+                    {aggregatePlayers.map((agg: any) => (
+                      <PlayerRankingCard
+                        key={agg.playerId}
+                        player={{
+                          id: agg.playerId,
+                          name: agg.name,
+                          team: agg.team,
+                          position: agg.position,
+                          projectedPoints: agg.projectedPoints,
+                          avatarUrl: agg.avatarUrl,
+                          teamLogoUrl: agg.teamLogoUrl,
+                          isStarred: false,
+                          rank: agg.rank,
+                        }}
+                        onStar={() => {}}
+                      />
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="text-center py-12 text-slate-500">
+                    No aggregate rankings available
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
@@ -858,7 +924,7 @@ export default function AggregateRankings() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Available Rankings</p>
-                      <p className="text-2xl font-bold">{filteredRankings.length}</p>
+                      <p className="text-2xl font-bold">{dedupedRankings.length}</p>
                     </div>
                     <Users className="w-8 h-8 text-blue-500" />
                   </div>
@@ -882,8 +948,8 @@ export default function AggregateRankings() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Avg Accuracy</p>
-                      <p className="text-2xl font-bold">
-                        {selectedRankings.length > 0
+                      <AccuracyCircle 
+                        accuracy={selectedRankings.length > 0
                           ? Math.round(
                               selectedRankings.reduce((sum, id) => {
                                 const ranking = availableRankings.find((r) => r.id === id)
@@ -891,8 +957,9 @@ export default function AggregateRankings() {
                               }, 0) / selectedRankings.length,
                             )
                           : 0}
-                        %
-                      </p>
+                        size="lg"
+                        showText={false}
+                      />
                     </div>
                     <Trophy className="w-8 h-8 text-purple-500" />
                   </div>
@@ -905,6 +972,7 @@ export default function AggregateRankings() {
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Ready to Generate</p>
                       <p className="text-2xl font-bold">{selectedRankings.length >= 2 ? "Yes" : "No"}</p>
+                      <p className="text-xs text-slate-500 mt-1">*At least 2 users are required to generate an aggregate ranking</p>
                     </div>
                     <TrendingUp className="w-8 h-8 text-orange-500" />
                   </div>

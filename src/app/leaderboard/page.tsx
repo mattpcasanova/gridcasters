@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GradientAvatar } from "@/components/ui/gradient-avatar"
+import { GradientLoading } from "@/components/ui/gradient-loading"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchInput } from "@/components/ui/search-input"
@@ -463,12 +464,13 @@ export default function Leaderboard() {
         </div>
 
         <Link href={`/profile/${entry.id}`}>
-          <Avatar className="w-12 h-12 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all">
-            <AvatarImage src={entry.user.avatar} />
-            <AvatarFallback>
-              {entry.user.name.split(' ').map((n: string) => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
+          <GradientAvatar
+            src={entry.user.avatar}
+            alt={entry.user.name}
+            fallback={entry.user.name.split(' ').map((n: string) => n[0]).join('')}
+            size="lg"
+            className="cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+          />
         </Link>
 
         <div>
@@ -823,8 +825,7 @@ export default function Leaderboard() {
                 
                 {isLoadingGroups ? (
                   <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600 dark:text-slate-400">Loading groups...</p>
+                    <GradientLoading text="Loading groups..." size="md" />
                   </div>
                 ) : groups.length === 0 ? (
                   <div className="text-center py-12">
@@ -854,12 +855,12 @@ export default function Leaderboard() {
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer">
                       
                       <div className="flex items-center space-x-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={group.avatar} />
-                          <AvatarFallback>
-                            {group.name.split(' ').map((n: string) => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
+                        <GradientAvatar
+                          src={group.avatar}
+                          alt={group.name}
+                          fallback={group.name.split(' ').map((n: string) => n[0]).join('')}
+                          size="lg"
+                        />
 
                         <div>
                           <div className="flex items-center space-x-2">

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GradientAvatar } from "@/components/ui/gradient-avatar"
+import { GradientLoading } from "@/components/ui/gradient-loading"
 import { SearchInput } from "@/components/ui/search-input"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { CircularProgress } from "@/components/ui/circular-progress"
@@ -189,12 +190,12 @@ export default function GroupPage({ params }: { params: { id: string } }) {
         </div>
         <div className="space-y-4">
           <div className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={groupData?.avatar_url || "/logo.png"} />
-              <AvatarFallback>
-                <Users className="w-6 h-6" />
-              </AvatarFallback>
-            </Avatar>
+            <GradientAvatar
+              src={groupData?.avatar_url || "/logo.png"}
+              alt={groupData?.name || "Group"}
+              fallback="G"
+              size="lg"
+            />
             <div>
               <p className="font-semibold">{groupData?.name}</p>
               <p className="text-sm text-slate-600 dark:text-slate-400">{members.length} members</p>
@@ -222,10 +223,7 @@ export default function GroupPage({ params }: { params: { id: string } }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Loading group...</p>
-        </div>
+        <GradientLoading text="Loading group..." size="md" />
       </div>
     )
   }
@@ -261,12 +259,12 @@ export default function GroupPage({ params }: { params: { id: string } }) {
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={groupData.avatar_url || "/logo.png"} />
-                  <AvatarFallback className="text-2xl">
-                    <Users className="w-12 h-12" />
-                  </AvatarFallback>
-                </Avatar>
+                <GradientAvatar
+                  src={groupData.avatar_url || "/logo.png"}
+                  alt={groupData.name}
+                  fallback="G"
+                  size="xl"
+                />
 
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
@@ -375,17 +373,19 @@ export default function GroupPage({ params }: { params: { id: string } }) {
                         href={`/profile/${member.user_id}?from=group`}
                         className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
                       >
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={member.profiles.avatar_url || "/placeholder-user.jpg"} />
-                          <AvatarFallback>
-                            {member.profiles.display_name
+                        <GradientAvatar
+                          src={member.profiles.avatar_url}
+                          alt={member.profiles.display_name || member.profiles.username}
+                          fallback={
+                            member.profiles.display_name
                               ? member.profiles.display_name
                                   .split(" ")
                                   .map((n) => n[0])
                                   .join("")
-                              : member.profiles.username.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                              : member.profiles.username.slice(0, 2).toUpperCase()
+                          }
+                          size="lg"
+                        />
 
                         <div>
                           <div className="flex items-center space-x-2">
