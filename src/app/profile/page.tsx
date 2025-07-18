@@ -745,6 +745,15 @@ export default function Profile() {
                       </div>
                     </Link>
                   ))}
+                  
+                  {/* See All Rankings Button */}
+                  <div className="pt-4 border-t">
+                    <Link href="/profile/all-rankings">
+                      <Button variant="outline" className="w-full">
+                        See All Rankings
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>

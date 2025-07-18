@@ -556,6 +556,15 @@ export default function UserProfile() {
                       <p className="text-slate-600 dark:text-slate-400">No rankings found.</p>
                     </div>
                   )}
+                  
+                  {/* See All Rankings Button */}
+                  <div className="pt-4 border-t">
+                    <Link href={`/profile/all-rankings?userId=${profileData?.id}`}>
+                      <Button variant="outline" className="w-full">
+                        See All Rankings
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardContent>
             </Card>
