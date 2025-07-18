@@ -247,7 +247,8 @@ export default function Leaderboard() {
   }, [leaderboardData.length, supabase])
 
   const currentUser = leaderboardData.find((user: LeaderboardUser) => user.isCurrentUser)
-  const friendsData = leaderboardData.filter((user: LeaderboardUser) => user.isFollowing || user.isCurrentUser)
+  const [friendsData, setFriendsData] = useState<LeaderboardUser[]>([])
+  const [isLoadingFriends, setIsLoadingFriends] = useState(true)
 
   // Search function to fetch users by name or username
   const searchUsers = async (searchTerm: string) => {
@@ -341,6 +342,105 @@ export default function Leaderboard() {
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
+
+  // Fetch friends data (users you're following + yourself)
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        setIsLoadingFriends(true)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Get users you're following
+        const { data: followData, error: followError } = await supabase
+          .from('follows')
+          .select(`
+            following_id,
+            profiles!following_id (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              is_verified
+            )
+          `)
+          .eq('follower_id', user.id)
+
+        if (followError) {
+          console.error('Error fetching follows:', followError)
+          return
+        }
+
+        // Get your own profile
+        const { data: ownProfile, error: ownError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url, is_verified')
+          .eq('id', user.id)
+          .single()
+
+        if (ownError) {
+          console.error('Error fetching own profile:', ownError)
+          return
+        }
+
+        // Transform friends data
+        const friends: LeaderboardUser[] = []
+
+        // Add yourself first
+        friends.push({
+          id: ownProfile.id,
+          rank: 1,
+          user: {
+            name: ownProfile.display_name || ownProfile.username,
+            username: ownProfile.username,
+            avatar: ownProfile.avatar_url || "/placeholder-user.jpg",
+            verified: ownProfile.is_verified || false,
+          },
+          accuracy: 0, // Will be fetched separately
+          rankings: 0,
+          followers: 0,
+          isFollowing: true, // You follow yourself
+          isCurrentUser: true,
+          weeklyAccuracy: 0,
+          weeklyRank: 0,
+          change: 0,
+          weeklyChange: 0,
+        })
+
+        // Add users you're following
+        followData?.forEach((follow, index) => {
+          const profile = follow.profiles as any
+          friends.push({
+            id: profile.id,
+            rank: index + 2, // Start from 2 since you're rank 1
+            user: {
+              name: profile.display_name || profile.username,
+              username: profile.username,
+              avatar: profile.avatar_url || "/placeholder-user.jpg",
+              verified: profile.is_verified || false,
+            },
+            accuracy: 0, // Will be fetched separately
+            rankings: 0,
+            followers: 0,
+            isFollowing: true,
+            isCurrentUser: false,
+            weeklyAccuracy: 0,
+            weeklyRank: 0,
+            change: 0,
+            weeklyChange: 0,
+          })
+        })
+
+        setFriendsData(friends)
+      } catch (error) {
+        console.error('Error fetching friends:', error)
+      } finally {
+        setIsLoadingFriends(false)
+      }
+    }
+
+    fetchFriends()
+  }, [supabase])
 
   // Fetch user's groups from database
   useEffect(() => {
@@ -894,7 +994,11 @@ export default function Leaderboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {friendsData.length > 1 ? (
+                {isLoadingFriends ? (
+                  <div className="text-center py-12">
+                    <GradientLoading text="Loading friends..." size="md" />
+                  </div>
+                ) : friendsData.length > 1 ? (
                   <>
                     <div className="mb-6">
                       <SearchInput
