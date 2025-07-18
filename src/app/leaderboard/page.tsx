@@ -59,7 +59,7 @@ export default function Leaderboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [pprType, setPprType] = useState("combined")
   const [selectedWeek, setSelectedWeek] = useState("Week 1")
-  const { selectedView, setSelectedView, getViewLabel, getUserRank } = useLeaderboard()
+  const { selectedView, setSelectedView, getViewLabel, getUserRank, userGroups } = useLeaderboard()
   
   // Handle tab parameter from URL
   useEffect(() => {
@@ -599,7 +599,11 @@ export default function Leaderboard() {
                 <SelectContent>
                   <SelectItem value="global">Global Rankings</SelectItem>
                   <SelectItem value="friends">Friends Only</SelectItem>
-                  {/* Dynamic group options will be added by the context */}
+                  {userGroups.map((group) => (
+                    <SelectItem key={group.id} value={`group_${group.id}`}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

@@ -22,6 +22,7 @@ interface LeaderboardContextType {
   getViewLabel: (view: LeaderboardView) => string;
   getLeaderboardData: (view: LeaderboardView) => LeaderboardUser[];
   getUserRank: (view: LeaderboardView) => string;
+  userGroups: Array<{ id: string; name: string }>;
 }
 
 const LeaderboardContext = createContext<LeaderboardContextType | undefined>(undefined);
@@ -290,7 +291,8 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       setSelectedView,
       getViewLabel,
       getLeaderboardData,
-      getUserRank
+      getUserRank,
+      userGroups
     }}>
       {children}
     </LeaderboardContext.Provider>
