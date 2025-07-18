@@ -313,7 +313,7 @@ export default function Leaderboard() {
           accuracy: 0, // Will be fetched separately if needed
           rankings: 0,
           followers: 0,
-          isFollowing: followingIds.has(profile.id),
+          isFollowing: followingIds.has(profile.id) && profile.id !== user.id, // Don't show as following yourself
           isCurrentUser: profile.id === user.id,
           weeklyAccuracy: 0,
           weeklyRank: 0,
@@ -407,9 +407,13 @@ export default function Leaderboard() {
           weeklyChange: 0,
         })
 
-        // Add users you're following
+        // Add users you're following (excluding yourself)
         followData?.forEach((follow, index) => {
           const profile = follow.profiles as any
+          // Skip if this is yourself (prevent self-follows)
+          if (profile.id === user.id) {
+            return
+          }
           friends.push({
             id: profile.id,
             rank: index + 2, // Start from 2 since you're rank 1
@@ -578,6 +582,12 @@ export default function Leaderboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         toast.error('Please sign in to follow users')
+        return
+      }
+
+      // Prevent self-follows
+      if (userId === user.id) {
+        toast.error('You cannot follow yourself')
         return
       }
 
