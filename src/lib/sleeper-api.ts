@@ -3,60 +3,58 @@ export class SleeperAPI {
 
   async getAllPlayers() {
     const response = await fetch(`${this.baseURL}/players/nfl`);
-    if (!response.ok) throw new Error('Failed to fetch players');
     return response.json();
   }
 
   async getNFLState() {
     const response = await fetch(`${this.baseURL}/state/nfl`);
-    if (!response.ok) throw new Error('Failed to fetch NFL state');
     return response.json();
   }
 
   async getProjections(week: number, season: number = 2025) {
-    const response = await fetch(`${this.baseURL}/projections/nfl/regular/${season}/${week}`);
-    if (!response.ok) throw new Error('Failed to fetch projections');
+    const response = await fetch(`${this.baseURL}/projections/nfl/${season}/${week}`);
     return response.json();
   }
 
   async getSeasonProjections(season: number = 2025): Promise<Record<string, any>> {
-    // Try to get real projections first
-    const sampleWeeks = [1, 2, 3, 4]; // Sample first 4 weeks
+    console.log(`Fetching season projections for ${season}...`);
+    
     const allProjections: Record<string, any> = {};
     let validWeeks = 0;
-    
-    for (const week of sampleWeeks) {
+
+    // Try to fetch projections for weeks 1-18
+    for (let week = 1; week <= 18; week++) {
       try {
-        const weeklyProjections = await this.getProjections(week, season);
+        const projections = await this.getProjections(week, season);
         
-        if (weeklyProjections && Object.keys(weeklyProjections).length > 0) {
-          let weekPlayersWithProjections = 0;
-          
-          // Sum up the projections for each player
-          Object.entries(weeklyProjections).forEach(([playerId, projection]: [string, any]) => {
-            if (projection.pts_ppr && projection.pts_ppr > 0) {
-              weekPlayersWithProjections++;
-              if (!allProjections[playerId]) {
-                allProjections[playerId] = { pts_ppr: 0, pts_half_ppr: 0, pts_std: 0 };
-              }
-              allProjections[playerId].pts_ppr += projection.pts_ppr || 0;
-              allProjections[playerId].pts_half_ppr += projection.pts_half_ppr || 0;
-              allProjections[playerId].pts_std += projection.pts_std || 0;
+        if (projections && Object.keys(projections).length > 0) {
+          // Merge projections into allProjections
+          Object.entries(projections).forEach(([playerId, projection]: [string, any]) => {
+            if (!allProjections[playerId]) {
+              allProjections[playerId] = {
+                pts_ppr: 0,
+                pts_half_ppr: 0,
+                pts_std: 0
+              };
             }
+            
+            // Add weekly projections to season totals
+            allProjections[playerId].pts_ppr += projection.pts_ppr || 0;
+            allProjections[playerId].pts_half_ppr += projection.pts_half_ppr || 0;
+            allProjections[playerId].pts_std += projection.pts_std || 0;
           });
           
-          if (weekPlayersWithProjections > 50) { // If we have decent projection data
-            validWeeks++;
-          }
+          validWeeks++;
+          console.log(`✅ Week ${week} projections: ${Object.keys(projections).length} players`);
         }
       } catch (error) {
         console.warn(`Failed to fetch projections for week ${week}:`, error);
       }
     }
     
-    // If we don't have good projection data, fall back to creating mock projections
+    // If we don't have good projection data, try previous season
     if (validWeeks === 0 || Object.keys(allProjections).length < 200) {
-      console.log(`Season projections insufficient - validWeeks: ${validWeeks}, projectionCount: ${Object.keys(allProjections).length}, falling back to mock projections`);
+      console.log(`Season projections insufficient - validWeeks: ${validWeeks}, projectionCount: ${Object.keys(allProjections).length}, trying previous season`);
       
       // Try previous season (only go back one year to avoid infinite recursion)
       if (season > 2020) {
@@ -71,9 +69,9 @@ export class SleeperAPI {
         }
       }
       
-      // As last resort, create mock projections based on player positions
-      console.log('Creating mock projections as fallback');
-      return this.createMockProjections();
+      // If no valid data available, return empty object
+      console.log('No valid projection data available');
+      return {};
     }
     
     // Extrapolate to full season (18 weeks) if we have valid data
@@ -87,78 +85,6 @@ export class SleeperAPI {
     }
     
     return allProjections;
-  }
-
-  async createMockProjections(): Promise<Record<string, any>> {
-    try {
-      const players = await this.getAllPlayers();
-      const mockProjections: Record<string, any> = {};
-      
-      console.log(`Mock projections - Total players from API: ${Object.keys(players).length}`);
-      
-      // Track counts by position
-      const positionCounts: Record<string, number> = { QB: 0, RB: 0, WR: 0, TE: 0 };
-      let totalValidPlayers = 0;
-      
-      // Create position-based mock projections - ONLY for fantasy relevant positions
-      Object.entries(players).forEach(([playerId, player]: [string, any]) => {
-        // Only include QB, RB, WR, TE players
-        const validPositions = ['QB', 'RB', 'WR', 'TE'];
-        if (!validPositions.includes(player.position)) {
-          return; // Skip non-fantasy positions
-        }
-        
-        // Only include active players with teams (exclude retired players)
-        if (player.status !== 'Active' || !player.team || player.team === 'null' || player.team === null) {
-          return; // Skip inactive or teamless players
-        }
-        
-        // Exclude players who are likely retired or inactive
-        if (player.years_exp && player.years_exp > 15) {
-          return; // Skip players with 15+ years (likely retired)
-        }
-        
-        // Count valid players by position
-        positionCounts[player.position]++;
-        totalValidPlayers++;
-        
-        let baseProjection = 0;
-        
-        switch (player.position) {
-          case 'QB':
-            // QB projections: 200-350 points for season
-            baseProjection = 180 + Math.random() * 170 + (Math.min(player.years_exp || 0, 10) * 8);
-            break;
-          case 'RB':
-            // RB projections: 100-300 points for season  
-            baseProjection = 100 + Math.random() * 200 + (Math.min(player.years_exp || 0, 8) * 5);
-            break;
-          case 'WR':
-            // WR projections: 80-280 points for season
-            baseProjection = 80 + Math.random() * 200 + (Math.min(player.years_exp || 0, 8) * 5);
-            break;
-          case 'TE':
-            // TE projections: 60-200 points for season
-            baseProjection = 60 + Math.random() * 140 + (Math.min(player.years_exp || 0, 8) * 3);
-            break;
-        }
-        
-        // Always create projections for all valid players (don't filter by baseProjection > 0)
-        mockProjections[playerId] = {
-          pts_ppr: Math.round(baseProjection * 10) / 10,
-          pts_half_ppr: Math.round(baseProjection * 0.9 * 10) / 10,
-          pts_std: Math.round(baseProjection * 0.8 * 10) / 10
-        };
-      });
-      
-      console.log(`Mock projections - Position breakdown:`, positionCounts);
-      console.log(`Mock projections - Total valid players: ${totalValidPlayers}`);
-      console.log(`Mock projections created: ${Object.keys(mockProjections).length} players`);
-      return mockProjections;
-    } catch (error) {
-      console.error('Failed to create mock projections:', error);
-      return {};
-    }
   }
 
   async getMatchups(week: number, season: number = 2025): Promise<Record<string, any>> {
@@ -200,14 +126,14 @@ export class SleeperAPI {
         }
       }
       
-      // If all fail, use mock data
-      console.log(`🔶 Using mock matchup data (${season} season schedule not yet available)`);
-      return this.getMockMatchups();
+      // If all fail, return empty object
+      console.log(`No matchup data available for week ${week}, season ${season}`);
+      return {};
       
     } catch (error) {
       console.error('Error fetching matchups:', error);
-      console.log(`🔶 Using mock matchup data due to fetch error`);
-      return this.getMockMatchups();
+      console.log(`No matchup data available due to fetch error`);
+      return {};
     }
   }
 
@@ -247,162 +173,6 @@ export class SleeperAPI {
         { home: 'TB', away: 'MIA' },
         { home: 'SF', away: 'LAR' },
         { home: 'DEN', away: 'LV' },
-        { home: 'CHI', away: 'MIN' },
-        { home: 'CLE', away: 'PIT' },
-        { home: 'HOU', away: 'IND' },
-        { home: 'JAX', away: 'TEN' },
-        { home: 'ATL', away: 'CAR' },
-        { home: 'NO', away: 'TB' },
-        { home: 'GB', away: 'DET' },
-        { home: 'SEA', away: 'ARI' },
-        { home: 'LAC', away: 'LVR' }
-      ],
-      2: [
-        { home: 'BUF', away: 'MIA' },
-        { home: 'NYJ', away: 'NE' },
-        { home: 'CIN', away: 'CLE' },
-        { home: 'PHI', away: 'WAS' },
-        { home: 'LAR', away: 'SF' },
-        { home: 'LV', away: 'DEN' },
-        { home: 'MIN', away: 'CHI' },
-        { home: 'PIT', away: 'BAL' },
-        { home: 'IND', away: 'HOU' },
-        { home: 'TEN', away: 'JAX' },
-        { home: 'CAR', away: 'ATL' },
-        { home: 'TB', away: 'NO' },
-        { home: 'DET', away: 'GB' },
-        { home: 'ARI', away: 'SEA' },
-        { home: 'LVR', away: 'LAC' }
-      ],
-      3: [
-        { home: 'BAL', away: 'CIN' },
-        { home: 'NE', away: 'NYJ' },
-        { home: 'CLE', away: 'PIT' },
-        { home: 'WAS', away: 'PHI' },
-        { home: 'BUF', away: 'MIA' },
-        { home: 'SF', away: 'LAR' },
-        { home: 'DEN', away: 'LV' },
-        { home: 'CHI', away: 'MIN' },
-        { home: 'HOU', away: 'IND' },
-        { home: 'JAX', away: 'TEN' },
-        { home: 'ATL', away: 'CAR' },
-        { home: 'NO', away: 'TB' },
-        { home: 'GB', away: 'DET' },
-        { home: 'SEA', away: 'ARI' },
-        { home: 'LAC', away: 'LVR' }
-      ],
-      4: [
-        { home: 'NO', away: 'MIA' },
-        { home: 'BAL', away: 'NYJ' },
-        { home: 'KC', away: 'CIN' },
-        { home: 'DAL', away: 'PHI' },
-        { home: 'TB', away: 'BUF' },
-        { home: 'SF', away: 'LAR' },
-        { home: 'DEN', away: 'LV' },
-        { home: 'CHI', away: 'MIN' },
-        { home: 'CLE', away: 'PIT' },
-        { home: 'HOU', away: 'IND' },
-        { home: 'JAX', away: 'TEN' },
-        { home: 'ATL', away: 'CAR' },
-        { home: 'GB', away: 'DET' },
-        { home: 'SEA', away: 'ARI' },
-        { home: 'LAC', away: 'LVR' }
-      ],
-      5: [
-        { home: 'BUF', away: 'NYJ' },
-        { home: 'BAL', away: 'CIN' },
-        { home: 'KC', away: 'DEN' },
-        { home: 'DAL', away: 'WAS' },
-        { home: 'MIA', away: 'TB' },
-        { home: 'SF', away: 'LAR' },
-        { home: 'DEN', away: 'LV' },
-        { home: 'CHI', away: 'MIN' },
-        { home: 'CLE', away: 'PIT' },
-        { home: 'HOU', away: 'IND' },
-        { home: 'JAX', away: 'TEN' },
-        { home: 'ATL', away: 'CAR' },
-        { home: 'NO', away: 'TB' },
-        { home: 'GB', away: 'DET' },
-        { home: 'SEA', away: 'ARI' },
-        { home: 'LAC', away: 'LVR' }
-      ],
-      6: [
-        { home: 'NYJ', away: 'BUF' },
-        { home: 'CIN', away: 'BAL' },
-        { home: 'DEN', away: 'KC' },
-        { home: 'WAS', away: 'DAL' },
-        { home: 'TB', away: 'MIA' },
-        { home: 'LAR', away: 'SF' },
-        { home: 'LV', away: 'DEN' },
-        { home: 'MIN', away: 'CHI' },
-        { home: 'PIT', away: 'CLE' },
-        { home: 'IND', away: 'HOU' },
-        { home: 'TEN', away: 'JAX' },
-        { home: 'CAR', away: 'ATL' },
-        { home: 'DET', away: 'GB' },
-        { home: 'ARI', away: 'SEA' },
-        { home: 'LVR', away: 'LAC' }
-      ],
-      7: [
-        { home: 'BUF', away: 'MIA' },
-        { home: 'BAL', away: 'NYJ' },
-        { home: 'KC', away: 'CIN' },
-        { home: 'DAL', away: 'PHI' },
-        { home: 'TB', away: 'NO' },
-        { home: 'SF', away: 'LAR' },
-        { home: 'DEN', away: 'LV' },
-        { home: 'CHI', away: 'MIN' },
-        { home: 'CLE', away: 'PIT' },
-        { home: 'HOU', away: 'IND' },
-        { home: 'JAX', away: 'TEN' },
-        { home: 'ATL', away: 'CAR' },
-        { home: 'GB', away: 'DET' },
-        { home: 'SEA', away: 'ARI' },
-        { home: 'LAC', away: 'LVR' }
-      ],
-      8: [
-        { home: 'MIA', away: 'BUF' },
-        { home: 'NYJ', away: 'BAL' },
-        { home: 'CIN', away: 'KC' },
-        { home: 'PHI', away: 'DAL' },
-        { home: 'NO', away: 'TB' },
-        { home: 'LAR', away: 'SF' },
-        { home: 'LV', away: 'DEN' },
-        { home: 'MIN', away: 'CHI' },
-        { home: 'PIT', away: 'CLE' },
-        { home: 'IND', away: 'HOU' },
-        { home: 'TEN', away: 'JAX' },
-        { home: 'CAR', away: 'ATL' },
-        { home: 'DET', away: 'GB' },
-        { home: 'ARI', away: 'SEA' },
-        { home: 'LVR', away: 'LAC' }
-      ],
-      9: [
-        { home: 'BUF', away: 'NYJ' },
-        { home: 'BAL', away: 'CIN' },
-        { home: 'KC', away: 'DEN' },
-        { home: 'DAL', away: 'WAS' },
-        { home: 'MIA', away: 'TB' },
-        { home: 'SF', away: 'LAR' },
-        { home: 'DEN', away: 'LV' },
-        { home: 'CHI', away: 'MIN' },
-        { home: 'CLE', away: 'PIT' },
-        { home: 'HOU', away: 'IND' },
-        { home: 'JAX', away: 'TEN' },
-        { home: 'ATL', away: 'CAR' },
-        { home: 'TB', away: 'NO' },
-        { home: 'GB', away: 'DET' },
-        { home: 'SEA', away: 'ARI' },
-        { home: 'LAC', away: 'LVR' }
-      ],
-      10: [
-        { home: 'NYJ', away: 'BUF' },
-        { home: 'CIN', away: 'BAL' },
-        { home: 'DEN', away: 'KC' },
-        { home: 'WAS', away: 'DAL' },
-        { home: 'TB', away: 'MIA' },
-        { home: 'LAR', away: 'SF' },
-        { home: 'LV', away: 'DEN' },
         { home: 'MIN', away: 'CHI' },
         { home: 'PIT', away: 'CLE' },
         { home: 'IND', away: 'HOU' },
@@ -578,27 +348,5 @@ export class SleeperAPI {
     });
 
     return teamMatchups;
-  }
-
-  private getMockMatchups(): Record<string, any> {
-    // Mock matchup data for testing purposes
-    return {
-      'BUF': { opponent: 'BAL', isHome: false, week: 1 },
-      'BAL': { opponent: 'BUF', isHome: true, week: 1 },
-      'WAS': { opponent: 'NYJ', isHome: true, week: 1 },
-      'NYJ': { opponent: 'WAS', isHome: false, week: 1 },
-      'KC': { opponent: 'CIN', isHome: true, week: 1 },
-      'CIN': { opponent: 'KC', isHome: false, week: 1 },
-      'PHI': { opponent: 'DAL', isHome: false, week: 1 },
-      'DAL': { opponent: 'PHI', isHome: true, week: 1 },
-      'TB': { opponent: 'MIA', isHome: true, week: 1 },
-      'MIA': { opponent: 'TB', isHome: false, week: 1 },
-      'LAR': { opponent: 'SF', isHome: false, week: 1 },
-      'SF': { opponent: 'LAR', isHome: true, week: 1 },
-      'DEN': { opponent: 'LV', isHome: true, week: 1 },
-      'LV': { opponent: 'DEN', isHome: false, week: 1 },
-      'MIN': { opponent: 'CHI', isHome: false, week: 1 },
-      'CHI': { opponent: 'MIN', isHome: true, week: 1 }
-    };
   }
 } 

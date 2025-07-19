@@ -288,44 +288,36 @@ export const showBadgeEarnedToast = (badge: Badge) => {
 export const useBadgeEarning = () => {
   const checkAndUpdateBadges = async (userId: string) => {
     // This would fetch current user stats and badge progress from the database
-    // For now, we'll use mock data
-    const mockStats: UserStats = {
-      totalRankings: 25,
-      rankingsByPosition: { QB: 5, RB: 8, WR: 7, TE: 5 },
-      topPercentileRankings: 3,
-      consecutiveTopPercentile: 2,
-      followers: 45,
-      groupsJoined: 1,
+    // For now, return empty results until real data is available
+    const emptyStats: UserStats = {
+      totalRankings: 0,
+      rankingsByPosition: { QB: 0, RB: 0, WR: 0, TE: 0 },
+      topPercentileRankings: 0,
+      consecutiveTopPercentile: 0,
+      followers: 0,
+      groupsJoined: 0,
       groupsCreated: 0,
-      daysSinceJoined: 30,
+      daysSinceJoined: 0,
       isVerified: false,
-      isBetaTester: true,
+      isBetaTester: false,
       isFoundingMember: false,
       percentileRankings: {
-        QB: { total: 10, top10: 3, top5: 1, top1: 0 },
-        RB: { total: 10, top10: 3, top5: 1, top1: 0 },
-        WR: { total: 10, top10: 3, top5: 1, top1: 0 },
-        TE: { total: 10, top10: 3, top5: 1, top1: 0 },
+        QB: { total: 0, top10: 0, top5: 0, top1: 0 },
+        RB: { total: 0, top10: 0, top5: 0, top1: 0 },
+        WR: { total: 0, top10: 0, top5: 0, top1: 0 },
+        TE: { total: 0, top10: 0, top5: 0, top1: 0 },
       },
-      weeklyPerformance: {
-        '1': { totalRankings: 10, topPercentileCount: 3 },
-        '2': { totalRankings: 10, topPercentileCount: 2 },
-        '3': { totalRankings: 10, topPercentileCount: 1 },
-      },
+      weeklyPerformance: {},
       seasonPerformance: {
-        totalRankings: 100,
-        averagePercentile: 98,
-        topPercentileCount: 5,
+        totalRankings: 0,
+        averagePercentile: 0,
+        topPercentileCount: 0,
       },
     };
 
-    const mockProgress: BadgeProgress = {
-      rookie_forecaster: { earned: true, progress: 100, lastChecked: Date.now(), notification_shown: true },
-      active_forecaster: { earned: true, progress: 100, lastChecked: Date.now(), notification_shown: true },
-      // ... other badges
-    };
+    const emptyProgress: BadgeProgress = {};
 
-    const { newProgress, newlyEarned } = checkBadgeEarning(mockStats, mockProgress, userId);
+    const { newProgress, newlyEarned } = checkBadgeEarning(emptyStats, emptyProgress, userId);
 
     // Show toasts for newly earned badges
     newlyEarned.forEach(badge => {

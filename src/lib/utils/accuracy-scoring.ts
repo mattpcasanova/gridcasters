@@ -123,12 +123,8 @@ function getCurrentWeek(): number {
 
 function getPlayerInfo(playerId: string): any {
   // This would fetch from a cached player database
-  // For now, return mock data
-  return {
-    name: `Player ${playerId}`,
-    team: 'TEAM',
-    position: 'QB'
-  };
+  // For now, return null to indicate no player info available
+  return null;
 }
 
 function calculateFantasyPoints(stats: any, scoringFormat: string): number {

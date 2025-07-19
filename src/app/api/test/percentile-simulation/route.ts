@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { calculateAccuracyScore, getMockPerformanceData } from '@/lib/utils/accuracy-scoring';
+import { calculateAccuracyScore, fetchRealPerformanceData } from '@/lib/utils/accuracy-scoring';
 
 interface SimulatedUser {
   id: string;
@@ -100,8 +100,8 @@ async function generateSimulation(supabase: any, numUsers: number, numRankings: 
   const results = [];
   for (const ranking of allRankings) {
     try {
-      // Calculate accuracy score for this ranking
-      const actualPerformance = getMockPerformanceData(ranking.position);
+      // Calculate accuracy score for this ranking using real data
+      const actualPerformance = await fetchRealPerformanceData(ranking.position);
       const accuracyResult = calculateAccuracyScore(ranking.player_rankings, actualPerformance, ranking.position);
 
       // Simulate database insertion
@@ -198,127 +198,84 @@ async function calculatePercentiles(supabase: any) {
           week,
           season,
           totalRankings: simulatedPercentiles.length,
-          percentileRange: {
-            min: Math.min(...simulatedPercentiles.map(p => p.percentile_score)),
-            max: Math.max(...simulatedPercentiles.map(p => p.percentile_score)),
-            avg: simulatedPercentiles.reduce((sum, p) => sum + p.percentile_score, 0) / simulatedPercentiles.length
+          percentiles: {
+            top1: simulatedPercentiles.filter(p => p.percentile <= 1).length,
+            top5: simulatedPercentiles.filter(p => p.percentile <= 5).length,
+            top10: simulatedPercentiles.filter(p => p.percentile <= 10).length,
+            top25: simulatedPercentiles.filter(p => p.percentile <= 25).length,
+            top50: simulatedPercentiles.filter(p => p.percentile <= 50).length
           }
         });
       } catch (error) {
-        console.error(`Error calculating percentiles for ${position} Week ${week}:`, error);
+        console.error(`Error calculating percentiles for ${position} week ${week}:`, error);
       }
     }
   }
 
   return NextResponse.json({
     success: true,
-    message: `Calculated percentiles for ${results.length} periods`,
+    message: `Calculated percentiles for ${results.length} position-week combinations`,
     results
   });
 }
 
 function simulatePercentileCalculation(position: string, week: number, season: number) {
-  // Simulate percentile calculation
-  const numRankings = Math.floor(Math.random() * 50) + 20; // 20-70 rankings per period
+  // Simulate percentile calculation - this would be replaced with real database calls
+  const numRankings = Math.floor(Math.random() * 100) + 10; // 10-110 rankings
   const percentiles = [];
-
+  
   for (let i = 0; i < numRankings; i++) {
-    const accuracyScore = Math.random() * 40 + 60; // 60-100 accuracy
-    const percentileScore = 100 - (i / numRankings) * 100; // Perfect distribution
-    
     percentiles.push({
-      ranking_id: `sim_${i}`,
-      user_id: `sim_user_${i}`,
-      percentile_rank: i + 1,
-      total_rankings: numRankings,
-      percentile_score: percentileScore
+      user_id: `user_${i}`,
+      ranking_id: `ranking_${i}`,
+      accuracy_score: Math.random() * 100,
+      percentile: Math.random() * 100
     });
   }
-
+  
   return percentiles;
 }
 
 async function analyzeResults(supabase: any) {
-  console.log('📈 Analyzing simulation results...');
+  console.log('📊 Analyzing simulation results...');
 
-  // Simulate analysis of the results
-  const analysis = {
-    totalUsers: 1000,
-    totalRankings: 5000,
-    averageAccuracy: 78.5,
-    accuracyDistribution: {
-      '90-100%': 15.2,
-      '80-89%': 32.1,
-      '70-79%': 33.2,
-      '60-69%': 16.1,
-      'Below 60%': 3.4
-    },
-    percentileDistribution: {
-      'Top 10%': 10.0,
-      'Top 25%': 25.0,
-      'Top 50%': 50.0,
-      'Bottom 50%': 50.0
-    },
-    performanceBySkillLevel: {
-      'beginner': { avgAccuracy: 68.2, avgPercentile: 25.3 },
-      'intermediate': { avgAccuracy: 78.5, avgPercentile: 50.1 },
-      'advanced': { avgAccuracy: 87.3, avgPercentile: 75.8 },
-      'expert': { avgAccuracy: 93.1, avgPercentile: 92.4 }
-    },
-    systemPerformance: {
-      calculationTime: '2.3 seconds',
-      memoryUsage: '45MB',
-      databaseQueries: 72,
-      cacheHitRate: '94%'
-    }
-  };
-
+  // This would analyze the actual database results
+  // For now, return a summary
   return NextResponse.json({
     success: true,
     message: 'Analysis complete',
-    analysis
+    summary: {
+      totalRankings: 0,
+      averageAccuracy: 0,
+      percentileDistribution: {
+        top1: 0,
+        top5: 0,
+        top10: 0,
+        top25: 0,
+        top50: 0
+      }
+    }
   });
 }
 
 async function cleanupSimulation(supabase: any) {
   console.log('🧹 Cleaning up simulation data...');
 
-  // In a real implementation, this would delete the simulated data
-  // For now, we'll just return a success message
-  
+  // This would clean up any test data
   return NextResponse.json({
     success: true,
-    message: 'Simulation cleanup complete',
-    deletedRecords: {
-      rankings: 5000,
-      users: 1000
-    }
+    message: 'Cleanup complete'
   });
 }
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Percentile Simulation API',
+    message: 'Percentile simulation API',
     endpoints: {
-      'POST /api/test/percentile-simulation': {
-        actions: {
-          generate: 'Generate simulated users and rankings',
-          calculate: 'Calculate percentiles for all periods',
-          analyze: 'Analyze simulation results',
-          cleanup: 'Clean up simulation data'
-        },
-        parameters: {
-          action: 'string (required)',
-          numUsers: 'number (default: 100)',
-          numRankings: 'number (default: 5)'
-        }
-      }
-    },
-    usage: {
-      generate: 'POST with { "action": "generate", "numUsers": 1000, "numRankings": 5 }',
-      calculate: 'POST with { "action": "calculate" }',
-      analyze: 'POST with { "action": "analyze" }',
-      cleanup: 'POST with { "action": "cleanup" }'
+      generate: 'POST - Generate simulated rankings',
+      calculate: 'POST - Calculate percentiles',
+      analyze: 'POST - Analyze results',
+      cleanup: 'POST - Clean up data'
     }
   });
 } 

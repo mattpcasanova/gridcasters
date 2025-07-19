@@ -62,18 +62,13 @@ const getPositionColor = (position: string) => {
 
 const getPositionIconColor = (position: string) => {
   switch (position) {
-    case "QB":
-      return "text-red-800 dark:text-red-400"
-    case "WR":
-      return "text-blue-800 dark:text-blue-400"
-    case "RB":
-      return "text-green-800 dark:text-green-400"
-    case "TE":
-      return "text-yellow-800 dark:text-yellow-400"
-    case "FLX":
-      return "text-purple-800 dark:text-purple-400"
-    default:
-      return "text-slate-800 dark:text-slate-400"
+    case 'QB': return 'text-red-500'
+    case 'RB': return 'text-green-500'
+    case 'WR': return 'text-blue-500'
+    case 'TE': return 'text-yellow-500'
+    case 'OVR': return 'text-purple-500'
+    case 'FLX': return 'text-indigo-500'
+    default: return 'text-gray-500'
   }
 }
 
@@ -110,14 +105,6 @@ const achievements = [
     earned: false,
     progress: 45,
   },
-]
-
-const mockRankings = [
-  { id: 1, title: "Week 8 Overall Rankings", position: "OVR", week: 8, accuracy: 89.2, rank: 156, date: "2024-03-15" },
-  { id: 2, title: "Week 8 QB Rankings", position: "QB", week: 8, accuracy: 94.1, rank: 23, date: "2024-03-15" },
-  { id: 3, title: "Week 7 Overall Rankings", position: "OVR", week: 7, accuracy: 87.3, rank: 198, date: "2024-03-08" },
-  { id: 4, title: "Week 7 RB Rankings", position: "RB", week: 7, accuracy: 91.8, rank: 45, date: "2024-03-08" },
-  { id: 5, title: "Week 6 Overall Rankings", position: "OVR", week: 6, accuracy: 85.7, rank: 234, date: "2024-03-01" },
 ]
 
 type UserProfile = {
