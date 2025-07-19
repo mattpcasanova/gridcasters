@@ -51,14 +51,12 @@ export default function NotFound() {
             </div>
 
             <div className="pt-4 border-t border-gray-200">
-              <Button 
-                variant="ghost" 
-                className="w-full text-gray-500 hover:text-gray-700"
-                onClick={() => window.history.back()}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Go Back
-              </Button>
+              <Link href="javascript:history.back()" className="w-full">
+                <Button variant="ghost" className="w-full text-gray-500 hover:text-gray-700">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Go Back
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
