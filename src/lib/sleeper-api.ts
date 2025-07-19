@@ -11,12 +11,12 @@ export class SleeperAPI {
     return response.json();
   }
 
-  async getProjections(week: number, season: number = 2024) {
+  async getProjections(week: number, season: number = 2025) {
     const response = await fetch(`${this.baseURL}/projections/nfl/${season}/${week}`);
     return response.json();
   }
 
-  async getSeasonProjections(season: number = 2024): Promise<Record<string, any>> {
+  async getSeasonProjections(season: number = 2025): Promise<Record<string, any>> {
     console.log(`Fetching season projections for ${season}...`);
     
     const allProjections: Record<string, any> = {};
@@ -87,7 +87,7 @@ export class SleeperAPI {
     return allProjections;
   }
 
-  async getMatchups(week: number, season: number = 2024): Promise<Record<string, any>> {
+  async getMatchups(week: number, season: number = 2025): Promise<Record<string, any>> {
     console.log(`Fetching matchups for week ${week}, season ${season}`);
     
     try {

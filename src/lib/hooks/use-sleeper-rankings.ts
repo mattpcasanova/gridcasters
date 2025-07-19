@@ -190,25 +190,8 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
             const seasonProjections: Record<string, any> = {};
             let successfulWeeks = 0;
             
-            // Try current season first, then fall back to 2024
-            let season = 2024; // Use 2024 as default since 2025 projections aren't available yet
-            let hasValidData = false;
-            
-            // Test if we can get data from current season
-            try {
-              const testProjections = await sleeperAPI.getProjections(1, season);
-              const validProjections = Object.values(testProjections).filter((p: any) => p && p.pts_ppr && p.pts_ppr > 0);
-              if (validProjections.length > 100) {
-                hasValidData = true;
-              }
-            } catch {
-              // Current season failed
-            }
-            
-            if (!hasValidData) {
-              console.log('Current season projections insufficient, using 2024...');
-              season = 2024;
-            }
+            // Use 2025 season projections
+            let season = 2025; // Use 2025 as default since Sleeper API now has 2025 data
             
             // Fetch projections for all 18 weeks in parallel for speed
             const weekPromises = [];
