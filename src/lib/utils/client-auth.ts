@@ -12,9 +12,9 @@ export type SignUpData = {
   email: string;
   password: string;
   username: string;
-  firstName: string;
-  lastName: string;
-  birthDate: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
 };
 
 export type SignUpResult = {
@@ -128,9 +128,9 @@ export async function signUp(
         data: {
           username: username,
           display_name: username,
-          first_name: firstName,
-          last_name: lastName,
-          birth_date: birthDate
+          first_name: firstName || '',
+          last_name: lastName || '',
+          birth_date: birthDate || ''
         }
       }
     });
