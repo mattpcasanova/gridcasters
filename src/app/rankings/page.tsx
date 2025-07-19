@@ -472,10 +472,7 @@ export default function Rankings() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              {/* Debug: Show search term and player counts */}
-              <div className="mt-2 text-sm text-gray-600">
-                Debug: Total players: {players.length}, Filtered: {filteredPlayers.length}, Search: "{searchTerm}"
-              </div>
+
             </div>
             <div className="flex gap-2">
               <GradientButton onClick={handleSaveRankings} icon={Save} className="w-full sm:w-auto">
