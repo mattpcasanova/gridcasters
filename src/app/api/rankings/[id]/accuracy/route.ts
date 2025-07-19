@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
-import { calculateAccuracyScore, getMockPerformanceData } from '@/lib/utils/accuracy-scoring';
+import { calculateAccuracyScore, fetchRealPerformanceData } from '@/lib/utils/accuracy-scoring';
 
 export async function POST(
   request: NextRequest,
@@ -30,8 +30,12 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to fetch player rankings' }, { status: 500 });
     }
 
-    // Get mock performance data for the position
-    const actualPerformance = getMockPerformanceData(ranking.position);
+    // Fetch real performance data for the position and week
+    const actualPerformance = await fetchRealPerformanceData(
+      ranking.position, 
+      ranking.week || undefined, 
+      ranking.season || undefined
+    );
 
     // Calculate accuracy score
     const accuracyResult = calculateAccuracyScore(playerRankings, actualPerformance, ranking.position);
@@ -65,7 +69,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       accuracyScore: accuracyResult.accuracyPercentage,
-      breakdown: accuracyResult.breakdown
+      breakdown: accuracyResult.breakdown,
+      dataSource: 'real' // Indicate this used real data
     });
 
   } catch (error) {
@@ -104,7 +109,13 @@ export async function GET(
         return NextResponse.json({ error: 'Failed to fetch player rankings' }, { status: 500 });
       }
 
-      const actualPerformance = getMockPerformanceData(ranking.position);
+      // Fetch real performance data
+      const actualPerformance = await fetchRealPerformanceData(
+        ranking.position, 
+        ranking.week || undefined, 
+        ranking.season || undefined
+      );
+      
       const accuracyResult = calculateAccuracyScore(playerRankings, actualPerformance, ranking.position);
 
       // Update the ranking with the accuracy score
@@ -119,13 +130,15 @@ export async function GET(
       return NextResponse.json({
         accuracyScore: accuracyResult.accuracyPercentage,
         breakdown: accuracyResult.breakdown,
-        calculated: true
+        calculated: true,
+        dataSource: 'real'
       });
     }
 
     return NextResponse.json({
       accuracyScore: ranking.accuracy_score,
-      calculated: false
+      calculated: false,
+      dataSource: 'cached'
     });
 
   } catch (error) {

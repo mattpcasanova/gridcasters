@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get current user stats
-    const userStats = await getUserStats(supabase, user.id);
+    // Get current user stats with real percentile data
+    const userStats = await getUserStatsWithPercentiles(supabase, user.id);
     
     // Get current badge progress
     const { data: badgeProgressData } = await supabase
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
+async function getUserStatsWithPercentiles(supabase: any, userId: string): Promise<UserStats> {
   // Get total rankings (excluding aggregate rankings)
   const { count: totalRankings } = await supabase
     .from('rankings')
@@ -124,41 +124,83 @@ async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
     ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
-  // Determine beta tester status (anyone who joined during beta period)
-  // Beta period: Before January 1, 2025 (or whenever you decide to end beta)
-  const betaEndDate = new Date('2025-01-01');
-  const isBetaTester = profile?.created_at ? new Date(profile.created_at) < betaEndDate : false;
-
   // Determine founding member status (first 250 users)
   const { count: totalUsers } = await supabase
     .from('profiles')
     .select('*', { count: 'exact', head: true });
 
-  // Get user's join order by checking how many users joined before them
-  const { count: usersJoinedBefore } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .lt('created_at', profile?.created_at || new Date().toISOString());
+  const isFoundingMember = totalUsers ? totalUsers <= 250 : false;
 
-  const isFoundingMember = (usersJoinedBefore || 0) < 250;
+  // Get percentile data for all user rankings
+  const { data: percentileData } = await supabase
+    .from('rankings')
+    .select(`
+      id,
+      position,
+      week,
+      season,
+      accuracy_score,
+      percentile_rank
+    `)
+    .eq('user_id', userId)
+    .not('position', 'like', 'AGG_%')
+    .not('percentile_rank', 'is', null);
 
-  // Get actual percentile data
-  const { data: percentileStats } = await supabase.rpc('get_user_percentile_stats', {
-    user_uuid: userId
-  });
-
-  const stats = percentileStats?.[0] || {
-    total_rankings: 0,
-    avg_percentile: 0,
-    top_10_percentile_count: 0,
-    top_25_percentile_count: 0,
-    top_50_percentile_count: 0,
-    best_percentile: 0,
-    recent_percentile_trend: 0
+  // Calculate percentile-based stats
+  const percentileRankings: { [position: string]: { total: number; top10: number; top5: number; top1: number } } = {
+    QB: { total: 0, top10: 0, top5: 0, top1: 0 },
+    RB: { total: 0, top10: 0, top5: 0, top1: 0 },
+    WR: { total: 0, top10: 0, top5: 0, top1: 0 },
+    TE: { total: 0, top10: 0, top5: 0, top1: 0 }
   };
 
-  const topPercentileRankings = stats.top_10_percentile_count || 0;
-  const consecutiveTopPercentile = Math.min(stats.top_10_percentile_count || 0, 3); // Simplified for now
+  const weeklyPerformance: { [week: string]: { totalRankings: number; topPercentileCount: number } } = {};
+  let consecutiveTopPercentile = 0;
+  let topPercentileRankings = 0;
+
+  // Process percentile data
+  percentileData?.forEach((ranking: any) => {
+    const percentile = ranking.percentile_rank;
+    const position = ranking.position;
+    const week = ranking.week?.toString() || 'preseason';
+
+    // Count by position
+    if (position in percentileRankings) {
+      percentileRankings[position].total++;
+      if (percentile >= 90) percentileRankings[position].top10++;
+      if (percentile >= 95) percentileRankings[position].top5++;
+      if (percentile >= 99) percentileRankings[position].top1++;
+    }
+
+    // Count by week
+    if (!weeklyPerformance[week]) {
+      weeklyPerformance[week] = { totalRankings: 0, topPercentileCount: 0 };
+    }
+    weeklyPerformance[week].totalRankings++;
+    if (percentile >= 90) {
+      weeklyPerformance[week].topPercentileCount++;
+      topPercentileRankings++;
+    }
+
+    // Track consecutive top percentile (simplified - would need more complex logic for true consecutive)
+    if (percentile >= 90) {
+      consecutiveTopPercentile++;
+    } else {
+      consecutiveTopPercentile = 0;
+    }
+  });
+
+  // Calculate season performance
+  const totalRankingsWithPercentiles = percentileData?.length || 0;
+  const averagePercentile = totalRankingsWithPercentiles > 0 
+    ? percentileData?.reduce((sum: number, r: any) => sum + (r.percentile_rank || 0), 0) / totalRankingsWithPercentiles
+    : 0;
+
+  const seasonPerformance = {
+    totalRankings: totalRankingsWithPercentiles,
+    averagePercentile,
+    topPercentileCount: topPercentileRankings
+  };
 
   return {
     totalRankings: totalRankings || 0,
@@ -170,7 +212,10 @@ async function getUserStats(supabase: any, userId: string): Promise<UserStats> {
     groupsCreated: groupsCreated || 0,
     daysSinceJoined,
     isVerified: profile?.is_verified || false,
-    isBetaTester,
+    isBetaTester: false, // Removed beta tester badge
     isFoundingMember,
+    percentileRankings,
+    weeklyPerformance,
+    seasonPerformance
   };
 } 
