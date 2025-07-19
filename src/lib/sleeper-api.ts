@@ -12,9 +12,40 @@ export class SleeperAPI {
   }
 
   async getProjections(week: number, season: number = 2025) {
-    const response = await fetch(`${this.baseURL}/projections/nfl/${season}/${week}`);
-    return response.json();
+    try {
+      const response = await fetch(`${this.baseURL}/projections/nfl/${season}/${week}`);
+      
+      if (!response.ok) {
+        console.warn(`Sleeper API responded with status: ${response.status}`);
+        return {};
+      }
+      
+      const data = await response.json();
+      
+      // Check if Sleeper data is actually populated
+      const hasRealData = Object.values(data).some((proj: any) => 
+        proj && Object.keys(proj).length > 0 && proj.pts_ppr !== undefined && proj.pts_ppr > 0
+      );
+      
+          if (!hasRealData) {
+      console.warn(`Sleeper projections are empty for week ${week}, season ${season}`);
+      return {};
+    }
+      
+      console.log(`✅ Sleeper projections loaded: ${Object.keys(data).length} players with valid data`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching Sleeper projections:', error);
+      console.warn('Sleeper API error - no fallback available');
+      return {};
+    }
   }
+
+
+
+
+
+  
 
   async getSeasonProjections(season: number = 2025): Promise<Record<string, any>> {
     console.log(`Fetching season projections for ${season}...`);

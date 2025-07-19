@@ -137,6 +137,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Handle average rankings reference
+    if (referenceRankingId === 'average') {
+      const { data: averageRankings, error: avgError } = await supabase
+        .from('player_average_rankings')
+        .select('*')
+        .eq('position', targetPosition)
+        .eq('season', targetSeason)
+        .eq('type', targetType)
+        .order('average_rank', { ascending: true });
+
+      if (avgError) {
+        console.error('Error fetching average rankings:', avgError);
+        return NextResponse.json({ error: 'Failed to fetch average rankings' }, { status: 500 });
+      }
+
+      // Transform average rankings to player format
+      const transformedPlayers = averageRankings?.map((avg, index) => ({
+        id: avg.player_id,
+        name: avg.player_name,
+        team: avg.team,
+        position: avg.position,
+        rank: index + 1,
+        isStarred: false // Average rankings don't have starred status
+      })) || [];
+
+      return NextResponse.json({ 
+        success: true,
+        players: transformedPlayers,
+        referenceInfo: {
+          title: `Average ${targetPosition} Rankings`,
+          position: targetPosition,
+          week: targetWeek,
+          type: targetType
+        }
+      });
+    }
+
     // Get the reference ranking
     const { data: referenceRanking, error: fetchError } = await supabase
       .from('rankings')

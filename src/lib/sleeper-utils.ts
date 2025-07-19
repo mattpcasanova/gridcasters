@@ -1,5 +1,7 @@
 import { SleeperPlayer, PlayerProjections, RankingPlayer } from '@/lib/types';
 import { getPositionLimits } from '@/lib/constants/position-limits';
+import { getSavedPreseasonRankings, createSavedRankingsMap } from '@/lib/saved-rankings-fallback';
+import { AveragePlayerRanking } from '@/lib/average-rankings';
 
 export const getPlayerAvatarURL = (playerId: string): string => {
   return `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg`;
@@ -16,7 +18,9 @@ export const transformSleeperData = (
   projections: PlayerProjections,
   starredPlayers: Set<string>,
   positionFilter: string = 'OVR',
-  scoringFormat: string = 'half_ppr'
+  scoringFormat: string = 'half_ppr',
+  savedRankings?: Record<string, number>,
+  averageRankings?: AveragePlayerRanking[]
 ): RankingPlayer[] => {
   const playerArray = Object.values(players);
   
@@ -67,7 +71,19 @@ export const transformSleeperData = (
         team: player.team,
         position: player.position, // Use position directly since we only allow QB, RB, WR, TE
         projectedPoints: (() => {
-          const projection = projections[player.player_id];
+          // Try to find projection by Sleeper ID first
+          let projection = projections[player.player_id];
+          
+          // If not found, try to find by name (for ESPN data)
+          if (!projection) {
+            const playerName = `${player.first_name} ${player.last_name}`.toLowerCase();
+            Object.entries(projections).forEach(([key, proj]: [string, any]) => {
+              if (proj.player_name && proj.player_name.toLowerCase() === playerName) {
+                projection = proj;
+              }
+            });
+          }
+          
           if (!projection) return 0;
           
           switch (scoringFormat) {
@@ -91,15 +107,73 @@ export const transformSleeperData = (
 
       };
     })
-    // Sort by projected points (descending)
-    .sort((a, b) => b.projectedPoints - a.projectedPoints);
+    // Sort by projected points (descending), fallback to average rankings, then saved rankings, then ESPN rankings
+    .sort((a, b) => {
+      // If both have projections, sort by projections
+      if (a.projectedPoints > 0 && b.projectedPoints > 0) {
+        return b.projectedPoints - a.projectedPoints;
+      }
+      
+      // If only one has projections, prioritize the one with projections
+      if (a.projectedPoints > 0 && b.projectedPoints === 0) {
+        return -1;
+      }
+      if (a.projectedPoints === 0 && b.projectedPoints > 0) {
+        return 1;
+      }
+      
+      // If neither has projections, use average rankings first, then saved rankings, then ESPN rankings
+      if (averageRankings && averageRankings.length > 0) {
+        const aAvgRanking = averageRankings.find(avg => avg.player_id === a.id);
+        const bAvgRanking = averageRankings.find(avg => avg.player_id === b.id);
+        
+        // If both have average rankings, sort by average rank
+        if (aAvgRanking && bAvgRanking) {
+          return aAvgRanking.average_rank - bAvgRanking.average_rank;
+        }
+        
+        // If only one has average ranking, prioritize the one with average ranking
+        if (aAvgRanking && !bAvgRanking) {
+          return -1;
+        }
+        if (!aAvgRanking && bAvgRanking) {
+          return 1;
+        }
+      }
+      
+      // If no average rankings, use saved rankings
+      if (savedRankings) {
+        const aSavedRank = savedRankings[a.id];
+        const bSavedRank = savedRankings[b.id];
+        
+        // If both have saved rankings, sort by saved rank
+        if (aSavedRank && bSavedRank) {
+          return aSavedRank - bSavedRank;
+        }
+        
+        // If only one has saved ranking, prioritize the one with saved ranking
+        if (aSavedRank && !bSavedRank) {
+          return -1;
+        }
+        if (!aSavedRank && bSavedRank) {
+          return 1;
+        }
+      }
+      
+      // No final fallback - if no average rankings, maintain current order
+      return 0;
+    });
 
   console.log(`TransformSleeperData Debug - After transformation and sorting: ${transformedPlayers.length} players`);
 
-  // Apply position-specific display limit
-  transformedPlayers = transformedPlayers.slice(0, limits.displayLimit);
-
-  console.log(`TransformSleeperData Debug - After applying display limit (${limits.displayLimit}): ${transformedPlayers.length} players`);
+  // Only apply position-specific display limit if we don't have saved or average rankings
+  // This ensures all players from saved rankings are shown
+  if (!savedRankings && (!averageRankings || averageRankings.length === 0)) {
+    transformedPlayers = transformedPlayers.slice(0, limits.displayLimit);
+    console.log(`TransformSleeperData Debug - Applied display limit (${limits.displayLimit}): ${transformedPlayers.length} players`);
+  } else {
+    console.log(`TransformSleeperData Debug - Skipped display limit due to saved/average rankings: ${transformedPlayers.length} players`);
+  }
 
   // Set ranks after filtering and sorting
   transformedPlayers = transformedPlayers.map((player, index) => ({

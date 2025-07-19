@@ -234,7 +234,7 @@ export default function Rankings() {
 
   // Debug: Show current limits and player counts
   const currentLimits = getPositionLimits(selectedPosition);
-  console.log(`Rankings Debug - Position: ${selectedPosition}, Players: ${players.length}, Filtered: ${filteredPlayers.length}, Limits:`, currentLimits);
+  console.log(`Rankings Debug - Position: ${selectedPosition}, Players: ${players.length}, Filtered: ${filteredPlayers.length}, Search Term: "${searchTerm}", Limits:`, currentLimits);
 
   // Calculate player counts for each position
   const getPositionPlayerCount = (position: string) => {
@@ -397,6 +397,12 @@ export default function Rankings() {
                     </div>
                   </SelectItem>
                   <SelectItem value="preseason">Pre-Season Rankings</SelectItem>
+                  <SelectItem value="average">
+                    <div className="flex items-center">
+                      <span>Average Player Rankings</span>
+                      <span className="ml-2 text-xs text-gray-500">Crowd Wisdom</span>
+                    </div>
+                  </SelectItem>
                   {/* Aggregate rankings will be loaded dynamically */}
                 </SelectContent>
               </Select>
@@ -466,6 +472,10 @@ export default function Rankings() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              {/* Debug: Show search term and player counts */}
+              <div className="mt-2 text-sm text-gray-600">
+                Debug: Total players: {players.length}, Filtered: {filteredPlayers.length}, Search: "{searchTerm}"
+              </div>
             </div>
             <div className="flex gap-2">
               <GradientButton onClick={handleSaveRankings} icon={Save} className="w-full sm:w-auto">
