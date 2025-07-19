@@ -26,17 +26,17 @@ export default function TestAccuracyPage() {
   const [testResults, setTestResults] = useState<TestSummary | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  const runTests = () => {
+  const runTests = async () => {
     setIsRunning(true);
     setTestResults(null);
     
     // Clear console for fresh output
     console.clear();
     
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         const runner = new AccuracyTestRunner();
-        const results = runner.runTests();
+        const results = await runner.runTests();
         setTestResults(results);
       } catch (error) {
         console.error('Test runner error:', error);
