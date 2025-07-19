@@ -18,6 +18,9 @@ export function SignUpForm() {
     email: '',
     password: '',
     username: '',
+    firstName: '',
+    lastName: '',
+    birthDate: '',
   })
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,6 +93,39 @@ export function SignUpForm() {
         )}
 
         <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Input
+                id="firstName"
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
+                required
+                placeholder="First name"
+                value={formData.firstName}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, firstName: e.target.value }))
+                }
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <Input
+                id="lastName"
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
+                required
+                placeholder="Last name"
+                value={formData.lastName}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, lastName: e.target.value }))
+                }
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
           <div>
             <Input
               id="username"
@@ -103,6 +139,22 @@ export function SignUpForm() {
               value={formData.username}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, username: e.target.value.toLowerCase() }))
+              }
+              disabled={isLoading}
+            />
+          </div>
+
+          <div>
+            <Input
+              id="birthDate"
+              name="birthDate"
+              type="date"
+              autoComplete="bday"
+              required
+              placeholder="Birth date"
+              value={formData.birthDate}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, birthDate: e.target.value }))
               }
               disabled={isLoading}
             />
