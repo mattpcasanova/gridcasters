@@ -191,7 +191,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
             let successfulWeeks = 0;
             
             // Try current season first, then fall back to 2024
-            let season = 2025; // Use 2025 as default since Sleeper API now has 2025 data
+            let season = 2024; // Use 2024 as default since 2025 projections aren't available yet
             let hasValidData = false;
             
             // Test if we can get data from current season

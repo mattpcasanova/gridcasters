@@ -245,7 +245,7 @@ export default function Rankings() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
           <div className="space-y-4">
@@ -260,7 +260,7 @@ export default function Rankings() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">Error loading data: {error}</p>
           <button 
@@ -275,13 +275,13 @@ export default function Rankings() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-4 sm:p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">
           {rankingType === 'preseason' ? 'Pre-Season Rankings' : `Week ${selectedWeek} Rankings`}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 text-sm sm:text-base">
           {rankingType === 'preseason' 
             ? 'Create your season-long player rankings' 
             : 'Drag and drop players to create your custom rankings'
@@ -289,13 +289,13 @@ export default function Rankings() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
         {/* Sidebar */}
-        <div className="lg:col-span-1">
+        <div className="xl:col-span-1 order-2 xl:order-1">
           {/* Position Filter */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
             <h3 className="font-semibold mb-3">Position Filter</h3>
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="grid grid-cols-3 gap-2 mb-4">
               {["OVR", "FLX", "QB", "RB", "WR", "TE"].map((position) => (
                 <button
                   key={position}
@@ -457,7 +457,7 @@ export default function Rankings() {
         </div>
 
         {/* Main Content */}
-        <div className="lg:col-span-3">
+        <div className="xl:col-span-3 order-1 xl:order-2">
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
@@ -468,7 +468,7 @@ export default function Rankings() {
               />
             </div>
             <div className="flex gap-2">
-              <GradientButton onClick={handleSaveRankings} icon={Save}>
+              <GradientButton onClick={handleSaveRankings} icon={Save} className="w-full sm:w-auto">
                 Save
               </GradientButton>
             </div>

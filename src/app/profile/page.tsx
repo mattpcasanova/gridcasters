@@ -513,23 +513,23 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Profile Header */}
         <Card className="mb-8">
           <CardContent className="p-6">
             <div className="flex flex-col space-y-4">
               {/* Profile Info */}
-              <div className="flex items-start">
-                <div className="flex items-start space-x-6 flex-1">
+              <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                <div className="flex items-start space-x-4 sm:space-x-6 flex-1">
                   {/* Profile Picture */}
                   <div className="relative group">
-                    <Avatar className="w-24 h-24 border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
+                    <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[2px]">
                       <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
                         <AvatarImage 
                           src={profile?.avatar_url || "/placeholder-user.jpg"} 
                           className="w-full h-full object-cover"
                         />
-                        <AvatarFallback className="text-xl">{profile ? getInitials(profile) : "U"}</AvatarFallback>
+                        <AvatarFallback className="text-lg sm:text-xl">{profile ? getInitials(profile) : "U"}</AvatarFallback>
                       </div>
                     </Avatar>
                     {isEditing && (
@@ -537,7 +537,7 @@ export default function Profile() {
                         className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
                         htmlFor="avatar"
                       >
-                        <Upload className="w-6 h-6 text-white" />
+                        <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                         <input
                           id="avatar"
                           type="file"
@@ -550,26 +550,26 @@ export default function Profile() {
                     <div className="absolute inset-0 rounded-full shadow-lg pointer-events-none"></div>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                       {isEditing ? (
                         <Input
                           value={editForm.display_name}
                           onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
-                          className="text-2xl font-bold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
+                          className="text-xl sm:text-2xl font-bold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
                           placeholder="Display Name"
                         />
                       ) : (
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{getDisplayName(profile)}</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{getDisplayName(profile)}</h1>
                       )}
-                      <UIBadge variant="outline" className="text-xs">Public</UIBadge>
+                      <UIBadge variant="outline" className="text-xs w-fit">Public</UIBadge>
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">@{profile?.username} • Joined {new Date(profile?.created_at || '').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                    <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">@{profile?.username} • Joined {new Date(profile?.created_at || '').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col space-y-2 min-w-[140px]">
+                <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 w-full sm:w-auto sm:min-w-[140px]">
                   <Button 
                     variant="outline" 
                     onClick={async () => {
@@ -686,7 +686,7 @@ export default function Profile() {
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
@@ -753,7 +753,7 @@ export default function Profile() {
                 <CardDescription>Detailed breakdown of your ranking performance</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   <Card className={`p-4 ${getTierBgColor('bronze')}`}>
                     <div className="flex items-center justify-center">
                       <div className="text-center">
@@ -786,7 +786,7 @@ export default function Profile() {
                   </Card>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {/* Position Accuracy */}
                   <div className="space-y-4">
                     <h3 className="font-semibold text-slate-900 dark:text-white">Accuracy by Position</h3>
@@ -875,7 +875,7 @@ export default function Profile() {
                   return (
                     <div key={category} className="mb-8 last:mb-0">
                       <h2 className="text-xl font-semibold mb-4">{getCategoryLabel(category)}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {categoryBadges.map((badge) => {
                           const badgeStatus = earnedBadges[badge.id]
                           const isSelected = selectedBadges.includes(badge.id)
