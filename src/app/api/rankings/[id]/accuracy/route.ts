@@ -70,7 +70,7 @@ export async function POST(
       success: true,
       accuracyScore: accuracyResult.accuracyPercentage,
       breakdown: accuracyResult.breakdown,
-      dataSource: 'real' // Indicate this used real data
+      dataSource: actualPerformance.length > 0 ? 'real' : 'no_data'
     });
 
   } catch (error) {
@@ -131,7 +131,7 @@ export async function GET(
         accuracyScore: accuracyResult.accuracyPercentage,
         breakdown: accuracyResult.breakdown,
         calculated: true,
-        dataSource: 'real'
+        dataSource: actualPerformance.length > 0 ? 'real' : 'no_data'
       });
     }
 

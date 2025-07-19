@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { calculateAccuracyScore, getMockPerformanceData } from '@/lib/utils/accuracy-scoring';
+import { calculateAccuracyScore, fetchRealPerformanceData } from '@/lib/utils/accuracy-scoring';
 
 export async function POST(request: Request) {
   try {
@@ -13,15 +13,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get mock performance data
-    const actualPerformance = getMockPerformanceData(position);
+    // Fetch real performance data
+    const actualPerformance = await fetchRealPerformanceData(position);
 
     // Calculate accuracy
     const result = calculateAccuracyScore(playerRankings, actualPerformance, position);
 
     return NextResponse.json({
       success: true,
-      result
+      result,
+      dataSource: actualPerformance.length > 0 ? 'real' : 'no_data'
     });
 
   } catch (error) {
@@ -33,31 +34,9 @@ export async function POST(request: Request) {
   }
 }
 
-// Example usage endpoint
 export async function GET() {
-  // Sample data for demonstration
-  const sampleUserRankings = {
-    'QB': [
-      { player_id: 'qb1', rank: 1 },
-      { player_id: 'qb2', rank: 2 },
-      { player_id: 'qb3', rank: 3 },
-      { player_id: 'qb4', rank: 4 },
-      { player_id: 'qb5', rank: 5 }
-    ]
-  };
-
-  const sampleActualRankings = {
-    'QB': [
-      { player_id: 'qb1', rank: 1, name: 'Josh Allen', team: 'BUF', position: 'QB' },
-      { player_id: 'qb2', rank: 3, name: 'Patrick Mahomes', team: 'KC', position: 'QB' },
-      { player_id: 'qb3', rank: 8, name: 'Jalen Hurts', team: 'PHI', position: 'QB' },
-      { player_id: 'qb4', rank: 2, name: 'Lamar Jackson', team: 'BAL', position: 'QB' },
-      { player_id: 'qb5', rank: 25, name: 'Justin Herbert', team: 'LAC', position: 'QB' }
-    ]
-  };
-
   try {
-    // Create sample player rankings with matching IDs from mock data
+    // Create sample player rankings for testing
     const samplePlayerRankings = [
       { id: '1', ranking_id: 'test', player_id: '1', player_name: 'Josh Allen', team: 'BUF', position: 'QB', rank_position: 1, is_starred: false, created_at: new Date().toISOString() },
       { id: '2', ranking_id: 'test', player_id: '3', player_name: 'Patrick Mahomes', team: 'KC', position: 'QB', rank_position: 2, is_starred: false, created_at: new Date().toISOString() },
@@ -66,7 +45,7 @@ export async function GET() {
       { id: '5', ranking_id: 'test', player_id: '6', player_name: 'Justin Herbert', team: 'LAC', position: 'QB', rank_position: 5, is_starred: false, created_at: new Date().toISOString() }
     ];
 
-    const actualPerformance = getMockPerformanceData('QB');
+    const actualPerformance = await fetchRealPerformanceData('QB');
     const result = calculateAccuracyScore(samplePlayerRankings, actualPerformance, 'QB');
     
     return NextResponse.json({
@@ -75,7 +54,8 @@ export async function GET() {
         playerRankings: samplePlayerRankings,
         actualPerformance
       },
-      result
+      result,
+      dataSource: actualPerformance.length > 0 ? 'real' : 'no_data'
     });
 
   } catch (error) {

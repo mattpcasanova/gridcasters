@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { RefreshCw, AlertTriangle, Home } from 'lucide-react'
@@ -59,14 +60,12 @@ export default function GlobalError({
                     Refresh Page
                   </Button>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => window.location.href = '/'}
-                  >
-                    <Home className="w-4 h-4 mr-2" />
-                    Go Home
-                  </Button>
+                  <Link href="/" className="w-full">
+                    <Button variant="outline" className="w-full">
+                      <Home className="w-4 h-4 mr-2" />
+                      Go Home
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

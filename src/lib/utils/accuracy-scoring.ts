@@ -44,7 +44,7 @@ export interface AccuracyScoreResult {
 }
 
 /**
- * Fetch real performance data from external APIs
+ * Fetch real performance data from Sleeper API only
  */
 export async function fetchRealPerformanceData(
   position: string, 
@@ -52,32 +52,18 @@ export async function fetchRealPerformanceData(
   season?: number
 ): Promise<ActualPerformance[]> {
   try {
-    // Try to fetch from multiple sources for redundancy
-    const sources = [
-      fetchFromSleeperAPI(position, week, season),
-      fetchFromFantasyProsAPI(position, week, season),
-      fetchFromDraftSharksAPI(position, week, season)
-    ];
-
-    // Use the first successful response
-    for (const source of sources) {
-      try {
-        const data = await source;
-        if (data && data.length > 0) {
-          return data;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch from source:', error);
-        continue;
-      }
+    // Try to fetch from Sleeper API
+    const data = await fetchFromSleeperAPI(position, week, season);
+    if (data && data.length > 0) {
+      return data;
     }
 
-    // Fallback to mock data if all sources fail
-    console.warn('All performance data sources failed, using mock data');
-    return getMockPerformanceData(position);
+    // If Sleeper API fails, return empty array
+    console.warn('Sleeper API failed, no performance data available');
+    return [];
   } catch (error) {
     console.error('Error fetching performance data:', error);
-    return getMockPerformanceData(position);
+    return [];
   }
 }
 
@@ -126,18 +112,6 @@ async function fetchFromSleeperAPI(position: string, week?: number, season?: num
     console.error('Sleeper API error:', error);
     throw error;
   }
-}
-
-async function fetchFromFantasyProsAPI(position: string, week?: number, season?: number): Promise<ActualPerformance[]> {
-  // FantasyPros API implementation would go here
-  // This would require an API key and specific endpoint
-  throw new Error('FantasyPros API not implemented');
-}
-
-async function fetchFromDraftSharksAPI(position: string, week?: number, season?: number): Promise<ActualPerformance[]> {
-  // DraftSharks API implementation would go here
-  // This would require an API key and specific endpoint
-  throw new Error('DraftSharks API not implemented');
 }
 
 function getCurrentWeek(): number {
@@ -200,6 +174,28 @@ export function calculateAccuracyScore(
   let top5Correct = 0;
   let busts = 0;
   let inactivePlayers = 0;
+
+  // If no actual performance data, return zero score
+  if (!actualPerformance || actualPerformance.length === 0) {
+    return {
+      totalScore: 0,
+      maxPossibleScore: 0,
+      accuracyPercentage: 0,
+      breakdown: {
+        baseScore: 0,
+        bonuses: 0,
+        penalties: 0,
+        details: {
+          perfectMatches: 0,
+          closeMatches: 0,
+          top10Correct: 0,
+          top5Correct: 0,
+          busts: 0,
+          inactivePlayers: 0,
+        }
+      }
+    };
+  }
 
   // Create lookup map for actual performance
   const actualMap = new Map(
@@ -291,166 +287,4 @@ export function calculateAccuracyScore(
       }
     }
   };
-}
-
-/**
- * Get mock performance data for testing
- */
-export function getMockPerformanceData(position: string): ActualPerformance[] {
-  const mockData: Record<string, ActualPerformance[]> = {
-    QB: [
-      { playerId: '1', playerName: 'Josh Allen', team: 'BUF', position: 'QB', actualRank: 1, actualPoints: 28.5, isActive: true },
-      { playerId: '2', playerName: 'Lamar Jackson', team: 'BAL', position: 'QB', actualRank: 2, actualPoints: 26.2, isActive: true },
-      { playerId: '3', playerName: 'Patrick Mahomes', team: 'KC', position: 'QB', actualRank: 3, actualPoints: 24.8, isActive: true },
-      { playerId: '4', playerName: 'Jalen Hurts', team: 'PHI', position: 'QB', actualRank: 4, actualPoints: 23.1, isActive: true },
-      { playerId: '5', playerName: 'Dak Prescott', team: 'DAL', position: 'QB', actualRank: 5, actualPoints: 22.7, isActive: true },
-      { playerId: '6', playerName: 'Justin Herbert', team: 'LAC', position: 'QB', actualRank: 6, actualPoints: 21.9, isActive: true },
-      { playerId: '7', playerName: 'Kyler Murray', team: 'ARI', position: 'QB', actualRank: 7, actualPoints: 20.8, isActive: true },
-      { playerId: '8', playerName: 'Tua Tagovailoa', team: 'MIA', position: 'QB', actualRank: 8, actualPoints: 19.5, isActive: true },
-      { playerId: '9', playerName: 'Kirk Cousins', team: 'MIN', position: 'QB', actualRank: 9, actualPoints: 18.9, isActive: true },
-      { playerId: '10', playerName: 'Russell Wilson', team: 'DEN', position: 'QB', actualRank: 10, actualPoints: 18.2, isActive: true },
-      { playerId: '11', playerName: 'Baker Mayfield', team: 'TB', position: 'QB', actualRank: 11, actualPoints: 17.8, isActive: true },
-      { playerId: '12', playerName: 'Jared Goff', team: 'DET', position: 'QB', actualRank: 12, actualPoints: 17.1, isActive: true },
-      { playerId: '13', playerName: 'Sam Howell', team: 'WAS', position: 'QB', actualRank: 13, actualPoints: 16.5, isActive: true },
-      { playerId: '14', playerName: 'Geno Smith', team: 'SEA', position: 'QB', actualRank: 14, actualPoints: 15.9, isActive: true },
-      { playerId: '15', playerName: 'Derek Carr', team: 'NO', position: 'QB', actualRank: 15, actualPoints: 15.2, isActive: true },
-      { playerId: '16', playerName: 'Daniel Jones', team: 'NYG', position: 'QB', actualRank: 16, actualPoints: 14.8, isActive: true },
-      { playerId: '17', playerName: 'Mac Jones', team: 'NE', position: 'QB', actualRank: 17, actualPoints: 14.1, isActive: true },
-      { playerId: '18', playerName: 'Kenny Pickett', team: 'PIT', position: 'QB', actualRank: 18, actualPoints: 13.5, isActive: true },
-      { playerId: '19', playerName: 'Desmond Ridder', team: 'ATL', position: 'QB', actualRank: 19, actualPoints: 12.9, isActive: true },
-      { playerId: '20', playerName: 'Zach Wilson', team: 'NYJ', position: 'QB', actualRank: 20, actualPoints: 12.2, isActive: true },
-      { playerId: '21', playerName: 'Carson Wentz', team: 'LAR', position: 'QB', actualRank: 21, actualPoints: 11.8, isActive: true },
-      { playerId: '22', playerName: 'Mitch Trubisky', team: 'BUF', position: 'QB', actualRank: 22, actualPoints: 11.1, isActive: true },
-      { playerId: '23', playerName: 'Davis Mills', team: 'HOU', position: 'QB', actualRank: 23, actualPoints: 10.5, isActive: true },
-      { playerId: '24', playerName: 'Taylor Heinicke', team: 'ATL', position: 'QB', actualRank: 24, actualPoints: 9.9, isActive: true },
-      { playerId: '25', playerName: 'Gardner Minshew', team: 'IND', position: 'QB', actualRank: 25, actualPoints: 9.2, isActive: true },
-      { playerId: '26', playerName: 'Tyler Huntley', team: 'BAL', position: 'QB', actualRank: 26, actualPoints: 8.8, isActive: true },
-      { playerId: '27', playerName: 'Cooper Rush', team: 'DAL', position: 'QB', actualRank: 27, actualPoints: 8.1, isActive: true },
-      { playerId: '28', playerName: 'Jameis Winston', team: 'NO', position: 'QB', actualRank: 28, actualPoints: 7.5, isActive: true },
-      { playerId: '29', playerName: 'Andy Dalton', team: 'CAR', position: 'QB', actualRank: 29, actualPoints: 6.9, isActive: true },
-      { playerId: '30', playerName: 'Marcus Mariota', team: 'PHI', position: 'QB', actualRank: 30, actualPoints: 6.2, isActive: true },
-      { playerId: '31', playerName: 'Joe Flacco', team: 'CLE', position: 'QB', actualRank: 31, actualPoints: 5.8, isActive: true },
-      { playerId: '32', playerName: 'Blaine Gabbert', team: 'KC', position: 'QB', actualRank: 32, actualPoints: 5.1, isActive: true },
-      { playerId: '33', playerName: 'Chase Daniel', team: 'LAC', position: 'QB', actualRank: 33, actualPoints: 4.5, isActive: true },
-      { playerId: '34', playerName: 'Nate Sudfeld', team: 'DET', position: 'QB', actualRank: 34, actualPoints: 3.9, isActive: true },
-      { playerId: '35', playerName: 'Kyle Trask', team: 'TB', position: 'QB', actualRank: 35, actualPoints: 3.2, isActive: true },
-      { playerId: '36', playerName: 'Jake Browning', team: 'CIN', position: 'QB', actualRank: 36, actualPoints: 2.8, isActive: true },
-    ],
-    RB: [
-      { playerId: 'rb1', playerName: 'Christian McCaffrey', actualRank: 1, fantasyPoints: 25.8, isActive: true },
-      { playerId: 'rb2', playerName: 'Austin Ekeler', actualRank: 2, fantasyPoints: 24.2, isActive: true },
-      { playerId: 'rb3', playerName: 'Saquon Barkley', actualRank: 3, fantasyPoints: 22.7, isActive: true },
-      { playerId: 'rb4', playerName: 'Derrick Henry', actualRank: 4, fantasyPoints: 21.9, isActive: true },
-      { playerId: 'rb5', playerName: 'Nick Chubb', actualRank: 5, fantasyPoints: 20.8, isActive: true },
-      { playerId: 'rb6', playerName: 'Alvin Kamara', actualRank: 6, fantasyPoints: 19.5, isActive: true },
-      { playerId: 'rb7', playerName: 'Dalvin Cook', actualRank: 7, fantasyPoints: 18.9, isActive: true },
-      { playerId: 'rb8', playerName: 'Joe Mixon', actualRank: 8, fantasyPoints: 18.2, isActive: true },
-      { playerId: 'rb9', playerName: 'Aaron Jones', actualRank: 9, fantasyPoints: 17.8, isActive: true },
-      { playerId: 'rb10', playerName: 'Josh Jacobs', actualRank: 10, fantasyPoints: 17.1, isActive: true },
-      { playerId: 'rb11', playerName: 'Ezekiel Elliott', actualRank: 11, fantasyPoints: 16.5, isActive: true },
-      { playerId: 'rb12', playerName: 'James Conner', actualRank: 12, fantasyPoints: 15.9, isActive: true },
-      { playerId: 'rb13', playerName: 'Miles Sanders', actualRank: 13, fantasyPoints: 15.2, isActive: true },
-      { playerId: 'rb14', playerName: 'Rhamondre Stevenson', actualRank: 14, fantasyPoints: 14.8, isActive: true },
-      { playerId: 'rb15', playerName: 'Tony Pollard', actualRank: 15, fantasyPoints: 14.1, isActive: true },
-      { playerId: 'rb16', playerName: 'J.K. Dobbins', actualRank: 16, fantasyPoints: 13.5, isActive: true },
-      { playerId: 'rb17', playerName: 'David Montgomery', actualRank: 17, fantasyPoints: 12.9, isActive: true },
-      { playerId: 'rb18', playerName: 'Damien Harris', actualRank: 18, fantasyPoints: 12.2, isActive: true },
-      { playerId: 'rb19', playerName: 'Clyde Edwards-Helaire', actualRank: 19, fantasyPoints: 11.8, isActive: true },
-      { playerId: 'rb20', playerName: 'Cam Akers', actualRank: 20, fantasyPoints: 11.1, isActive: true },
-      { playerId: 'rb21', playerName: 'Kareem Hunt', actualRank: 21, fantasyPoints: 10.5, isActive: true },
-      { playerId: 'rb22', playerName: 'Melvin Gordon', actualRank: 22, fantasyPoints: 9.9, isActive: true },
-      { playerId: 'rb23', playerName: 'Chase Edmonds', actualRank: 23, fantasyPoints: 9.2, isActive: true },
-      { playerId: 'rb24', playerName: 'Rashaad Penny', actualRank: 24, fantasyPoints: 8.8, isActive: true },
-      { playerId: 'rb25', playerName: 'Alexander Mattison', actualRank: 25, fantasyPoints: 8.1, isActive: true },
-      { playerId: 'rb26', playerName: 'Devin Singletary', actualRank: 26, fantasyPoints: 7.5, isActive: true },
-      { playerId: 'rb27', playerName: 'Raheem Mostert', actualRank: 27, fantasyPoints: 6.9, isActive: true },
-      { playerId: 'rb28', playerName: 'Jeff Wilson Jr.', actualRank: 28, fantasyPoints: 6.2, isActive: true },
-      { playerId: 'rb29', playerName: 'Nyheim Hines', actualRank: 29, fantasyPoints: 5.8, isActive: true },
-      { playerId: 'rb30', playerName: 'James Robinson', actualRank: 30, fantasyPoints: 5.1, isActive: true },
-      { playerId: 'rb31', playerName: 'Cordarrelle Patterson', actualRank: 31, fantasyPoints: 4.5, isActive: true },
-      { playerId: 'rb32', playerName: 'Tyler Allgeier', actualRank: 32, fantasyPoints: 3.9, isActive: true },
-      { playerId: 'rb33', playerName: 'Kenneth Walker III', actualRank: 33, fantasyPoints: 3.2, isActive: true },
-      { playerId: 'rb34', playerName: 'Breece Hall', actualRank: 34, fantasyPoints: 2.8, isActive: true },
-      { playerId: 'rb35', playerName: 'Dameon Pierce', actualRank: 35, fantasyPoints: 2.1, isActive: true },
-      { playerId: 'rb36', playerName: 'Brian Robinson Jr.', actualRank: 36, fantasyPoints: 1.5, isActive: true },
-    ],
-    WR: [
-      { playerId: 'wr1', playerName: 'Justin Jefferson', actualRank: 1, fantasyPoints: 24.8, isActive: true },
-      { playerId: 'wr2', playerName: 'Davante Adams', actualRank: 2, fantasyPoints: 23.5, isActive: true },
-      { playerId: 'wr3', playerName: 'Tyreek Hill', actualRank: 3, fantasyPoints: 22.9, isActive: true },
-      { playerId: 'wr4', playerName: 'Stefon Diggs', actualRank: 4, fantasyPoints: 21.7, isActive: true },
-      { playerId: 'wr5', playerName: 'CeeDee Lamb', actualRank: 5, fantasyPoints: 20.8, isActive: true },
-      { playerId: 'wr6', playerName: 'A.J. Brown', actualRank: 6, fantasyPoints: 19.9, isActive: true },
-      { playerId: 'wr7', playerName: 'Ja\'Marr Chase', actualRank: 7, fantasyPoints: 19.2, isActive: true },
-      { playerId: 'wr8', playerName: 'DeAndre Hopkins', actualRank: 8, fantasyPoints: 18.5, isActive: true },
-      { playerId: 'wr9', playerName: 'Mike Evans', actualRank: 9, fantasyPoints: 17.8, isActive: true },
-      { playerId: 'wr10', playerName: 'Keenan Allen', actualRank: 10, fantasyPoints: 17.1, isActive: true },
-      { playerId: 'wr11', playerName: 'Amari Cooper', actualRank: 11, fantasyPoints: 16.5, isActive: true },
-      { playerId: 'wr12', playerName: 'Tyler Lockett', actualRank: 12, fantasyPoints: 15.9, isActive: true },
-      { playerId: 'wr13', playerName: 'Brandin Cooks', actualRank: 13, fantasyPoints: 15.2, isActive: true },
-      { playerId: 'wr14', playerName: 'Terry McLaurin', actualRank: 14, fantasyPoints: 14.8, isActive: true },
-      { playerId: 'wr15', playerName: 'Diontae Johnson', actualRank: 15, fantasyPoints: 14.1, isActive: true },
-      { playerId: 'wr16', playerName: 'Chris Godwin', actualRank: 16, fantasyPoints: 13.5, isActive: true },
-      { playerId: 'wr17', playerName: 'Michael Pittman Jr.', actualRank: 17, fantasyPoints: 12.9, isActive: true },
-      { playerId: 'wr18', playerName: 'Jerry Jeudy', actualRank: 18, fantasyPoints: 12.2, isActive: true },
-      { playerId: 'wr19', playerName: 'Drake London', actualRank: 19, fantasyPoints: 11.8, isActive: true },
-      { playerId: 'wr20', playerName: 'Garrett Wilson', actualRank: 20, fantasyPoints: 11.1, isActive: true },
-      { playerId: 'wr21', playerName: 'Christian Watson', actualRank: 21, fantasyPoints: 10.5, isActive: true },
-      { playerId: 'wr22', playerName: 'Jahan Dotson', actualRank: 22, fantasyPoints: 9.9, isActive: true },
-      { playerId: 'wr23', playerName: 'Treylon Burks', actualRank: 23, fantasyPoints: 9.2, isActive: true },
-      { playerId: 'wr24', playerName: 'George Pickens', actualRank: 24, fantasyPoints: 8.8, isActive: true },
-      { playerId: 'wr25', playerName: 'Skyy Moore', actualRank: 25, fantasyPoints: 8.1, isActive: true },
-      { playerId: 'wr26', playerName: 'Wan\'Dale Robinson', actualRank: 26, fantasyPoints: 7.5, isActive: true },
-      { playerId: 'wr27', playerName: 'Alec Pierce', actualRank: 27, fantasyPoints: 6.9, isActive: true },
-      { playerId: 'wr28', playerName: 'Romeo Doubs', actualRank: 28, fantasyPoints: 6.2, isActive: true },
-      { playerId: 'wr29', playerName: 'Kadarius Toney', actualRank: 29, fantasyPoints: 5.8, isActive: true },
-      { playerId: 'wr30', playerName: 'Jalen Tolbert', actualRank: 30, fantasyPoints: 5.1, isActive: true },
-      { playerId: 'wr31', playerName: 'Kyle Philips', actualRank: 31, fantasyPoints: 4.5, isActive: true },
-      { playerId: 'wr32', playerName: 'Calvin Austin III', actualRank: 32, fantasyPoints: 3.9, isActive: true },
-      { playerId: 'wr33', playerName: 'Tyquan Thornton', actualRank: 33, fantasyPoints: 3.2, isActive: true },
-      { playerId: 'wr34', playerName: 'Velus Jones Jr.', actualRank: 34, fantasyPoints: 2.8, isActive: true },
-      { playerId: 'wr35', playerName: 'Danny Gray', actualRank: 35, fantasyPoints: 2.1, isActive: true },
-      { playerId: 'wr36', playerName: 'John Metchie III', actualRank: 36, fantasyPoints: 1.5, isActive: true },
-    ],
-    TE: [
-      { playerId: 'te1', playerName: 'Travis Kelce', actualRank: 1, fantasyPoints: 22.5, isActive: true },
-      { playerId: 'te2', playerName: 'Mark Andrews', actualRank: 2, fantasyPoints: 20.8, isActive: true },
-      { playerId: 'te3', playerName: 'Kyle Pitts', actualRank: 3, fantasyPoints: 19.2, isActive: true },
-      { playerId: 'te4', playerName: 'George Kittle', actualRank: 4, fantasyPoints: 17.9, isActive: true },
-      { playerId: 'te5', playerName: 'Darren Waller', actualRank: 5, fantasyPoints: 16.8, isActive: true },
-      { playerId: 'te6', playerName: 'T.J. Hockenson', actualRank: 6, fantasyPoints: 15.7, isActive: true },
-      { playerId: 'te7', playerName: 'Dallas Goedert', actualRank: 7, fantasyPoints: 14.9, isActive: true },
-      { playerId: 'te8', playerName: 'Pat Freiermuth', actualRank: 8, fantasyPoints: 14.2, isActive: true },
-      { playerId: 'te9', playerName: 'Cole Kmet', actualRank: 9, fantasyPoints: 13.5, isActive: true },
-      { playerId: 'te10', playerName: 'Evan Engram', actualRank: 10, fantasyPoints: 12.8, isActive: true },
-      { playerId: 'te11', playerName: 'Gerald Everett', actualRank: 11, fantasyPoints: 12.1, isActive: true },
-      { playerId: 'te12', playerName: 'Tyler Higbee', actualRank: 12, fantasyPoints: 11.5, isActive: true },
-      { playerId: 'te13', playerName: 'Hayden Hurst', actualRank: 13, fantasyPoints: 10.9, isActive: true },
-      { playerId: 'te14', playerName: 'Robert Tonyan', actualRank: 14, fantasyPoints: 10.2, isActive: true },
-      { playerId: 'te15', playerName: 'Noah Fant', actualRank: 15, fantasyPoints: 9.8, isActive: true },
-      { playerId: 'te16', playerName: 'Mike Gesicki', actualRank: 16, fantasyPoints: 9.1, isActive: true },
-      { playerId: 'te17', playerName: 'Hunter Henry', actualRank: 17, fantasyPoints: 8.5, isActive: true },
-      { playerId: 'te18', playerName: 'Austin Hooper', actualRank: 18, fantasyPoints: 7.9, isActive: true },
-      { playerId: 'te19', playerName: 'Cameron Brate', actualRank: 19, fantasyPoints: 7.2, isActive: true },
-      { playerId: 'te20', playerName: 'Mo Alie-Cox', actualRank: 20, fantasyPoints: 6.8, isActive: true },
-      { playerId: 'te21', playerName: 'Tyler Conklin', actualRank: 21, fantasyPoints: 6.1, isActive: true },
-      { playerId: 'te22', playerName: 'Jonnu Smith', actualRank: 22, fantasyPoints: 5.5, isActive: true },
-      { playerId: 'te23', playerName: 'Irv Smith Jr.', actualRank: 23, fantasyPoints: 4.9, isActive: true },
-      { playerId: 'te24', playerName: 'Albert Okwuegbunam', actualRank: 24, fantasyPoints: 4.2, isActive: true },
-      { playerId: 'te25', playerName: 'Brevin Jordan', actualRank: 25, fantasyPoints: 3.8, isActive: true },
-      { playerId: 'te26', playerName: 'Jelani Woods', actualRank: 26, fantasyPoints: 3.1, isActive: true },
-      { playerId: 'te27', playerName: 'Greg Dulcich', actualRank: 27, fantasyPoints: 2.5, isActive: true },
-      { playerId: 'te28', playerName: 'Trey McBride', actualRank: 28, fantasyPoints: 1.9, isActive: true },
-      { playerId: 'te29', playerName: 'Jake Ferguson', actualRank: 29, fantasyPoints: 1.2, isActive: true },
-      { playerId: 'te30', playerName: 'Isaiah Likely', actualRank: 30, fantasyPoints: 0.8, isActive: true },
-      { playerId: 'te31', playerName: 'Cade Otton', actualRank: 31, fantasyPoints: 0.1, isActive: true },
-      { playerId: 'te32', playerName: 'Daniel Bellinger', actualRank: 32, fantasyPoints: 0.0, isActive: true },
-      { playerId: 'te33', playerName: 'Jeremy Ruckert', actualRank: 33, fantasyPoints: 0.0, isActive: true },
-      { playerId: 'te34', playerName: 'Charlie Kolar', actualRank: 34, fantasyPoints: 0.0, isActive: true },
-      { playerId: 'te35', playerName: 'Jalen Wydermyer', actualRank: 35, fantasyPoints: 0.0, isActive: true },
-      { playerId: 'te36', playerName: 'James Mitchell', actualRank: 36, fantasyPoints: 0.0, isActive: true },
-    ]
-  };
-
-  return mockData[position] || mockData.QB;
 } 
