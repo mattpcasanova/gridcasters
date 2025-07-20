@@ -595,12 +595,12 @@ export default function Profile() {
                       }
                     }}
                     disabled={isCheckingBadges}
-                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                    className="w-full sm:flex-none text-xs sm:text-sm"
                   >
                     <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${isCheckingBadges ? 'animate-spin' : ''}`} />
                     Check Badges
                   </Button>
-                  <Link href="/settings" className="flex-1 sm:flex-none">
+                  <Link href="/settings" className="w-full sm:flex-none">
                     <Button 
                       variant="outline" 
                       className="w-full text-xs sm:text-sm"
@@ -613,7 +613,7 @@ export default function Profile() {
                     <>
                       <Button 
                         variant="outline" 
-                        className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        className="w-full sm:flex-none text-xs sm:text-sm"
                         onClick={() => setIsEditing(false)}
                       >
                         <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -621,7 +621,7 @@ export default function Profile() {
                       </Button>
                       <GradientButton
                         onClick={handleSave}
-                        className="flex-1 sm:flex-none text-xs sm:text-sm"
+                        className="w-full sm:flex-none text-xs sm:text-sm"
                       >
                         <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         Save
@@ -631,7 +631,7 @@ export default function Profile() {
                     <Button 
                       variant="outline" 
                       onClick={handleLogout}
-                      className="flex-1 sm:flex-none text-xs sm:text-sm border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                      className="w-full sm:flex-none text-xs sm:text-sm border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
                       <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Sign Out
@@ -729,13 +729,15 @@ export default function Profile() {
                               </div>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              {ranking.accuracy !== null ? (
-                                <CircularProgress value={ranking.accuracy} size={40} showText />
-                              ) : (
-                                <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                                  <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
-                                </div>
-                              )}
+                              <div className="hidden sm:block">
+                                {ranking.accuracy !== null ? (
+                                  <CircularProgress value={ranking.accuracy} size={40} showText />
+                                ) : (
+                                  <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                    <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </Link>

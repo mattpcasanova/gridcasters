@@ -1149,7 +1149,7 @@ export default function Leaderboard() {
                             )}
                           </div>
                           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                            {group.members} members • {group.avgAccuracy > 0 ? `${group.avgAccuracy}%` : '--'} avg accuracy
+                            {group.members} members
                           </p>
                           {group.isJoined && group.userRank && (
                             <p className="text-xs text-slate-500">
