@@ -16,15 +16,18 @@ function getScoringFormatText(scoringFormat: string): string {
 
 // Helper function to update individual position rankings based on OVR ranking
 async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string, scoringFormat?: string) {
-  // Group players by position from the OVR ranking
+  // Group players by their actual NFL position (not the ranking position)
   const playersByPosition: Record<string, any[]> = {};
   
   ovrPlayers.forEach(player => {
-    if (!playersByPosition[player.position]) {
-      playersByPosition[player.position] = [];
-    }
-    playersByPosition[player.position].push(player);
+    // Get the player's actual NFL position from the Sleeper API data
+    // We need to fetch this from the database or use a different approach
+    // For now, let's skip this function as it's causing issues
+    return;
   });
+  
+  // Skip this function for now as it's overwriting saved rankings
+  return;
 
   // Update each position's ranking to match the OVR order
   for (const [pos, positionPlayers] of Object.entries(playersByPosition)) {
@@ -43,7 +46,7 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
     // Handle week parameter - use is() for null values, eq() for integers
     if (week === null) {
       positionQuery = positionQuery.is('week', null);
-    } else {
+    } else if (week !== undefined) {
       positionQuery = positionQuery.eq('week', week);
     }
 
@@ -119,6 +122,9 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
 
 // Helper function to update FLX ranking based on OVR ranking
 async function updateFLXRankingFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string, scoringFormat?: string) {
+  // Skip this function for now as it's causing issues with saved rankings
+  return;
+  
   // Filter OVR players to only include RB, WR, TE (FLX eligible positions)
   const flxPlayers = ovrPlayers.filter(player => ['RB', 'WR', 'TE'].includes(player.position));
   
@@ -137,7 +143,7 @@ async function updateFLXRankingFromOVR(supabase: any, userId: string, ovrPlayers
   // Handle week parameter - use is() for null values, eq() for integers
   if (week === null) {
     flxQuery = flxQuery.is('week', null);
-  } else {
+  } else if (week !== undefined) {
     flxQuery = flxQuery.eq('week', week);
   }
 
