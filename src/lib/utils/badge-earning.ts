@@ -83,25 +83,25 @@ export const checkBadgeEarning = (
 
       // Performance Badges - Now using real percentile data
       case 'rising_forecaster':
-        const top20Count = Object.values(currentStats.percentileRankings)
+        const top20Count = Object.values(currentStats.percentileRankings || {})
           .reduce((sum, pos) => sum + pos.total, 0);
         progress = Math.min(100, (top20Count / 5) * 100); // Need 5 top 20th percentile rankings
         earned = top20Count >= 5;
         break;
       case 'top_performer':
-        const top10Count = Object.values(currentStats.percentileRankings)
+        const top10Count = Object.values(currentStats.percentileRankings || {})
           .reduce((sum, pos) => sum + pos.top10, 0);
         progress = Math.min(100, (top10Count / 3) * 100); // Need 3 top 10th percentile rankings
         earned = top10Count >= 3;
         break;
       case 'super_forecaster':
-        const top5Count = Object.values(currentStats.percentileRankings)
+        const top5Count = Object.values(currentStats.percentileRankings || {})
           .reduce((sum, pos) => sum + pos.top5, 0);
         progress = Math.min(100, (top5Count / 2) * 100); // Need 2 top 5th percentile rankings
         earned = top5Count >= 2;
         break;
       case 'grid_genius':
-        const top1Count = Object.values(currentStats.percentileRankings)
+        const top1Count = Object.values(currentStats.percentileRankings || {})
           .reduce((sum, pos) => sum + pos.top1, 0);
         progress = Math.min(100, (top1Count / 1) * 100); // Need 1 top 1st percentile ranking
         earned = top1Count >= 1;
@@ -215,7 +215,7 @@ export const checkBadgeEarning = (
 
       // Milestone Badges
       case 'perfect_prophet':
-        const top1Total = Object.values(currentStats.percentileRankings)
+        const top1Total = Object.values(currentStats.percentileRankings || {})
           .reduce((sum, pos) => sum + pos.top1, 0);
         progress = Math.min(100, (top1Total / 1) * 100);
         earned = top1Total >= 1;

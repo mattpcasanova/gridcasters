@@ -42,6 +42,7 @@ import { getAvailableWeeks, getCurrentSeasonInfo, getDefaultWeek } from "@/lib/u
 import { getPositionLimits } from "@/lib/constants/position-limits"
 import { getPositionColor } from "@/lib/sleeper-utils"
 import { useSupabase } from "@/lib/hooks/use-supabase"
+import { toast } from "sonner"
 
 export default function Rankings() {
   const [selectedPosition, setSelectedPosition] = useState("OVR")
@@ -205,13 +206,13 @@ export default function Rankings() {
           }
         }
         
-        alert(message);
+        toast.success(message);
       } else {
-        alert(`Failed to save rankings: ${result.error}`);
+        toast.error(`Failed to save rankings: ${result.error}`);
       }
     } catch (error) {
       console.error('Error saving rankings:', error);
-      alert('An error occurred while saving rankings.');
+      toast.error('An error occurred while saving rankings.');
     }
   }
 
