@@ -23,11 +23,14 @@ export async function getAverageRankings(
   try {
     console.log(`getAverageRankings Debug - Fetching for position=${position}, season=${season}, type=${type}, week=${week}`);
 
+    // For FLX, we need to fetch OVR rankings and filter out QBs later
+    const queryPosition = position === 'FLX' ? 'OVR' : position;
+
     // Use a more specific query to avoid duplicates by selecting distinct player_id
     let query = supabase
       .from('player_average_rankings')
       .select('*')
-      .eq('position', position)
+      .eq('position', queryPosition)
       .eq('season', season)
       .eq('type', type)
       .order('average_rank', { ascending: true });

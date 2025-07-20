@@ -96,8 +96,23 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
         const limits = getPositionLimits(positionFilter);
         
         // Transform average rankings directly to player format - NO DUPLICATES
-        const averagePlayers = averageRankings
-          .filter(avg => avg.position === positionFilter) // Only include players for the correct position
+        let filteredRankings = averageRankings;
+        
+        if (positionFilter === 'FLX') {
+          // For FLX, use OVR rankings but exclude QBs
+          filteredRankings = averageRankings
+            .filter(avg => avg.position === 'OVR') // Get OVR rankings
+            .filter(avg => {
+              // Get the player's actual position from allPlayers
+              const player = allPlayers[avg.player_id];
+              return player && player.position && !['QB'].includes(player.position);
+            });
+        } else {
+          // For other positions, use position-specific rankings
+          filteredRankings = averageRankings.filter(avg => avg.position === positionFilter);
+        }
+        
+        const averagePlayers = filteredRankings
           .sort((a, b) => a.average_rank - b.average_rank) // Sort by average_rank (lowest first)
           .slice(0, limits.displayLimit) // Apply display limit
           .map((avg, index) => ({
