@@ -145,28 +145,28 @@ export const checkBadgeEarning = (
 
       // Position Badges - Using position-specific percentile data
       case 'qb_whisperer':
-        const qbTop10 = currentStats.percentileRankings.QB?.top10 || 0;
+        const qbTop10 = currentStats.percentileRankings?.QB?.top10 || 0;
         progress = Math.min(100, (qbTop10 / 3) * 100);
         earned = qbTop10 >= 3;
         break;
       case 'rb_oracle':
-        const rbTop10 = currentStats.percentileRankings.RB?.top10 || 0;
+        const rbTop10 = currentStats.percentileRankings?.RB?.top10 || 0;
         progress = Math.min(100, (rbTop10 / 3) * 100);
         earned = rbTop10 >= 3;
         break;
       case 'wr_savant':
-        const wrTop10 = currentStats.percentileRankings.WR?.top10 || 0;
+        const wrTop10 = currentStats.percentileRankings?.WR?.top10 || 0;
         progress = Math.min(100, (wrTop10 / 3) * 100);
         earned = wrTop10 >= 3;
         break;
       case 'te_expert':
-        const teTop10 = currentStats.percentileRankings.TE?.top10 || 0;
+        const teTop10 = currentStats.percentileRankings?.TE?.top10 || 0;
         progress = Math.min(100, (teTop10 / 3) * 100);
         earned = teTop10 >= 3;
         break;
       case 'position_master':
         const allPositionsTop10 = ['QB', 'RB', 'WR', 'TE'].every(pos => 
-          (currentStats.percentileRankings[pos]?.top10 || 0) >= 3
+          (currentStats.percentileRankings?.[pos]?.top10 || 0) >= 3
         );
         progress = allPositionsTop10 ? 100 : 0;
         earned = allPositionsTop10;
@@ -222,7 +222,7 @@ export const checkBadgeEarning = (
         break;
       case 'triple_threat':
         const differentTypes = ['QB', 'RB', 'WR', 'TE'].filter(pos => 
-          (currentStats.percentileRankings[pos]?.top10 || 0) >= 3
+          (currentStats.percentileRankings?.[pos]?.top10 || 0) >= 3
         ).length;
         progress = Math.min(100, (differentTypes / 3) * 100);
         earned = differentTypes >= 3;

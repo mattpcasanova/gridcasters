@@ -60,6 +60,7 @@ export default function Rankings() {
   const [showPlayerModal, setShowPlayerModal] = useState<string | null>(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const [tutorialChecked, setTutorialChecked] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const supabase = useSupabase()
 
   
@@ -184,17 +185,18 @@ export default function Rankings() {
   }
 
   const handleSaveRankings = async () => {
+    setIsSaving(true);
     try {
       const result = await saveRankings(selectedPosition);
       
-              if (result.success) {
-          const actionText = result.action === 'created' ? 'created' : 'updated';
-          let message = `Rankings ${actionText} successfully!`;
-          
-          if ((selectedPosition === 'OVR' || selectedPosition === 'FLX') && result.positionRankingsUpdated) {
-            message += ' Individual position rankings have been updated to maintain consistency.';
-          }
+      if (result.success) {
+        const actionText = result.action === 'created' ? 'created' : 'updated';
+        let message = `Rankings ${actionText} successfully!`;
         
+        if ((selectedPosition === 'OVR' || selectedPosition === 'FLX') && result.positionRankingsUpdated) {
+          message += ' Individual position rankings have been updated to maintain consistency.';
+        }
+      
         // If this was a preseason ranking save, update the state
         if (rankingType === 'preseason') {
           setHasPreseasonRankings(true);
@@ -213,6 +215,8 @@ export default function Rankings() {
     } catch (error) {
       console.error('Error saving rankings:', error);
       toast.error('An error occurred while saving rankings.');
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -476,8 +480,20 @@ export default function Rankings() {
 
             </div>
             <div className="flex gap-2">
-              <GradientButton onClick={handleSaveRankings} icon={Save} className="w-full sm:w-auto">
-                Save
+              <GradientButton 
+                onClick={handleSaveRankings} 
+                icon={isSaving ? undefined : Save} 
+                className="w-full sm:w-auto"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </GradientButton>
             </div>
           </div>
