@@ -722,6 +722,7 @@ export async function GET(request: NextRequest) {
     const week = searchParams.get('week');
     const season = searchParams.get('season');
     const type = searchParams.get('type') || 'weekly';
+    const scoringFormat = searchParams.get('scoringFormat') || 'half_ppr';
 
     let query = supabase
       .from('rankings')
@@ -749,6 +750,11 @@ export async function GET(request: NextRequest) {
     if (week) {
       query = query.eq('week', parseInt(week));
     }
+
+    // Filter by scoring format based on title
+    const scoringText = scoringFormat === 'std' ? 'Standard' : 
+                       scoringFormat === 'ppr' ? 'Full PPR' : 'Half PPR';
+    query = query.ilike('title', `%${scoringText}%`);
 
     const { data: rankings, error } = await query;
 
