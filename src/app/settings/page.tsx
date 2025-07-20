@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { GradientButton } from "@/components/ui/gradient-button"
 import { useSupabase } from "@/lib/hooks/use-supabase"
 import { toast } from "sonner"
+import { useTheme } from "next-themes"
 import {
   Save,
   Upload,
@@ -21,9 +22,13 @@ import {
   Eye,
   Globe,
   Lock,
+  Moon,
+  Sun,
+  Monitor,
 } from "lucide-react"
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme()
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -559,6 +564,55 @@ export default function Settings() {
 
           <TabsContent value="account">
             <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Appearance</CardTitle>
+                  <CardDescription>Customize how GridCasters looks</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center space-x-2">
+                        <Monitor className="w-4 h-4 text-slate-500" />
+                        <Label className="text-base">Theme</Label>
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Choose your preferred color scheme
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant={theme === 'light' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setTheme('light')}
+                        className="flex items-center space-x-1"
+                      >
+                        <Sun className="w-4 h-4" />
+                        <span>Light</span>
+                      </Button>
+                      <Button
+                        variant={theme === 'dark' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setTheme('dark')}
+                        className="flex items-center space-x-1"
+                      >
+                        <Moon className="w-4 h-4" />
+                        <span>Dark</span>
+                      </Button>
+                      <Button
+                        variant={theme === 'system' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setTheme('system')}
+                        className="flex items-center space-x-1"
+                      >
+                        <Monitor className="w-4 h-4" />
+                        <span>Auto</span>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Change Password</CardTitle>
