@@ -19,15 +19,26 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
   // Group players by their actual NFL position (not the ranking position)
   const playersByPosition: Record<string, any[]> = {};
   
-  ovrPlayers.forEach(player => {
-    // Get the player's actual NFL position from the Sleeper API data
-    // We need to fetch this from the database or use a different approach
-    // For now, let's skip this function as it's causing issues
+  // Get all players from Sleeper API to get their actual positions
+  try {
+    const { SleeperAPI } = await import('@/lib/sleeper-api');
+    const sleeperAPI = new SleeperAPI();
+    const allPlayers = await sleeperAPI.getAllPlayers();
+    
+    ovrPlayers.forEach(player => {
+      const sleeperPlayer = allPlayers[player.id];
+      if (sleeperPlayer && sleeperPlayer.position) {
+        const position = sleeperPlayer.position;
+        if (!playersByPosition[position]) {
+          playersByPosition[position] = [];
+        }
+        playersByPosition[position].push(player);
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching player positions:', error);
     return;
-  });
-  
-  // Skip this function for now as it's overwriting saved rankings
-  return;
+  }
 
   // Update each position's ranking to match the OVR order
   for (const [pos, positionPlayers] of Object.entries(playersByPosition)) {
@@ -122,97 +133,106 @@ async function updatePositionRankingsFromOVR(supabase: any, userId: string, ovrP
 
 // Helper function to update FLX ranking based on OVR ranking
 async function updateFLXRankingFromOVR(supabase: any, userId: string, ovrPlayers: any[], week: number | null, season: number, type: string, scoringFormat?: string) {
-  // Skip this function for now as it's causing issues with saved rankings
-  return;
-  
-  // Filter OVR players to only include RB, WR, TE (FLX eligible positions)
-  const flxPlayers = ovrPlayers.filter(player => ['RB', 'WR', 'TE'].includes(player.position));
-  
-  // Sort FLX players by their rank in the OVR ranking
-  const sortedFLXPlayers = flxPlayers.sort((a, b) => a.rank - b.rank);
-  
-  // Check if a FLX ranking already exists
-  let flxQuery = supabase
-    .from('rankings')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('position', 'FLX')
-    .eq('season', season)
-    .eq('type', type);
-
-  // Handle week parameter - use is() for null values, eq() for integers
-  if (week === null) {
-    flxQuery = flxQuery.is('week', null);
-  } else if (week !== undefined) {
-    flxQuery = flxQuery.eq('week', week);
-  }
-
-  const { data: existingFLXRanking, error: fetchError } = await flxQuery.single();
-
-  let flxRankingId: string;
-
-  if (existingFLXRanking) {
-    // Update existing FLX ranking
-    flxRankingId = existingFLXRanking.id;
+  // Get all players from Sleeper API to get their actual positions
+  try {
+    const { SleeperAPI } = await import('@/lib/sleeper-api');
+    const sleeperAPI = new SleeperAPI();
+    const allPlayers = await sleeperAPI.getAllPlayers();
     
-    const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+    // Filter OVR players to only include RB, WR, TE (FLX eligible positions)
+    const flxPlayers = ovrPlayers.filter(player => {
+      const sleeperPlayer = allPlayers[player.id];
+      return sleeperPlayer && sleeperPlayer.position && ['RB', 'WR', 'TE'].includes(sleeperPlayer.position);
+    });
     
-    await supabase
+    // Sort FLX players by their rank in the OVR ranking
+    const sortedFLXPlayers = flxPlayers.sort((a, b) => a.rank - b.rank);
+    
+    // Check if a FLX ranking already exists
+    let flxQuery = supabase
       .from('rankings')
-      .update({
-        title: type === 'preseason' ? `Pre-Season FLX ${scoringText} Rankings` : `Week ${week} FLX ${scoringText} Rankings`,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', flxRankingId);
-
-    // Delete existing player rankings for FLX
-    await supabase
-      .from('player_rankings')
-      .delete()
-      .eq('ranking_id', flxRankingId);
-  } else {
-    // Create new FLX ranking
-    const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
-    
-    const { data: newFLXRanking, error: createError } = await supabase
-      .from('rankings')
-      .insert({
-        user_id: userId,
-        title: type === 'preseason' ? `Pre-Season FLX ${scoringText} Rankings` : `Week ${week} FLX ${scoringText} Rankings`,
-        position: 'FLX',
-        type,
-        week,
-        season,
-        is_active: true
-      })
       .select('id')
-      .single();
+      .eq('user_id', userId)
+      .eq('position', 'FLX')
+      .eq('season', season)
+      .eq('type', type);
 
-    if (createError) {
-      console.error(`Error creating FLX ranking:`, createError);
-      return;
+    // Handle week parameter - use is() for null values, eq() for integers
+    if (week === null) {
+      flxQuery = flxQuery.is('week', null);
+    } else if (week !== undefined) {
+      flxQuery = flxQuery.eq('week', week);
     }
 
-    flxRankingId = newFLXRanking.id;
-  }
+    const { data: existingFLXRanking, error: fetchError } = await flxQuery.single();
 
-  // Insert player rankings for FLX with new ranks (1, 2, 3, etc.)
-  const flxPlayerRankings = sortedFLXPlayers.map((player, index) => ({
-    ranking_id: flxRankingId,
-    player_id: player.id,
-    player_name: player.name,
-    team: player.team,
-    position: 'FLX', // Use FLX as the ranking position
-    rank_position: index + 1, // Re-rank starting from 1 for FLX
-    is_starred: player.isStarred || false
-  }));
+    let flxRankingId: string;
 
-  const { error: insertError } = await supabase
-    .from('player_rankings')
-    .insert(flxPlayerRankings);
+    if (existingFLXRanking) {
+      // Update existing FLX ranking
+      flxRankingId = existingFLXRanking.id;
+      
+      const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+      
+      await supabase
+        .from('rankings')
+        .update({
+          title: type === 'preseason' ? `Pre-Season FLX ${scoringText} Rankings` : `Week ${week} FLX ${scoringText} Rankings`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', flxRankingId);
 
-  if (insertError) {
-    console.error(`Error inserting FLX player rankings:`, insertError);
+      // Delete existing player rankings for FLX
+      await supabase
+        .from('player_rankings')
+        .delete()
+        .eq('ranking_id', flxRankingId);
+    } else {
+      // Create new FLX ranking
+      const scoringText = scoringFormat ? getScoringFormatText(scoringFormat) : 'Half PPR';
+      
+      const { data: newFLXRanking, error: createError } = await supabase
+        .from('rankings')
+        .insert({
+          user_id: userId,
+          title: type === 'preseason' ? `Pre-Season FLX ${scoringText} Rankings` : `Week ${week} FLX ${scoringText} Rankings`,
+          position: 'FLX',
+          type,
+          week,
+          season,
+          is_active: true
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error(`Error creating FLX ranking:`, createError);
+        return;
+      }
+
+      flxRankingId = newFLXRanking.id;
+    }
+
+    // Insert player rankings for FLX with new ranks (1, 2, 3, etc.)
+    const flxPlayerRankings = sortedFLXPlayers.map((player, index) => ({
+      ranking_id: flxRankingId,
+      player_id: player.id,
+      player_name: player.name,
+      team: player.team,
+      position: 'FLX', // Use FLX as the ranking position
+      rank_position: index + 1, // Re-rank starting from 1 for FLX
+      is_starred: player.isStarred || false
+    }));
+
+    const { error: insertError } = await supabase
+      .from('player_rankings')
+      .insert(flxPlayerRankings);
+
+    if (insertError) {
+      console.error(`Error inserting FLX player rankings:`, insertError);
+    }
+  } catch (error) {
+    console.error('Error updating FLX ranking from OVR:', error);
   }
 }
 
