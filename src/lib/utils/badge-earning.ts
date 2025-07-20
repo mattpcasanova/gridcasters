@@ -184,7 +184,7 @@ export const checkBadgeEarning = (
 
       // Seasonal Badges - Using weekly performance data
       case 'week_1_prophet':
-        const week1Performance = currentStats.weeklyPerformance['1'];
+        const week1Performance = currentStats.weeklyPerformance?.['1'];
         if (week1Performance) {
           const week1Percentile = week1Performance.topPercentileCount / week1Performance.totalRankings;
           progress = Math.min(100, (week1Percentile / 0.85) * 100); // Top 15th percentile
@@ -194,11 +194,11 @@ export const checkBadgeEarning = (
       case 'playoff_predictor':
         const playoffWeeks = ['18', '19', '20', '21']; // Playoff weeks
         const playoffPerformance = playoffWeeks.reduce((sum, week) => {
-          const weekData = currentStats.weeklyPerformance[week];
+          const weekData = currentStats.weeklyPerformance?.[week];
           return sum + (weekData?.topPercentileCount || 0);
         }, 0);
         const playoffTotal = playoffWeeks.reduce((sum, week) => {
-          const weekData = currentStats.weeklyPerformance[week];
+          const weekData = currentStats.weeklyPerformance?.[week];
           return sum + (weekData?.totalRankings || 0);
         }, 0);
         if (playoffTotal > 0) {
@@ -208,7 +208,7 @@ export const checkBadgeEarning = (
         }
         break;
       case 'season_sage':
-        const seasonPercentile = currentStats.seasonPerformance.averagePercentile;
+        const seasonPercentile = currentStats.seasonPerformance?.averagePercentile || 0;
         progress = Math.min(100, (seasonPercentile / 95) * 100); // Top 5th percentile
         earned = seasonPercentile >= 95;
         break;

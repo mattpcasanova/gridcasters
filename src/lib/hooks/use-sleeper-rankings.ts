@@ -82,39 +82,36 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     weekToLoad: number | null, 
     typeToLoad: 'preseason' | 'weekly'
   ) => {
-    // Always use preseason average rankings as the primary source
-    let averageRankings: any[] = [];
-    try {
-      averageRankings = await getAverageRankings(positionFilter, seasonInfo.season, 'preseason', undefined);
-      console.log(`Hook Debug - Loaded ${averageRankings.length} preseason average rankings for ${positionFilter}`);
-      
-      // Always use average rankings as the primary source
-      if (averageRankings.length > 0) {
-        console.log(`Hook Debug - Using preseason average rankings as primary source for ${positionFilter}`);
-        
-        // Get position limits for display filtering
-        const limits = getPositionLimits(positionFilter);
-        
-        // Transform average rankings directly to player format - NO DUPLICATES
-        let filteredRankings = averageRankings;
-        
-        if (positionFilter === 'FLX') {
-          // For FLX, use OVR rankings but exclude QBs
-          filteredRankings = averageRankings
-            .filter(avg => avg.position === 'OVR') // Get OVR rankings
-            .filter(avg => {
-              // Get the player's actual position from allPlayers
-              const player = allPlayers[avg.player_id];
-              return player && player.position && !['QB'].includes(player.position);
-            });
-        } else {
-          // For other positions, use position-specific rankings
-          filteredRankings = averageRankings.filter(avg => avg.position === positionFilter);
-        }
-        
-        const averagePlayers = filteredRankings
-          .sort((a, b) => a.average_rank - b.average_rank) // Sort by average_rank (lowest first)
-          .slice(0, limits.displayLimit) // Apply display limit
+            // Always use preseason average rankings as the primary source
+        let averageRankings: any[] = [];
+        try {
+          averageRankings = await getAverageRankings(positionFilter, seasonInfo.season, 'preseason', undefined);
+          
+          // Always use average rankings as the primary source
+          if (averageRankings.length > 0) {
+            // Get position limits for display filtering
+            const limits = getPositionLimits(positionFilter);
+            
+            // Transform average rankings directly to player format - NO DUPLICATES
+            let filteredRankings = averageRankings;
+            
+            if (positionFilter === 'FLX') {
+              // For FLX, use OVR rankings but exclude QBs
+              filteredRankings = averageRankings
+                .filter(avg => avg.position === 'OVR') // Get OVR rankings
+                .filter(avg => {
+                  // Get the player's actual position from allPlayers
+                  const player = allPlayers[avg.player_id];
+                  return player && player.position && !['QB'].includes(player.position);
+                });
+            } else {
+              // For other positions, use position-specific rankings
+              filteredRankings = averageRankings.filter(avg => avg.position === positionFilter);
+            }
+            
+            const averagePlayers = filteredRankings
+              .sort((a, b) => a.average_rank - b.average_rank) // Sort by average_rank (lowest first)
+              .slice(0, limits.displayLimit) // Apply display limit
           .map((avg, index) => ({
             id: avg.player_id,
             name: avg.player_name,
@@ -144,27 +141,23 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
             yearsExp: allPlayers[avg.player_id]?.years_exp || null,
           }));
         
-        console.log(`Hook Debug - Loaded ${averagePlayers.length} players from average rankings for ${positionFilter} (display limit: ${limits.displayLimit})`);
-        console.log(`Hook Debug - First 5 players:`, averagePlayers.slice(0, 5).map(p => ({ id: p.id, name: p.name, rank: p.rank })));
-        setPlayers(averagePlayers);
-        setError(null);
-        setLoading(false);
-        return;
-      } else {
-        console.log(`Hook Debug - No preseason average rankings found for ${positionFilter}, showing empty state`);
-        setPlayers([]);
-        setError('No average rankings available for this position');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      console.log('Hook Debug - Could not fetch average rankings:', err);
-      // If no average rankings available, show empty state
-      setPlayers([]);
-      setError('Failed to load average rankings');
-      setLoading(false);
-      return;
-    }
+                    setPlayers(averagePlayers);
+            setError(null);
+            setLoading(false);
+            return;
+          } else {
+            setPlayers([]);
+            setError('No average rankings available for this position');
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          // If no average rankings available, show empty state
+          setPlayers([]);
+          setError('Failed to load average rankings');
+          setLoading(false);
+          return;
+        }
   };
 
   useEffect(() => {

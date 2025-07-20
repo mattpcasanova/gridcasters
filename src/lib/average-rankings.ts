@@ -21,8 +21,6 @@ export async function getAverageRankings(
   week?: number
 ): Promise<AveragePlayerRanking[]> {
   try {
-    console.log(`getAverageRankings Debug - Fetching for position=${position}, season=${season}, type=${type}, week=${week}`);
-
     // For FLX, we need to fetch OVR rankings and filter out QBs later
     const queryPosition = position === 'FLX' ? 'OVR' : position;
 
@@ -44,13 +42,8 @@ export async function getAverageRankings(
     const { data, error } = await query;
 
     if (error) {
-      console.error('getAverageRankings Debug - Error fetching average rankings:', error);
+      console.error('Error fetching average rankings:', error);
       return [];
-    }
-
-    console.log(`getAverageRankings Debug - Found ${data?.length || 0} average rankings for ${position}`);
-    if (data && data.length > 0) {
-      console.log(`getAverageRankings Debug - First 3 rankings:`, data.slice(0, 3).map(r => ({ player_id: r.player_id, player_name: r.player_name, average_rank: r.average_rank })));
     }
 
     // Deduplicate by player_id - keep the first occurrence (lowest average_rank due to ordering)
@@ -58,14 +51,9 @@ export async function getAverageRankings(
       index === self.findIndex(r => r.player_id === ranking.player_id)
     ) : [];
 
-    console.log(`getAverageRankings Debug - After deduplication: ${uniqueData.length} unique rankings for ${position}`);
-    if (uniqueData.length > 0) {
-      console.log(`getAverageRankings Debug - First 3 unique rankings:`, uniqueData.slice(0, 3).map(r => ({ player_id: r.player_id, player_name: r.player_name, average_rank: r.average_rank })));
-    }
-
     return uniqueData;
   } catch (error) {
-    console.error('getAverageRankings Debug - Unexpected error fetching average rankings:', error);
+    console.error('Unexpected error fetching average rankings:', error);
     return [];
   }
 }
