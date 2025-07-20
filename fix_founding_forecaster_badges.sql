@@ -10,7 +10,7 @@ SELECT
     true as earned,
     100 as progress,
     p.created_at as earned_at,
-    EXTRACT(EPOCH FROM NOW()) * 1000 as last_checked,
+    NOW() as last_checked,
     false as notification_shown
 FROM profiles p
 WHERE NOT EXISTS (
@@ -32,7 +32,7 @@ BEGIN
     -- Award founding forecaster badge if user is among first 250
     IF user_rank <= 250 THEN
         INSERT INTO badge_progress (user_id, badge_id, earned, progress, earned_at, last_checked, notification_shown)
-        VALUES (NEW.id, 'founding_forecaster', true, 100, NEW.created_at, EXTRACT(EPOCH FROM NOW()) * 1000, false)
+        VALUES (NEW.id, 'founding_forecaster', true, 100, NEW.created_at, NOW(), false)
         ON CONFLICT (user_id, badge_id) DO NOTHING;
     END IF;
     
