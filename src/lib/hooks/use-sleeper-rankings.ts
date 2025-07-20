@@ -109,15 +109,15 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
               filteredRankings = averageRankings.filter(avg => avg.position === positionFilter);
             }
             
-            const averagePlayers = filteredRankings
+                        const averagePlayers = filteredRankings
               .sort((a, b) => a.average_rank - b.average_rank) // Sort by average_rank (lowest first)
               .slice(0, limits.displayLimit) // Apply display limit
-          .map((avg, index) => ({
-            id: avg.player_id,
-            name: avg.player_name,
-            team: avg.team,
-            position: avg.position,
-            rank: index + 1, // Sequential display rank (1, 2, 3, etc.)
+              .map((avg, index) => ({
+                id: avg.player_id,
+                name: avg.player_name,
+                team: avg.team,
+                position: positionFilter, // Use the requested position filter, not the database position
+                rank: index + 1, // Sequential display rank (1, 2, 3, etc.)
             projectedPoints: (() => {
               const projection = (projections as any)[avg.player_id];
               if (!projection) return 0;
