@@ -122,7 +122,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 id: player.player_id,
                 name: player.player_name,
                 team: player.team,
-                position: positionFilter,
+                position: allPlayers[player.player_id]?.position || positionFilter,
                 rank: index + 1,
                 projectedPoints: (() => {
                   const projection = (projections as any)[player.player_id];
@@ -200,7 +200,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                   id: player.player_id,
                   name: player.player_name,
                   team: player.team,
-                  position: positionFilter,
+                  position: allPlayers[player.player_id]?.position || positionFilter,
                   rank: index + 1,
                   projectedPoints: (() => {
                     const projection = (projections as any)[player.player_id];
@@ -270,7 +270,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
                 id: avg.player_id,
                 name: avg.player_name,
                 team: avg.team,
-                position: positionFilter, // Use the requested position filter, not the database position
+                position: allPlayers[avg.player_id]?.position || positionFilter, // Use actual player position
                 rank: index + 1, // Sequential display rank (1, 2, 3, etc.)
             projectedPoints: (() => {
               const projection = (projections as any)[avg.player_id];

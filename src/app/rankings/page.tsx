@@ -228,12 +228,37 @@ export default function Rankings() {
     player.team.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Get starred players for "My Guys" section
+  // Calculate position-specific ranks for My Guys
+  const getPositionSpecificRank = (player: any, filterPosition: string) => {
+    if (filterPosition === "All") return player.rank;
+    
+    // Filter players by the selected position
+    const positionPlayers = players.filter(p => {
+      if (filterPosition === "FLX") {
+        return p.position === "RB" || p.position === "WR" || p.position === "TE";
+      }
+      return p.position === filterPosition;
+    });
+    
+    // Sort by rank and find the player's position
+    const sortedPositionPlayers = positionPlayers.sort((a, b) => a.rank - b.rank);
+    const playerIndex = sortedPositionPlayers.findIndex(p => p.id === player.id);
+    
+    return playerIndex >= 0 ? playerIndex + 1 : player.rank;
+  };
+
+  // Get starred players for "My Guys" section with position-specific ranks
   const myGuys = players.filter(player => {
     if (!player.isStarred) return false
     if (myGuysFilter === "All") return true
+    if (myGuysFilter === "FLX") {
+      return player.position === "RB" || player.position === "WR" || player.position === "TE";
+    }
     return player.position === myGuysFilter
-  })
+  }).map(player => ({
+    ...player,
+    positionRank: getPositionSpecificRank(player, myGuysFilter)
+  }))
 
   const selectedPlayer = showPlayerModal ? players.find(p => p.id === showPlayerModal) : null
 
@@ -420,7 +445,14 @@ export default function Rankings() {
           {/* My Guys */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">My Guys ({starredPlayers.length})</h3>
+              <h3 className="font-semibold">
+                My Guys ({myGuys.length})
+                {myGuysFilter !== "All" && (
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    • {myGuysFilter}
+                  </span>
+                )}
+              </h3>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
@@ -433,6 +465,7 @@ export default function Rankings() {
                   <DropdownMenuItem onClick={() => setMyGuysFilter("RB")}>RB</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setMyGuysFilter("WR")}>WR</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setMyGuysFilter("TE")}>TE</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setMyGuysFilter("FLX")}>FLX</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -440,7 +473,7 @@ export default function Rankings() {
               {myGuys.slice(0, 5).map(player => (
                 <div key={player.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-gray-900">#{player.rank}</span>
+                    <span className="font-bold text-sm text-gray-900">#{player.positionRank}</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
                       {player.position}
                     </span>
