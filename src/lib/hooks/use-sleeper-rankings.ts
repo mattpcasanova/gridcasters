@@ -14,6 +14,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
   const [error, setError] = useState<string | null>(null);
   const [currentWeek, setCurrentWeek] = useState<number | null>(null);
   const [rankingType, setRankingType] = useState<'preseason' | 'weekly'>('weekly');
+  const [carriedOverFromWeek, setCarriedOverFromWeek] = useState<number | null>(null);
 
   const sleeperAPI = new SleeperAPI();
   const { favorites, isFavorite, toggleFavorite: toggleFavoriteDB, loading: favoritesLoading } = useFavorites();
@@ -82,93 +83,16 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     weekToLoad: number | null, 
     typeToLoad: 'preseason' | 'weekly'
   ) => {
-    // First, try to load user's saved rankings for the current week
-    try {
-      const savedRankingsResponse = await fetch(`/api/rankings?position=${positionFilter}&season=${seasonInfo.season}&type=${typeToLoad}&scoringFormat=${scoringFormat}${weekToLoad ? `&week=${weekToLoad}` : ''}`);
-      
-      if (savedRankingsResponse.ok) {
-        const { rankings } = await savedRankingsResponse.json();
-        
-        if (rankings && rankings.length > 0) {
-          // Use the most recent saved ranking
-          const savedRanking = rankings[0];
-          const savedPlayers = savedRanking.player_rankings || [];
-          
-          if (savedPlayers.length > 0) {
-            // Get position limits for display filtering
-            const limits = getPositionLimits(positionFilter);
-            
-            // Transform saved rankings to player format
-            let filteredPlayers = savedPlayers;
-            
-            if (positionFilter === 'FLX') {
-              // For FLX, filter out QBs from saved OVR rankings
-              filteredPlayers = savedPlayers.filter((player: any) => {
-                const sleeperPlayer = allPlayers[player.player_id];
-                return sleeperPlayer && sleeperPlayer.position && !['QB'].includes(sleeperPlayer.position);
-              });
-            } else if (positionFilter !== 'OVR') {
-              // For position-specific rankings, filter by position
-              filteredPlayers = savedPlayers.filter((player: any) => {
-                const sleeperPlayer = allPlayers[player.player_id];
-                return sleeperPlayer && sleeperPlayer.position === positionFilter;
-              });
-            }
-            
-            const savedPlayersFormatted = filteredPlayers
-              .sort((a: any, b: any) => a.rank_position - b.rank_position)
-              .slice(0, limits.displayLimit)
-              .map((player: any, index: number) => ({
-                id: player.player_id,
-                name: player.player_name,
-                team: player.team,
-                position: allPlayers[player.player_id]?.position || positionFilter,
-                rank: index + 1,
-                projectedPoints: (() => {
-                  const projection = (projections as any)[player.player_id];
-                  if (!projection) return 0;
-                  
-                  switch (scoringFormat) {
-                    case 'std':
-                      return projection.pts_std || 0;
-                    case 'ppr':
-                      return projection.pts_ppr || 0;
-                    case 'half_ppr':
-                    default:
-                      return projection.pts_half_ppr || (projection.pts_ppr ? projection.pts_ppr * 0.95 : 0);
-                  }
-                })(),
-                avatarUrl: `https://sleepercdn.com/content/nfl/players/thumb/${player.player_id}.jpg`,
-                teamLogoUrl: `https://sleepercdn.com/images/team_logos/nfl/${player.team?.toLowerCase()}.png`,
-                isStarred: isFavorite(player.player_id),
-                injuryStatus: allPlayers[player.player_id]?.injury_status || null,
-                age: allPlayers[player.player_id]?.age || null,
-                college: allPlayers[player.player_id]?.college || null,
-                yearsExp: allPlayers[player.player_id]?.years_exp || null,
-              }));
-            
-            setPlayers(savedPlayersFormatted);
-            setError(null);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-    } catch (err) {
-      // If loading saved rankings fails, continue to fallback
-    }
-    
-    // If no rankings found for current week and this is a weekly ranking, try previous week
-    if (typeToLoad === 'weekly' && weekToLoad && weekToLoad > 1) {
+    // Helper function to load and format saved rankings
+    const loadSavedRankings = async (week: number | null, type: 'preseason' | 'weekly') => {
       try {
-        const previousWeek = weekToLoad - 1;
-        const previousWeekResponse = await fetch(`/api/rankings?position=${positionFilter}&season=${seasonInfo.season}&type=${typeToLoad}&scoringFormat=${scoringFormat}&week=${previousWeek}`);
+        const savedRankingsResponse = await fetch(`/api/rankings?position=${positionFilter}&season=${seasonInfo.season}&type=${type}&scoringFormat=${scoringFormat}${week ? `&week=${week}` : ''}`);
         
-        if (previousWeekResponse.ok) {
-          const { rankings } = await previousWeekResponse.json();
+        if (savedRankingsResponse.ok) {
+          const { rankings } = await savedRankingsResponse.json();
           
           if (rankings && rankings.length > 0) {
-            // Use the most recent saved ranking from previous week
+            // Use the most recent saved ranking
             const savedRanking = rankings[0];
             const savedPlayers = savedRanking.player_rankings || [];
             
@@ -228,12 +152,34 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
               setPlayers(savedPlayersFormatted);
               setError(null);
               setLoading(false);
-              return;
+              
+              // Track if this is a carried-over ranking
+              if (week !== weekToLoad) {
+                setCarriedOverFromWeek(week);
+              } else {
+                setCarriedOverFromWeek(null);
+              }
+              
+              return true; // Successfully loaded
             }
           }
         }
       } catch (err) {
-        // If loading previous week rankings fails, continue to fallback
+        // If loading saved rankings fails, continue to fallback
+      }
+      return false; // Failed to load
+    };
+
+    // First, try to load user's saved rankings for the current week
+    const currentWeekLoaded = await loadSavedRankings(weekToLoad, typeToLoad);
+    if (currentWeekLoaded) return;
+    
+    // If no rankings found for current week and this is a weekly ranking, try previous weeks
+    if (typeToLoad === 'weekly' && weekToLoad && weekToLoad > 1) {
+      // Try previous weeks in descending order (most recent first)
+      for (let previousWeek = weekToLoad - 1; previousWeek >= 1; previousWeek--) {
+        const previousWeekLoaded = await loadSavedRankings(previousWeek, typeToLoad);
+        if (previousWeekLoaded) return;
       }
     }
     
@@ -538,6 +484,7 @@ export function useSleeperRankings(positionFilter: string = 'OVR', selectedWeek?
     error,
     currentWeek,
     rankingType,
+    carriedOverFromWeek,
     toggleStar,
     reorderPlayers,
     updatePlayerRank,

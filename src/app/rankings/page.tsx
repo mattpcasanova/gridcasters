@@ -155,6 +155,7 @@ export default function Rankings() {
     error, 
     currentWeek,
     rankingType,
+    carriedOverFromWeek,
     toggleStar, 
     reorderPlayers,
     updatePlayerRank,
@@ -512,7 +513,12 @@ export default function Rankings() {
               />
 
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {carriedOverFromWeek && (
+                <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-md border border-amber-200 dark:border-amber-800">
+                  Using rankings from Week {carriedOverFromWeek}
+                </div>
+              )}
               <GradientButton 
                 onClick={handleSaveRankings} 
                 icon={isSaving ? undefined : Save} 
