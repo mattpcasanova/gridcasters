@@ -570,7 +570,7 @@ export default function Profile() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center sm:justify-start">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center sm:justify-start w-full sm:w-auto">
                   <Button 
                     variant="outline" 
                     onClick={async () => {
@@ -595,7 +595,7 @@ export default function Profile() {
                       }
                     }}
                     disabled={isCheckingBadges}
-                    className="w-full sm:w-auto text-xs sm:text-sm"
+                    className="w-full sm:w-auto text-xs sm:text-sm px-6"
                   >
                     <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${isCheckingBadges ? 'animate-spin' : ''}`} />
                     Check Badges
@@ -603,7 +603,7 @@ export default function Profile() {
                   <Link href="/settings" className="w-full sm:w-auto">
                     <Button 
                       variant="outline" 
-                      className="w-full text-xs sm:text-sm"
+                      className="w-full text-xs sm:text-sm px-6"
                     >
                       <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Settings
@@ -613,7 +613,7 @@ export default function Profile() {
                     <>
                       <Button 
                         variant="outline" 
-                        className="w-full sm:w-auto text-xs sm:text-sm"
+                        className="w-full sm:w-auto text-xs sm:text-sm px-6"
                         onClick={() => setIsEditing(false)}
                       >
                         <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -621,7 +621,7 @@ export default function Profile() {
                       </Button>
                       <GradientButton
                         onClick={handleSave}
-                        className="w-full sm:w-auto text-xs sm:text-sm"
+                        className="w-full sm:w-auto text-xs sm:text-sm px-6"
                       >
                         <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         Save
@@ -631,7 +631,7 @@ export default function Profile() {
                     <Button 
                       variant="outline" 
                       onClick={handleLogout}
-                      className="w-full sm:w-auto text-xs sm:text-sm border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                      className="w-full sm:w-auto text-xs sm:text-sm px-6 border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
                       <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Sign Out
@@ -692,14 +692,14 @@ export default function Profile() {
 
         {/* Main Content */}
         <div className="space-y-6">
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+          <Tabs defaultValue="overview">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="achievements">Achievements</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="mt-6">
+            <TabsContent value="overview">
                 <Card>
                   <CardHeader>
                     <CardTitle>Recent Rankings</CardTitle>
