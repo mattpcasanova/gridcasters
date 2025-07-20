@@ -128,6 +128,7 @@ export default function Profile() {
   const [isPrivate, setIsPrivate] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [isSelectingBadges, setIsSelectingBadges] = useState(false)
+  const [isCheckingBadges, setIsCheckingBadges] = useState(false)
   const [earnedBadges, setEarnedBadges] = useState<{[key: string]: { earned: boolean, progress: number }}>({})
   const [selectedBadges, setSelectedBadges] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -569,10 +570,11 @@ export default function Profile() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 w-full sm:w-auto sm:min-w-[140px] max-w-full">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                   <Button 
                     variant="outline" 
                     onClick={async () => {
+                      setIsCheckingBadges(true);
                       try {
                         const response = await fetch('/api/badges/check', { method: 'POST' });
                         if (response.ok) {
@@ -588,26 +590,30 @@ export default function Profile() {
                       } catch (error) {
                         console.error('Error checking badges:', error);
                         toast.error('Failed to check badges');
+                      } finally {
+                        setIsCheckingBadges(false);
                       }
                     }}
-                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20 text-xs sm:text-sm"
+                    disabled={isCheckingBadges}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                   >
-                    <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${isCheckingBadges ? 'animate-spin' : ''}`} />
                     Check Badges
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20 text-xs sm:text-sm"
-                    onClick={() => router.push('/settings')}
-                  >
-                    <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    Settings
-                  </Button>
+                  <Link href="/settings" className="flex-1 sm:flex-none">
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-xs sm:text-sm"
+                    >
+                      <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Settings
+                    </Button>
+                  </Link>
                   {isEditing ? (
                     <>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start text-xs sm:text-sm"
+                        className="flex-1 sm:flex-none text-xs sm:text-sm"
                         onClick={() => setIsEditing(false)}
                       >
                         <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -615,7 +621,7 @@ export default function Profile() {
                       </Button>
                       <GradientButton
                         onClick={handleSave}
-                        className="w-full justify-start text-xs sm:text-sm"
+                        className="flex-1 sm:flex-none text-xs sm:text-sm"
                       >
                         <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         Save
@@ -625,7 +631,7 @@ export default function Profile() {
                     <Button 
                       variant="outline" 
                       onClick={handleLogout}
-                      className="w-full justify-start border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 text-xs sm:text-sm"
+                      className="flex-1 sm:flex-none text-xs sm:text-sm border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
                       <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Sign Out
@@ -693,268 +699,270 @@ export default function Profile() {
               <TabsTrigger value="achievements">Achievements</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Rankings</CardTitle>
-                  <CardDescription>Your latest player rankings and their performance</CardDescription>
-                </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentRankings?.map((ranking) => (
-                    <Link
-                      key={ranking.id}
-                      href={`/rankings/${ranking.id}`}
-                    >
-                      <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                        <div className="flex items-center space-x-3 sm:space-x-4">
-                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base ${getPositionColor(ranking.position)}`}>
-                            {ranking.position}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-sm sm:text-base truncate">{ranking.name}</h3>
-                            <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                              <UIBadge className={`${getPositionColor(ranking.position)} text-xs`} variant="outline">
+            <div className="mt-6">
+              <TabsContent value="overview">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Rankings</CardTitle>
+                    <CardDescription>Your latest player rankings and their performance</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {recentRankings?.map((ranking) => (
+                        <Link
+                          key={ranking.id}
+                          href={`/rankings/${ranking.id}`}
+                        >
+                          <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                            <div className="flex items-center space-x-3 sm:space-x-4">
+                              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base ${getPositionColor(ranking.position)}`}>
                                 {ranking.position}
-                              </UIBadge>
-                              <span>{ranking.date}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          {ranking.accuracy !== null ? (
-                            <CircularProgress value={ranking.accuracy} size={40} showText />
-                          ) : (
-                            <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                              <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                  
-                  {/* See All Rankings Button */}
-                  <div className="pt-4 border-t">
-                    <Link href="/profile/all-rankings">
-                      <Button variant="outline" className="w-full">
-                        See All Rankings
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Analytics</CardTitle>
-                <CardDescription>Detailed breakdown of your ranking performance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                  <Card className={`p-4 ${getTierBgColor('bronze')}`}>
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
-                        <div className="flex items-center justify-center mt-2">
-                          <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                            <span className="text-sm font-medium text-slate-500">--</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className={`p-4 ${getTierBgColor('bronze')}`}>
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
-                        <h2 className="text-2xl font-bold">Pending</h2>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className={`p-4 ${getTierBgColor('bronze')}`}>
-                    <div className="flex items-center justify-center">
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
-                        <h2 className="text-2xl font-bold">5</h2>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {/* Position Accuracy */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Accuracy by Position</h3>
-                    <div className="space-y-3">
-                      {[
-                        { position: 'FLX', accuracy: 0 },
-                        { position: 'QB', accuracy: 0 },
-                        { position: 'RB', accuracy: 0 },
-                        { position: 'WR', accuracy: 0 },
-                        { position: 'TE', accuracy: 0 }
-                      ].map(({ position, accuracy }) => (
-                        <div key={position} className="flex items-center justify-between">
-                          <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
-                            {position}
-                          </span>
-                          <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                            <span className="text-sm font-medium text-slate-500">--</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Percentile Rankings */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Percentile Rankings</h3>
-                    <div className="space-y-3">
-                      {[
-                        { position: 'FLX', percentile: 0 },
-                        { position: 'QB', percentile: 0 },
-                        { position: 'RB', percentile: 0 },
-                        { position: 'WR', percentile: 0 },
-                        { position: 'TE', percentile: 0 }
-                      ].map(({ position, percentile }) => (
-                        <div key={position} className="flex items-center justify-between">
-                          <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
-                            {position}
-                          </span>
-                          <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                            <span className="text-sm font-medium text-slate-500">--</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* All Time Data */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">All Time Data</h3>
-                    <div className="space-y-3">
-                      {[
-                        { label: 'Top 10 Percentile', value: 0 },
-                        { label: 'Top 20 Percentile', value: 0 },
-                        { label: 'Top 30 Percentile', value: 0 },
-                        { label: 'Perfect Picks', value: 0 },
-                        { label: '95%+ Accuracy Score', value: 0 },
-                        { label: '90%+ Accuracy Score', value: 0 },
-                        { label: '80%+ Accuracy Score', value: 0 }
-                      ].map(({ label, value }) => (
-                        <div key={label} className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold">{value}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="achievements">
-            <Card>
-              <CardHeader>
-                <CardTitle>Achievements</CardTitle>
-                <CardDescription>Badges and milestones earned on RankBet. Click to showcase up to 3 badges on your profile.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Group badges by category */}
-                {(['ranking', 'performance', 'consistency', 'social', 'position', 'seasonal', 'milestone', 'special'] as BadgeType['category'][]).map(category => {
-                  const categoryBadges = BADGES.filter(badge => badge.category === category)
-                  if (categoryBadges.length === 0) return null
-
-                  return (
-                    <div key={category} className="mb-8 last:mb-0">
-                      <h2 className="text-xl font-semibold mb-4">{getCategoryLabel(category)}</h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {categoryBadges.map((badge) => {
-                          const badgeStatus = earnedBadges[badge.id]
-                          const isSelected = selectedBadges.includes(badge.id)
-                          return (
-                            <button
-                              key={badge.id}
-                              onClick={() => toggleBadgeSelection(badge.id)}
-                              className={`p-4 border rounded-lg text-left transition-all ${getTierBgColor(badge.tier)} ${
-                                badge.tier === 'bronze'
-                                  ? 'border-amber-200 dark:border-amber-800'
-                                  : badge.tier === 'silver'
-                                  ? 'border-slate-200 dark:border-slate-700'
-                                  : badge.tier === 'gold'
-                                  ? 'border-yellow-200 dark:border-yellow-800'
-                                  : badge.tier === 'diamond'
-                                  ? 'border-blue-200 dark:border-blue-800'
-                                  : badge.tier === 'platinum'
-                                  ? 'border-purple-200 dark:border-purple-800'
-                                  : badge.tier === 'verified'
-                                  ? 'border-green-200 dark:border-green-800'
-                                  : badge.tier === 'special'
-                                  ? 'border-blue-200 dark:border-blue-800'
-                                  : 'border-indigo-200 dark:border-indigo-800'
-                              } ${
-                                isSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
-                              } ${
-                                !badgeStatus?.earned ? 'opacity-75' : ''
-                              }`}
-                            >
-                              <div className="flex items-start space-x-3">
-                                <div
-                                  className={`rounded-lg shadow-sm transition-all duration-200 hover:scale-105 ${
-                                    badgeStatus?.earned
-                                      ? getBadgeIconBg(badge.id, badge.tier)
-                                      : "bg-slate-300 dark:bg-slate-600"
-                                  }`}
-                                >
-                                  <div className="relative w-20 h-20 flex items-center justify-center">
-                                    <Image
-                                      src={badge.icon}
-                                      alt={badge.name}
-                                      width={80}
-                                      height={80}
-                                      className="w-full h-full object-contain p-1"
-                                      quality={100}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className={`font-semibold ${getTierColor(badge.tier)}`}>{badge.name}</h3>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">{badge.description}</p>
-                                  <p className="text-xs text-slate-500 dark:text-slate-500">{badge.subtitle}</p>
-                                  {badgeStatus?.earned ? (
-                                    <UIBadge variant="outline" className={`text-xs mt-2 ${isSelected ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : ''}`}>
-                                      {isSelected ? 'Selected' : 'Earned'}
-                                    </UIBadge>
-                                  ) : (
-                                    <div className="space-y-1 mt-2">
-                                      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                                        <span>Progress</span>
-                                        <span>{badgeStatus?.progress || 0}%</span>
-                                      </div>
-                                      <Progress value={badgeStatus?.progress || 0} className="h-1" />
-                                    </div>
-                                  )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-semibold text-sm sm:text-base truncate">{ranking.name}</h3>
+                                <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                                  <UIBadge className={`${getPositionColor(ranking.position)} text-xs`} variant="outline">
+                                    {ranking.position}
+                                  </UIBadge>
+                                  <span>{ranking.date}</span>
                                 </div>
                               </div>
-                            </button>
-                          )
-                        })}
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              {ranking.accuracy !== null ? (
+                                <CircularProgress value={ranking.accuracy} size={40} showText />
+                              ) : (
+                                <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                  <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                      
+                      {/* See All Rankings Button */}
+                      <div className="pt-4 border-t">
+                        <Link href="/profile/all-rankings">
+                          <Button variant="outline" className="w-full">
+                            See All Rankings
+                          </Button>
+                        </Link>
                       </div>
                     </div>
-                  )
-                })}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="analytics">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Performance Analytics</CardTitle>
+                    <CardDescription>Detailed breakdown of your ranking performance</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                      <Card className={`p-4 ${getTierBgColor('bronze')}`}>
+                        <div className="flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Overall Accuracy</p>
+                            <div className="flex items-center justify-center mt-2">
+                              <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                <span className="text-sm font-medium text-slate-500">--</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className={`p-4 ${getTierBgColor('bronze')}`}>
+                        <div className="flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Global Rank</p>
+                            <h2 className="text-2xl font-bold">Pending</h2>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className={`p-4 ${getTierBgColor('bronze')}`}>
+                        <div className="flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Rankings</p>
+                            <h2 className="text-2xl font-bold">5</h2>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {/* Position Accuracy */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">Accuracy by Position</h3>
+                        <div className="space-y-3">
+                          {[
+                            { position: 'FLX', accuracy: 0 },
+                            { position: 'QB', accuracy: 0 },
+                            { position: 'RB', accuracy: 0 },
+                            { position: 'WR', accuracy: 0 },
+                            { position: 'TE', accuracy: 0 }
+                          ].map(({ position, accuracy }) => (
+                            <div key={position} className="flex items-center justify-between">
+                              <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
+                                {position}
+                              </span>
+                              <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                <span className="text-sm font-medium text-slate-500">--</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Percentile Rankings */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">Percentile Rankings</h3>
+                        <div className="space-y-3">
+                          {[
+                            { position: 'FLX', percentile: 0 },
+                            { position: 'QB', percentile: 0 },
+                            { position: 'RB', percentile: 0 },
+                            { position: 'WR', percentile: 0 },
+                            { position: 'TE', percentile: 0 }
+                          ].map(({ position, percentile }) => (
+                            <div key={position} className="flex items-center justify-between">
+                              <span className={`px-2 py-1 rounded-md text-sm font-medium ${getPositionColor(position)}`}>
+                                {position}
+                              </span>
+                              <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                                <span className="text-sm font-medium text-slate-500">--</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* All Time Data */}
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">All Time Data</h3>
+                        <div className="space-y-3">
+                          {[
+                            { label: 'Top 10 Percentile', value: 0 },
+                            { label: 'Top 20 Percentile', value: 0 },
+                            { label: 'Top 30 Percentile', value: 0 },
+                            { label: 'Perfect Picks', value: 0 },
+                            { label: '95%+ Accuracy Score', value: 0 },
+                            { label: '90%+ Accuracy Score', value: 0 },
+                            { label: '80%+ Accuracy Score', value: 0 }
+                          ].map(({ label, value }) => (
+                            <div key={label} className="flex items-center justify-between">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
+                              <div className="flex items-center space-x-2">
+                                <span className="font-semibold">{value}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="achievements">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Achievements</CardTitle>
+                    <CardDescription>Badges and milestones earned on RankBet. Click to showcase up to 3 badges on your profile.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Group badges by category */}
+                    {(['ranking', 'performance', 'consistency', 'social', 'position', 'seasonal', 'milestone', 'special'] as BadgeType['category'][]).map(category => {
+                      const categoryBadges = BADGES.filter(badge => badge.category === category)
+                      if (categoryBadges.length === 0) return null
+
+                      return (
+                        <div key={category} className="mb-8 last:mb-0">
+                          <h2 className="text-xl font-semibold mb-4">{getCategoryLabel(category)}</h2>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {categoryBadges.map((badge) => {
+                              const badgeStatus = earnedBadges[badge.id]
+                              const isSelected = selectedBadges.includes(badge.id)
+                              return (
+                                <button
+                                  key={badge.id}
+                                  onClick={() => toggleBadgeSelection(badge.id)}
+                                  className={`p-4 border rounded-lg text-left transition-all ${getTierBgColor(badge.tier)} ${
+                                    badge.tier === 'bronze'
+                                      ? 'border-amber-200 dark:border-amber-800'
+                                      : badge.tier === 'silver'
+                                      ? 'border-slate-200 dark:border-slate-700'
+                                      : badge.tier === 'gold'
+                                      ? 'border-yellow-200 dark:border-yellow-800'
+                                      : badge.tier === 'diamond'
+                                      ? 'border-blue-200 dark:border-blue-800'
+                                      : badge.tier === 'platinum'
+                                      ? 'border-purple-200 dark:border-purple-800'
+                                      : badge.tier === 'verified'
+                                      ? 'border-green-200 dark:border-green-800'
+                                      : badge.tier === 'special'
+                                      ? 'border-blue-200 dark:border-blue-800'
+                                      : 'border-indigo-200 dark:border-indigo-800'
+                                  } ${
+                                    isSelected ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
+                                  } ${
+                                    !badgeStatus?.earned ? 'opacity-75' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-start space-x-3">
+                                    <div
+                                      className={`rounded-lg shadow-sm transition-all duration-200 hover:scale-105 ${
+                                        badgeStatus?.earned
+                                          ? getBadgeIconBg(badge.id, badge.tier)
+                                          : "bg-slate-300 dark:bg-slate-600"
+                                      }`}
+                                    >
+                                      <div className="relative w-20 h-20 flex items-center justify-center">
+                                        <Image
+                                          src={badge.icon}
+                                          alt={badge.name}
+                                          width={80}
+                                          height={80}
+                                          className="w-full h-full object-contain p-1"
+                                          quality={100}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className={`font-semibold ${getTierColor(badge.tier)}`}>{badge.name}</h3>
+                                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">{badge.description}</p>
+                                      <p className="text-xs text-slate-500 dark:text-slate-500">{badge.subtitle}</p>
+                                      {badgeStatus?.earned ? (
+                                        <UIBadge variant="outline" className={`text-xs mt-2 ${isSelected ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : ''}`}>
+                                          {isSelected ? 'Selected' : 'Earned'}
+                                        </UIBadge>
+                                      ) : (
+                                        <div className="space-y-1 mt-2">
+                                          <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                                            <span>Progress</span>
+                                            <span>{badgeStatus?.progress || 0}%</span>
+                                          </div>
+                                          <Progress value={badgeStatus?.progress || 0} className="h-1" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
 
         {showShareModal && <ShareModal />}

@@ -132,78 +132,87 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
 
   return (
     <header className="border-b bg-white dark:bg-slate-800 dark:border-slate-700">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4 sm:space-x-8 min-w-0 flex-1">
-          <Link href={logoHref} className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-            <Image src="/logo.png" alt="GridCasters Logo" width={48} height={48} className="w-8 h-8 sm:w-12 sm:h-12 flex-shrink-0" />
-            <span className="text-lg sm:text-2xl font-bold min-w-0">
-              <span className="text-blue-600 dark:text-blue-400">Grid</span>
-              <span className="text-green-600 dark:text-green-400">Casters</span>
-            </span>
-          </Link>
+      <div className="container mx-auto px-4 py-4">
+        {/* Main Header Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 sm:space-x-8 min-w-0 flex-1">
+            <Link href={logoHref} className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+              <Image src="/logo.png" alt="GridCasters Logo" width={48} height={48} className="w-8 h-8 sm:w-12 sm:h-12 flex-shrink-0" />
+              <span className="text-lg sm:text-2xl font-bold min-w-0">
+                <span className="text-blue-600 dark:text-blue-400">Grid</span>
+                <span className="text-green-600 dark:text-green-400">Casters</span>
+              </span>
+            </Link>
 
-          {isSignedIn && (
-            <nav className="hidden md:flex items-center space-x-6">
-              <NavLinks />
-            </nav>
-          )}
-        </div>
+            {isSignedIn && (
+              <nav className="hidden md:flex items-center space-x-6">
+                <NavLinks />
+              </nav>
+            )}
+          </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-          {rightButtons}
-          {isSignedIn && (
-            <>
-              {/* Help Link */}
-              <Link href="/help/accuracy-scoring">
-                <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4" />
-                  <span className="text-sm">Help</span>
-                </Button>
-              </Link>
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            {isSignedIn && (
+              <>
+                {/* Help Link - Desktop Only */}
+                <Link href="/help/accuracy-scoring">
+                  <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4" />
+                    <span className="text-sm">Help</span>
+                  </Button>
+                </Link>
 
-              <NoSSR fallback={
-                <Button variant="ghost" size="sm" className="md:hidden" disabled>
-                  <Menu className="w-5 h-5" />
-                </Button>
-              }>
-                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="sm" className="md:hidden">
-                      <Menu className="w-5 h-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-64">
-                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                    <SheetDescription className="sr-only">Main navigation menu for GridCasters</SheetDescription>
-                    <div className="flex flex-col space-y-4 mt-8">
-                      <NavLinks mobile onNavigate={() => setMobileMenuOpen(false)} />
-                      <Link
-                        href="/help/accuracy-scoring"
-                        className="flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-300 font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 w-full justify-start"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <HelpCircle className="w-4 h-4" />
-                        <span>Help</span>
-                      </Link>
+                <NoSSR fallback={
+                  <Button variant="ghost" size="sm" className="md:hidden" disabled>
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                }>
+                  <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="sm" className="md:hidden">
+                        <Menu className="w-5 h-5" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-64">
+                      <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                      <SheetDescription className="sr-only">Main navigation menu for GridCasters</SheetDescription>
+                      <div className="flex flex-col space-y-4 mt-8">
+                        <NavLinks mobile onNavigate={() => setMobileMenuOpen(false)} />
+                        <Link
+                          href="/help/accuracy-scoring"
+                          className="flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-300 font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 w-full justify-start"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <HelpCircle className="w-4 h-4" />
+                          <span>Help</span>
+                        </Link>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </NoSSR>
+
+                <Link href="/profile">
+                  <Avatar className="cursor-pointer w-8 h-8 sm:w-12 sm:h-12 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px] flex-shrink-0">
+                    <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
+                      <AvatarImage 
+                        src={profile?.avatar_url || DEFAULT_AVATAR_URL} 
+                        className="w-full h-full object-cover"
+                      />
+                    <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
                     </div>
-                  </SheetContent>
-                </Sheet>
-              </NoSSR>
-
-              <Link href="/profile">
-                <Avatar className="cursor-pointer w-8 h-8 sm:w-12 sm:h-12 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px] flex-shrink-0">
-                  <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
-                    <AvatarImage 
-                      src={profile?.avatar_url || DEFAULT_AVATAR_URL} 
-                      className="w-full h-full object-cover"
-                    />
-                  <AvatarFallback>{profile ? getInitials(profile) : "U"}</AvatarFallback>
-                  </div>
-                </Avatar>
-              </Link>
-            </>
-          )}
+                  </Avatar>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Mobile Action Buttons Row */}
+        {isSignedIn && rightButtons && (
+          <div className="flex items-center justify-center mt-4 md:hidden">
+            {rightButtons}
+          </div>
+        )}
       </div>
     </header>
   )

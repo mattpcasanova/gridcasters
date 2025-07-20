@@ -717,7 +717,7 @@ export default function Leaderboard() {
               </Badge>
             )}
             {entry.isCurrentUser && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs hidden sm:inline-flex">
                 You
               </Badge>
             )}
@@ -1137,7 +1137,7 @@ export default function Leaderboard() {
                           <div className="flex items-center space-x-1 sm:space-x-2">
                             <h3 className="font-semibold text-sm sm:text-base truncate">{group.name}</h3>
                             {group.isJoined && (
-                              <Badge variant="outline" className="text-xs flex-shrink-0">
+                              <Badge variant="outline" className="text-xs flex-shrink-0 hidden sm:inline-flex">
                                 Member
                               </Badge>
                             )}

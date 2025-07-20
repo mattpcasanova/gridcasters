@@ -334,26 +334,26 @@ export default function RankingDetailPage({ params }: { params: { id: string } }
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2 sm:space-x-6">
                     <div className="text-center">
-                      <p className="font-semibold">{player.projectedPoints}</p>
+                      <p className="font-semibold text-sm sm:text-base">{player.projectedPoints}</p>
                       <p className="text-xs text-slate-500">Projected</p>
                     </div>
                     <div className="text-center">
-                      <p className="font-semibold">{player.actualPoints}</p>
+                      <p className="font-semibold text-sm sm:text-base">{player.actualPoints}</p>
                       <p className="text-xs text-slate-500">Actual</p>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center hidden sm:block">
                       <CircularProgress value={player.accuracy} size={40} />
                       <p className="text-xs text-slate-500 mt-1">Accuracy</p>
                     </div>
                     <div className="text-center">
                       {player.accuracy >= 90 ? (
-                        <TrendingUp className="w-5 h-5 text-green-500 mx-auto" />
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" />
                       ) : player.accuracy >= 80 ? (
-                        <Trophy className="w-5 h-5 text-yellow-500 mx-auto" />
+                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto" />
                       ) : (
-                        <TrendingDown className="w-5 h-5 text-red-500 mx-auto" />
+                        <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" />
                       )}
                     </div>
                   </div>

@@ -291,13 +291,15 @@ export default function AllRankingsPage() {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      {ranking.accuracy_score !== null ? (
-                        <CircularProgress value={ranking.accuracy_score} size={40} showText />
-                      ) : (
-                        <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                          <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
-                        </div>
-                      )}
+                      <div className="hidden sm:block">
+                        {ranking.accuracy_score !== null ? (
+                          <CircularProgress value={ranking.accuracy_score} size={40} showText />
+                        ) : (
+                          <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                            <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>
