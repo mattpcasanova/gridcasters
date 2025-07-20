@@ -745,13 +745,13 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4">
         <div className="text-center">
           {accuracy > 0 ? (
-            <CircularProgress value={accuracy} size={60} showText />
+            <CircularProgress value={accuracy} size={40} showText />
           ) : (
-            <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-              <span className="text-sm font-medium text-slate-500">--</span>
+            <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+              <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
             </div>
           )}
           <p className="text-xs text-slate-500 mt-1">accuracy</p>
@@ -762,20 +762,23 @@ export default function Leaderboard() {
             variant={entry.isFollowing ? "outline" : "default"}
             size="sm"
             onClick={() => toggleFollow(entry.id)}
-            className={entry.isFollowing 
-              ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
-              : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
-            }
+            className={`text-xs sm:text-sm ${
+              entry.isFollowing 
+                ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+            }`}
           >
             {entry.isFollowing ? (
               <>
-                <UserCheck className="w-4 h-4 mr-2" />
-                Following
+                <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Following</span>
+                <span className="sm:hidden">Follow</span>
               </>
             ) : (
               <>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Follow
+                <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Follow</span>
+                <span className="sm:hidden">+</span>
               </>
             )}
           </Button>
@@ -1117,30 +1120,35 @@ export default function Leaderboard() {
                         >
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all cursor-pointer">
                       
-                      <div className="flex items-center space-x-4">
-                        <GradientAvatar
-                          src={group.avatar}
-                          alt={group.name}
-                          fallback={group.name.split(' ').map((n: string) => n[0]).join('')}
-                          size="lg"
-                        />
+                      <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5 flex-shrink-0">
+                          <img 
+                            src={group.avatar}
+                            alt={group.name}
+                            className="w-full h-full rounded-full bg-gray-200 object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/placeholder-user.jpg';
+                            }}
+                          />
+                        </div>
 
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold">{group.name}</h3>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{group.name}</h3>
                             {group.isJoined && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-xs flex-shrink-0">
                                 Member
                               </Badge>
                             )}
                             {group.isPrivate && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs flex-shrink-0">
                                 <Lock className="w-3 h-3 mr-1" />
                                 Private
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                             {group.members} members • {group.avgAccuracy > 0 ? `${group.avgAccuracy}%` : '--'} avg accuracy
                           </p>
                           {group.isJoined && group.userRank && (
@@ -1151,13 +1159,13 @@ export default function Leaderboard() {
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                         <div className="text-center">
                           {group.avgAccuracy > 0 ? (
-                            <CircularProgress value={group.avgAccuracy} size={60} showText />
+                            <CircularProgress value={group.avgAccuracy} size={40} showText />
                           ) : (
-                            <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                              <span className="text-sm font-medium text-slate-500">--</span>
+                            <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                              <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
                             </div>
                           )}
                           <p className="text-xs text-slate-500 mt-1">group avg</p>
@@ -1170,20 +1178,23 @@ export default function Leaderboard() {
                             e.preventDefault();
                             toggleGroupJoin(group.id);
                           }}
-                          className={group.isJoined 
-                            ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
-                            : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
-                          }
+                          className={`text-xs sm:text-sm ${
+                            group.isJoined 
+                              ? "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                              : "bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+                          }`}
                         >
                           {group.isJoined ? (
                             <>
-                              <UserCheck className="w-4 h-4 mr-2" />
-                              Joined
+                              <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Joined</span>
+                              <span className="sm:hidden">Join</span>
                             </>
                           ) : (
                             <>
-                              <UserPlus className="w-4 h-4 mr-2" />
-                              Join
+                              <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                              <span className="hidden sm:inline">Join</span>
+                              <span className="sm:hidden">+</span>
                             </>
                           )}
                         </Button>

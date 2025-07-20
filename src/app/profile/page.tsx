@@ -707,26 +707,26 @@ export default function Profile() {
                       href={`/rankings/${ranking.id}`}
                     >
                       <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold ${getPositionColor(ranking.position)}`}>
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base ${getPositionColor(ranking.position)}`}>
                             {ranking.position}
                           </div>
-                          <div>
-                            <h3 className="font-semibold">{ranking.name}</h3>
-                            <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-                              <UIBadge className={getPositionColor(ranking.position)} variant="outline">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{ranking.name}</h3>
+                            <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                              <UIBadge className={`${getPositionColor(ranking.position)} text-xs`} variant="outline">
                                 {ranking.position}
                               </UIBadge>
                               <span>{ranking.date}</span>
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex-shrink-0">
                           {ranking.accuracy !== null ? (
-                            <CircularProgress value={ranking.accuracy} size="sm" />
+                            <CircularProgress value={ranking.accuracy} size={40} showText />
                           ) : (
-                            <div className="w-[60px] h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                              <span className="text-sm font-medium text-slate-500">--</span>
+                            <div className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                              <span className="text-xs sm:text-sm font-medium text-slate-500">--</span>
                             </div>
                           )}
                         </div>
