@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { BarChart3, Trophy, Users, User, Menu, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -173,6 +173,8 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="w-64">
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <SheetDescription className="sr-only">Main navigation menu for GridCasters</SheetDescription>
                     <div className="flex flex-col space-y-4 mt-8">
                       <NavLinks mobile onNavigate={() => setMobileMenuOpen(false)} />
                       <Link

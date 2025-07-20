@@ -1,6 +1,6 @@
 "use client"
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Menu, BarChart3, Trophy, Users, User } from "lucide-react"
 import Link from "next/link"
@@ -55,6 +55,8 @@ export default function MobileMenu({ isOpen, onOpenChange, onNavigate }: MobileM
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-64">
+        <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+        <SheetDescription className="sr-only">Main navigation menu for GridCasters</SheetDescription>
         <div className="flex flex-col space-y-4 mt-8">
           <NavLinks onNavigate={onNavigate} />
         </div>
