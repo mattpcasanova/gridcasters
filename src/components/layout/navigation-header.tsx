@@ -133,10 +133,10 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
   return (
     <header className="border-b bg-white dark:bg-slate-800 dark:border-slate-700">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
-          <Link href={logoHref} className="flex items-center space-x-3">
-            <Image src="/logo.png" alt="GridCasters Logo" width={48} height={48} className="w-12 h-12" />
-            <span className="text-2xl font-bold">
+        <div className="flex items-center space-x-4 sm:space-x-8 min-w-0 flex-1">
+          <Link href={logoHref} className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <Image src="/logo.png" alt="GridCasters Logo" width={48} height={48} className="w-8 h-8 sm:w-12 sm:h-12 flex-shrink-0" />
+            <span className="text-lg sm:text-2xl font-bold min-w-0">
               <span className="text-blue-600 dark:text-blue-400">Grid</span>
               <span className="text-green-600 dark:text-green-400">Casters</span>
             </span>
@@ -149,7 +149,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
           )}
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
           {rightButtons}
           {isSignedIn && (
             <>
@@ -189,7 +189,7 @@ export function NavigationHeader({ rightButtons, isSignedIn = true }: Navigation
               </NoSSR>
 
               <Link href="/profile">
-                <Avatar className="cursor-pointer w-12 h-12 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px]">
+                <Avatar className="cursor-pointer w-8 h-8 sm:w-12 sm:h-12 border border-transparent bg-gradient-to-br from-blue-500 to-green-500 p-[1px] flex-shrink-0">
                   <div className="rounded-full bg-white dark:bg-slate-900 w-full h-full flex items-center justify-center overflow-hidden">
                     <AvatarImage 
                       src={profile?.avatar_url || DEFAULT_AVATAR_URL} 

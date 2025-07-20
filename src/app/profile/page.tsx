@@ -569,7 +569,7 @@ export default function Profile() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 w-full sm:w-auto sm:min-w-[140px]">
+                <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 w-full sm:w-auto sm:min-w-[140px] max-w-full">
                   <Button 
                     variant="outline" 
                     onClick={async () => {
@@ -590,34 +590,34 @@ export default function Profile() {
                         toast.error('Failed to check badges');
                       }
                     }}
-                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
+                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20 text-xs sm:text-sm"
                   >
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Check Badges
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20"
+                    className="w-full justify-start border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-100 dark:hover:bg-slate-900/20 text-xs sm:text-sm"
                     onClick={() => router.push('/settings')}
                   >
-                    <Settings className="w-4 h-4 mr-2" />
+                    <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Settings
                   </Button>
                   {isEditing ? (
                     <>
                       <Button 
                         variant="outline" 
-                        className="w-full justify-start"
+                        className="w-full justify-start text-xs sm:text-sm"
                         onClick={() => setIsEditing(false)}
                       >
-                        <X className="w-4 h-4 mr-2" />
+                        <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         Cancel
                       </Button>
                       <GradientButton
                         onClick={handleSave}
-                        className="w-full justify-start"
+                        className="w-full justify-start text-xs sm:text-sm"
                       >
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         Save
                       </GradientButton>
                     </>
@@ -625,9 +625,9 @@ export default function Profile() {
                     <Button 
                       variant="outline" 
                       onClick={handleLogout}
-                      className="w-full justify-start border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                      className="w-full justify-start border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 text-xs sm:text-sm"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
+                      <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Sign Out
                     </Button>
                   )}
@@ -685,19 +685,20 @@ export default function Profile() {
         </Card>
 
         {/* Main Content */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Rankings</CardTitle>
-                <CardDescription>Your latest player rankings and their performance</CardDescription>
-              </CardHeader>
+            <TabsContent value="overview">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Rankings</CardTitle>
+                  <CardDescription>Your latest player rankings and their performance</CardDescription>
+                </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {recentRankings?.map((ranking) => (
@@ -954,6 +955,7 @@ export default function Profile() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
 
         {showShareModal && <ShareModal />}
       </div>

@@ -296,7 +296,7 @@ export default function Rankings() {
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 lg:gap-6">
         {/* Sidebar */}
-        <div className="xl:col-span-1 order-2 xl:order-1">
+        <div className="xl:col-span-1 order-1">
           {/* Position Filter */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
             <h3 className="font-semibold mb-3">Position Filter</h3>
@@ -468,7 +468,7 @@ export default function Rankings() {
         </div>
 
         {/* Main Content */}
-        <div className="xl:col-span-3 order-1 xl:order-2">
+        <div className="xl:col-span-3 order-2">
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">

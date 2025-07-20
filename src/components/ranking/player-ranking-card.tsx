@@ -41,16 +41,16 @@ export function PlayerRankingCard({
 
   return (
     <div 
-      className={`flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-all duration-200 ${
+      className={`flex items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-all duration-200 ${
         isDragging ? 'shadow-lg scale-105' : ''
       }`}
     >
       {/* Drag Handle & Rank */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div className="cursor-move text-gray-400 hover:text-gray-600">
-          <GripVertical className="w-4 h-4" />
+          <GripVertical className="w-3 h-3 sm:w-4 sm:h-4" />
         </div>
-        <div className="w-8 text-center">
+        <div className="w-6 sm:w-8 text-center">
           {isEditingRank ? (
             <input
               type="number"
@@ -58,12 +58,12 @@ export function PlayerRankingCard({
               onChange={(e) => setRankValue(e.target.value)}
               onBlur={handleRankSubmit}
               onKeyDown={handleRankKeyPress}
-              className="w-8 text-center font-bold text-lg text-gray-900 border-b border-blue-500 focus:outline-none"
+              className="w-6 sm:w-8 text-center font-bold text-base sm:text-lg text-gray-900 border-b border-blue-500 focus:outline-none"
               autoFocus
             />
           ) : (
             <div 
-              className="font-bold text-lg text-gray-900 cursor-pointer hover:text-blue-600"
+              className="font-bold text-base sm:text-lg text-gray-900 cursor-pointer hover:text-blue-600"
               onClick={() => setIsEditingRank(true)}
             >
               {player.rank}
@@ -74,7 +74,7 @@ export function PlayerRankingCard({
 
       {/* Player Avatar */}
       <div className="relative">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-blue-600 to-green-500 p-0.5">
           <img 
             src={player.avatarUrl}
             alt={player.name}
@@ -91,34 +91,34 @@ export function PlayerRankingCard({
           />
         </div>
         {player.injuryStatus && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+          <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full border-2 border-white"></div>
         )}
       </div>
 
       {/* Player Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-1 sm:gap-2 mb-1">
           <h3 
-            className="font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600"
+            className="font-semibold text-sm sm:text-base text-gray-900 truncate cursor-pointer hover:text-blue-600"
             onClick={onPlayerClick}
           >
             {player.name}
           </h3>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
+          <span className={`px-1 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
             {player.position}
           </span>
           {player.injuryStatus && (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getInjuryStatusColor(player.injuryStatus)}`}>
+            <span className={`px-1 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-medium ${getInjuryStatusColor(player.injuryStatus)}`}>
               {player.injuryStatus}
             </span>
           )}
         </div>
         
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
           <img 
             src={player.teamLogoUrl}
             alt={player.team}
-            className="w-4 h-4"
+            className="w-3 h-3 sm:w-4 sm:h-4"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
@@ -128,35 +128,36 @@ export function PlayerRankingCard({
           {player.age && (
             <span className="text-gray-400">• {player.age}y</span>
           )}
+          {/* Hide years of experience on mobile to prevent overlap */}
           {player.yearsExp !== undefined && (
-            <span className="text-gray-400">• {player.yearsExp}yr exp</span>
+            <span className="hidden sm:inline text-gray-400">• {player.yearsExp}yr exp</span>
           )}
         </div>
       </div>
 
       {/* Projected Points */}
       <div className="text-right">
-        <div className="text-lg font-bold text-gray-900">
+        <div className="text-sm sm:text-lg font-bold text-gray-900">
           {player.projectedPoints > 0 ? player.projectedPoints.toFixed(1) : '--'} pts
         </div>
-        <div className="text-xs text-gray-500">projected</div>
+        <div className="text-xs text-gray-500 hidden sm:block">projected</div>
       </div>
 
       {/* Trend Arrow (placeholder for now) */}
-      <div className="text-gray-400">
+      <div className="text-gray-400 hidden sm:block">
         <TrendingUp className="w-4 h-4" />
       </div>
 
       {/* Star Button */}
       <button
         onClick={onStar}
-        className={`p-2 rounded-full transition-colors ${
+        className={`p-1 sm:p-2 rounded-full transition-colors ${
           player.isStarred 
             ? 'text-yellow-500 hover:text-yellow-600' 
             : 'text-gray-400 hover:text-yellow-500'
         }`}
       >
-        <Star className={`w-5 h-5 ${player.isStarred ? 'fill-current' : ''}`} />
+        <Star className={`w-4 h-4 sm:w-5 sm:h-5 ${player.isStarred ? 'fill-current' : ''}`} />
       </button>
     </div>
   );

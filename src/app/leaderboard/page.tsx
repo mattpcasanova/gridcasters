@@ -874,7 +874,7 @@ export default function Leaderboard() {
           <TabsContent value="overall">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
                     <CardTitle>Overall Leaderboard</CardTitle>
                     <CardDescription>
@@ -884,12 +884,12 @@ export default function Leaderboard() {
                        "Full PPR scoring rankings"}
                     </CardDescription>
                   </div>
-                  <Tabs value={pprType} onValueChange={setPprType} className="w-auto">
-                    <TabsList>
-                      <TabsTrigger value="combined">Combined</TabsTrigger>
-                      <TabsTrigger value="standard">Standard</TabsTrigger>
-                      <TabsTrigger value="half">Half PPR</TabsTrigger>
-                      <TabsTrigger value="full">Full PPR</TabsTrigger>
+                  <Tabs value={pprType} onValueChange={setPprType} className="w-full lg:w-auto">
+                    <TabsList className="grid w-full grid-cols-4 lg:flex lg:w-auto">
+                      <TabsTrigger value="combined" className="text-xs lg:text-sm">Combined</TabsTrigger>
+                      <TabsTrigger value="standard" className="text-xs lg:text-sm">Standard</TabsTrigger>
+                      <TabsTrigger value="half" className="text-xs lg:text-sm">Half PPR</TabsTrigger>
+                      <TabsTrigger value="full" className="text-xs lg:text-sm">Full PPR</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
@@ -925,7 +925,7 @@ export default function Leaderboard() {
           <TabsContent value="weekly">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
                     <CardTitle>Weekly Leaderboard</CardTitle>
                     <CardDescription>
@@ -935,9 +935,9 @@ export default function Leaderboard() {
                        "Full PPR scoring rankings"}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-full sm:w-40">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -948,12 +948,12 @@ export default function Leaderboard() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Tabs value={pprType} onValueChange={setPprType} className="w-auto">
-                      <TabsList>
-                        <TabsTrigger value="combined">Combined</TabsTrigger>
-                        <TabsTrigger value="standard">Standard</TabsTrigger>
-                        <TabsTrigger value="half">Half PPR</TabsTrigger>
-                        <TabsTrigger value="full">Full PPR</TabsTrigger>
+                    <Tabs value={pprType} onValueChange={setPprType} className="w-full sm:w-auto">
+                      <TabsList className="grid w-full grid-cols-4 sm:flex sm:w-auto">
+                        <TabsTrigger value="combined" className="text-xs sm:text-sm">Combined</TabsTrigger>
+                        <TabsTrigger value="standard" className="text-xs sm:text-sm">Standard</TabsTrigger>
+                        <TabsTrigger value="half" className="text-xs sm:text-sm">Half PPR</TabsTrigger>
+                        <TabsTrigger value="full" className="text-xs sm:text-sm">Full PPR</TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
