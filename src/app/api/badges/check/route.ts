@@ -125,11 +125,15 @@ async function getUserStatsWithPercentiles(supabase: any, userId: string): Promi
     : 0;
 
   // Determine founding member status (first 250 users)
-  const { count: totalUsers } = await supabase
+  // Get the user's rank based on creation date (earliest = rank 1)
+  const { data: userRankData } = await supabase
     .from('profiles')
-    .select('*', { count: 'exact', head: true });
+    .select('created_at')
+    .lt('created_at', profile?.created_at || new Date().toISOString())
+    .order('created_at', { ascending: true });
 
-  const isFoundingMember = totalUsers ? totalUsers <= 250 : false;
+  const userRank = (userRankData?.length || 0) + 1;
+  const isFoundingMember = userRank <= 250;
 
   // Get percentile data for all user rankings
   const { data: percentileData } = await supabase
